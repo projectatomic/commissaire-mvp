@@ -27,6 +27,9 @@ Requires:  python2-python-etcd
 Requires:  python-jinja2
 Requires:  python-requests
 Requires:  py-bcrypt
+
+# Ansible's Python API has no stability guarantees,
+# so keep the acceptable versions on a short leash.
 Requires:  ansible >= 2.0.1.0
 Requires:  ansible < 2.0.2.0
 
