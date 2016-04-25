@@ -15,6 +15,7 @@
 """
 """
 
+import argparse
 import cherrypy
 import json
 import logging
@@ -110,22 +111,22 @@ def parse_uri(uri, name):
     return parsed
 
 
-def main():  # pragma: no cover
+def parse_args(parser):
     """
-    Main script entry point.
+    Parses and combines arguments from the server configuration file
+    and the command-line invocation.  Command-line arguments override
+    the configuration file.
+
+    The 'parser' argument should be a fresh argparse.ArgumentParser
+    instance with a suitable description, epilog, etc.  This method
+    will add arguments to it.
+
+    :param parser: An argument parser instance
+    :type parser: argparse.ArgumentParser
     """
-    import argparse
-
-    from multiprocessing import Process
-    from commissaire.cherrypy_plugins import CherryPyStorePlugin
-    config = Config()
-
-    epilog = ('Example: ./commissaire -e http://127.0.0.1:2379'
-              ' -k http://127.0.0.1:8080')
-
-    parser = argparse.ArgumentParser(epilog=epilog)
     parser.add_argument(
-        '--listen-interface', '-i', type=str, help='Interface to listen on')
+        '--listen-interface', '-i', type=str,
+        help='Interface to listen on')
     parser.add_argument(
         '--listen-port', '-p', type=int, help='Port to listen on')
     parser.add_argument(
@@ -159,9 +160,25 @@ def main():  # pragma: no cover
         required=False, default={},
         help='Authentication Plugin configuration (key=value)')
 
-    args = parser.parse_args()
+    # XXX Temporary
+    return parser.parse_args()
+
+
+def main():  # pragma: no cover
+    """
+    Main script entry point.
+    """
+    from multiprocessing import Process
+    from commissaire.cherrypy_plugins import CherryPyStorePlugin
+    config = Config()
+
+    epilog = ('Example: ./commissaire -e http://127.0.0.1:2379'
+              ' -k http://127.0.0.1:8080')
+
+    parser = argparse.ArgumentParser(epilog=epilog)
 
     try:
+        args = parse_args(parser)
         config.etcd['uri'] = parse_uri(args.etcd_uri, 'etcd')
         config.kubernetes['uri'] = parse_uri(args.kube_uri, 'kube')
     except Exception:
