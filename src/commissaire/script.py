@@ -111,6 +111,51 @@ def parse_uri(uri, name):
     return parsed
 
 
+def _read_config_file(path=None):
+    """
+    Attempts to parse a configuration file, formatted as a JSON object
+    with member names matching documented command-line arguments.
+
+    If a config file path is explicitly given, then failure to open the
+    file will raise an IOError.  Otherwise a default path is tried, but
+    no IOError is raised on failure.  If the file can be opened but not
+    parsed, an exception is always raised.
+
+    :param path: Full path to the config file, or None
+    :type path: str or None
+    :returns: A namespace object, possibly empty
+    :rtype: argparse.Namespace
+    """
+    json_object = {}
+    using_default = False
+
+    if path is None:
+        path = '/etc/commissaire/commissaire.conf'
+        using_default = True
+
+    try:
+        with open(path, 'r') as fp:
+            json_object = json.load(fp)
+        # XXX Logging is not yet set up, so just print.
+        if using_default:
+            print('Using configuration in {0}'.format(path))
+    except IOError:
+        if not using_default:
+            raise
+
+    if type(json_object) is not dict:
+        raise TypeError('{0}: '.format(path) +
+                        'File content must be a JSON object')
+
+    # Normalize member names by converting hypens to underscores.
+    # FIXME Use a dictionary comprehension here when we no longer
+    #       have to support Python 2.6.
+    json_object = dict([(k.replace('-', '_'), v)
+                        for k, v in json_object.items()])
+
+    return argparse.Namespace(**json_object)
+
+
 def parse_args(parser):
     """
     Parses and combines arguments from the server configuration file
@@ -124,44 +169,66 @@ def parse_args(parser):
     :param parser: An argument parser instance
     :type parser: argparse.ArgumentParser
     """
+    # Do not use required=True because it would preclude such
+    # arguments from being specified in a configuration file.
+    # Instead we manually check for required arguments below.
+    parser.add_argument(
+        '--config-file', '-c', type=str,
+        help='Full path to a JSON configuration file '
+             '(command-line arguments override)')
     parser.add_argument(
         '--listen-interface', '-i', type=str,
         help='Interface to listen on')
     parser.add_argument(
         '--listen-port', '-p', type=int, help='Port to listen on')
     parser.add_argument(
-        '--etcd-uri', '-e', type=str, required=True,
+        '--etcd-uri', '-e', type=str,
         help='Full URI for etcd EX: http://127.0.0.1:2379')
     parser.add_argument(
-        '--etcd-cert-path', '-C', type=str, required=False,
+        '--etcd-cert-path', '-C', type=str,
         help='Full path to the client side certificate.')
     parser.add_argument(
-        '--etcd-cert-key-path', '-K', type=str, required=False,
+        '--etcd-cert-key-path', '-K', type=str,
         help='Full path to the client side certificate key.')
     parser.add_argument(
-        '--etcd-ca-path', '-A', type=str, required=False,
+        '--etcd-ca-path', '-A', type=str,
         help='Full path to the CA file.')
     parser.add_argument(
-        '--kube-uri', '-k', type=str, required=True,
+        '--kube-uri', '-k', type=str,
         help='Full URI for kubernetes EX: http://127.0.0.1:8080')
     parser.add_argument(
-        '--tls-keyfile', type=str, required=False,
+        '--tls-keyfile', type=str,
         help='Full path to the TLS keyfile for the commissaire server')
     parser.add_argument(
-        '--tls-certfile', type=str, required=False,
+        '--tls-certfile', type=str,
         help='Full path to the TLS certfile for the commissaire server')
     parser.add_argument(
-        '--authentication-plugin', type=str, required=False,
+        '--authentication-plugin', type=str,
         default='commissaire.authentication.httpauthbyetcd',
         help=('Authentication Plugin module. '
               'EX: commissaire.authentication.httpauth'))
     parser.add_argument(
-        '--authentication-plugin-kwargs', type=str,
-        required=False, default={},
+        '--authentication-plugin-kwargs', type=str, default={},
         help='Authentication Plugin configuration (key=value)')
 
-    # XXX Temporary
-    return parser.parse_args()
+    # We have to parse the command-line arguments twice.  Once to extract
+    # the --config-file option, and again with the config file content as
+    # a baseline.
+    args = parser.parse_args()
+    namespace = _read_config_file(args.config_file)
+    args = parser.parse_args(namespace=namespace)
+
+    # Make sure required arguments are present.
+    required_args = ('etcd_uri', 'kube_uri')
+    missing_args = []
+    for name in required_args:
+        if getattr(args, name) is None:
+            missing_args.append(name.replace('_', '-'))
+    if missing_args:
+        parser.error('Missing required arguments: {0}'.format(
+            ', '.join(missing_args)))
+
+    return args
 
 
 def main():  # pragma: no cover

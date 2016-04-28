@@ -16,10 +16,15 @@
 Test cases for the commissaire.script module.
 """
 
-import mock
-import falcon
+import argparse
+import contextlib
+import errno
 import etcd
+import falcon
+import mock
+import os
 import os.path
+import sys
 
 from . import TestCase
 from commissaire import script
@@ -60,3 +65,67 @@ class Test_ParseUri(TestCase):
 
         for x in ('http://127.0.0.1:', 'http://127.0.0.1', 'http://1:a', ''):
             self.assertRaises(Exception, script.parse_uri, x, 'test')
+
+
+class Test_ParseArgs(TestCase):
+    """
+    Tests the parse_args function.
+    """
+
+    config_data = ('{'
+        '  "etcd-uri": "http://192.168.100.1:2379",'
+        '  "kube-uri": "http://192.168.100.1:8080"'
+        '}')
+
+    def test_missing_req_args(self):
+        """
+        Verify required arguments are caught when missing.
+        """
+        failing_cases = ([''],
+                         ['', '--etcd-uri', 'http://127.0.0.1:2379'],
+                         ['', '--kube-uri', 'http://127.0.0.1:8080'])
+        for argv in failing_cases:
+            sys.argv = argv
+            parser = argparse.ArgumentParser()
+            with contextlib.nested(
+                    mock.patch('__builtin__.open'),
+                    mock.patch('argparse.ArgumentParser._print_message')
+                ) as (_open, _print):
+                # Make sure no config file is opened.
+                _open.side_effect = IOError(
+                    errno.ENOENT, os.strerror(errno.ENOENT))
+                self.assertRaises(SystemExit, script.parse_args, parser)
+
+        # All required arguments; no exception raised.
+        sys.argv = ['', '--etcd-uri', 'http://127.0.0.1:2379',
+                        '--kube-uri', 'http://127.0.0.1:8080']
+        parser = argparse.ArgumentParser()
+        with mock.patch('__builtin__.open') as _open:
+            # Make sure no config file is opened.
+            _open.side_effect = IOError(
+                errno.ENOENT, os.strerror(errno.ENOENT))
+            args = script.parse_args(parser)
+
+    def test_missing_config_file(self):
+        """
+        Verify behavior for missing config file.
+        """
+        sys.argv = ['', '--config-file', '/some/bogus/location']
+        parser = argparse.ArgumentParser()
+        with mock.patch('__builtin__.open') as _open:
+            # Make sure no config file is opened.
+            _open.side_effect = IOError(
+                errno.ENOENT, os.strerror(errno.ENOENT))
+            self.assertRaises(IOError, script.parse_args, parser)
+
+    def test_arg_priority(self):
+        """
+        Verify command-line arguments shadow config file.
+        """
+        sys.argv = ['', '--etcd-uri', 'http://127.0.0.1:2379']
+        parser = argparse.ArgumentParser()
+        with mock.patch('__builtin__.open',
+                        mock.mock_open(read_data=self.config_data)) as _open:
+            args = script.parse_args(parser)
+        self.assertEquals(args.etcd_uri, 'http://127.0.0.1:2379')
+        self.assertEquals(args.kube_uri, 'http://192.168.100.1:8080')

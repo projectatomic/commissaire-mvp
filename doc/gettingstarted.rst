@@ -77,22 +77,34 @@ If you want to run from Docker and would like to build the image for yourself ru
 Running the service
 ~~~~~~~~~~~~~~~~~~~
 
+Most of Commissaire's command-line options can be specified in a JSON
+configuration file, by default ``/etc/commissaire/commissaire.conf`` or
+as specified by the ``--config-file`` option.
+
+.. note::
+
+   Command-line options take precedence over the configuration file.
+
 From Source
 ```````````
-From the repo root...
-
-**Not So Secure Mode**
+To launch the server from the repo root, with a configuration file such
+as those given below:
 
 .. include:: examples/run_from_source.rst
 
+**Not So Secure Mode**
+
+.. include:: examples/simple_config.rst
+
 **More Secure Mode**
 
-.. include:: examples/run_from_source_more_secure.rst
+.. include:: examples/secure_config.rst
 
 
 Via Docker
 ``````````
-To run the image specify the ETCD and KUBE variables pointing towards the specific services.
+To run the image, place a ``commissaire.conf`` file in an empty directory
+and then bind-mount the directory to ``/etc/commissaire`` in the container.
 
 .. note::
 
