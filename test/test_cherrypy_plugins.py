@@ -28,7 +28,7 @@ class Test_CherryPyStorePlugin(TestCase):
     """
 
     #: Topics that should be registered
-    topics = ('store-get', 'store-save')
+    topics = ('store-get', 'store-save', 'store-delete')
 
     def before(self):
         """
