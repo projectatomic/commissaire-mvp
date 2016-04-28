@@ -120,7 +120,7 @@ class Test_HostsResource(TestCase):
             _publish.return_value = [[self.return_value, None]]
             body = self.simulate_request('/api/v0/hosts')
             # datasource's get should have been called once
-            self.assertEqual(self.srmock.status, falcon.HTTP_200)
+            self.assertEqual(self.srmock.status, falcon.HTTP_404)
             self.assertEqual({}, json.loads(body[0]))
 
     def test_hosts_listing_with_no_etcd_result(self):
@@ -226,28 +226,27 @@ class Test_HostResource(TestCase):
         """
         Verify deleting a Host.
         """
+        with mock.patch('cherrypy.engine.publish') as _publish:
+            # Verify if the host exists the data is returned
+            self.return_value.value = self.etcd_host
+            _publish.return_value = [[self.return_value, None]]
 
-        clusters_return_value = MagicMock(
-            etcd.EtcdResult, leaves=[],
-            value={'value': None}, _children=[])
-        # First call return is etcd_host, second is the clusters_return_value
-        self.datasource.get.side_effect = (
-            MagicMock(value=self.etcd_host), clusters_return_value)
+            # Verify deleting of an existing host works
+            body = self.simulate_request(
+                '/api/v0/host/10.2.0.2', method='DELETE')
+            # datasource's delete should have been called once
+            self.assertEquals(2, _publish.call_count)
+            self.assertEqual(self.srmock.status, falcon.HTTP_200)
+            self.assertEqual({}, json.loads(body[0]))
 
-        # Verify deleting of an existing host works
-        body = self.simulate_request('/api/v0/host/10.2.0.2', method='DELETE')
-        # datasource's delete should have been called once
-        self.assertEquals(1, self.datasource.delete.call_count)
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertEqual({}, json.loads(body[0]))
-
-        # Verify deleting of a non existing host returns the proper result
-        self.datasource.delete.reset_mock()
-        self.datasource.delete.side_effect = etcd.EtcdKeyNotFound
-        body = self.simulate_request('/api/v0/host/10.9.9.9', method='DELETE')
-        self.assertEquals(1, self.datasource.delete.call_count)
-        self.assertEqual(self.srmock.status, falcon.HTTP_404)
-        self.assertEqual({}, json.loads(body[0]))
+            # Verify deleting of a non existing host returns the proper result
+            _publish.reset_mock()
+            _publish.return_value = [[None, etcd.EtcdKeyNotFound]]
+            body = self.simulate_request(
+                '/api/v0/host/10.9.9.9', method='DELETE')
+            self.assertEquals(2, _publish.call_count)
+            self.assertEqual(self.srmock.status, falcon.HTTP_404)
+            self.assertEqual({}, json.loads(body[0]))
 
     def test_host_create(self):
         """

@@ -19,12 +19,10 @@ Host(s) handlers.
 
 import json
 
-import cherrypy
-import etcd
 import falcon
 
 from commissaire.resource import Resource
-from commissaire.handlers.models import Cluster, Host, Hosts
+from commissaire.handlers.models import Host, Hosts, Cluster, Clusters
 import commissaire.handlers.util as util
 
 
@@ -42,29 +40,21 @@ class HostsResource(Resource):
         :param resp: Response instance that will be passed through.
         :type resp: falcon.Response
         """
-        hosts_dir, error = cherrypy.engine.publish(
-            'store-get', '/commissaire/hosts/')[0]
-        self.logger.debug('Etcd Response: {0}'.format(hosts_dir))
 
-        if error:
+        try:
+            hosts = Hosts.retrieve()
+            if len(hosts.hosts) == 0:
+                raise Exception()
+            resp.status = falcon.HTTP_200
+            req.context['model'] = hosts
+        except:
+            # This was originally a "no content" but I think a 404 makes
+            # more sense if there are no hosts
             self.logger.warn(
                 'Etcd does not have any hosts. Returning [] and 404.')
             resp.status = falcon.HTTP_404
             req.context['model'] = None
             return
-
-        results = []
-        # Don't let an empty host directory through
-        if len(hosts_dir._children):
-            for host in hosts_dir.leaves:
-                results.append(Host(**json.loads(host.value)))
-            resp.status = falcon.HTTP_200
-            req.context['model'] = Hosts(hosts=results)
-        else:
-            self.logger.debug(
-                'Etcd has a hosts directory but no content.')
-            resp.status = falcon.HTTP_200
-            req.context['model'] = None
 
 
 class HostResource(Resource):
@@ -84,16 +74,13 @@ class HostResource(Resource):
         :type address: str
         """
         # TODO: Verify input
-        etcd_resp, error = cherrypy.engine.publish(
-            'store-get', util.etcd_host_key(address))[0]
-        self.logger.debug('Etcd Response: {0}'.format(etcd_resp))
-
-        if error:
+        try:
+            host = Host.retrieve(address)
+            resp.status = falcon.HTTP_200
+            req.context['model'] = host
+        except:
             resp.status = falcon.HTTP_404
             return
-
-        resp.status = falcon.HTTP_200
-        req.context['model'] = Host(**json.loads(etcd_resp.value))
 
     def on_put(self, req, resp, address):
         """
@@ -140,9 +127,9 @@ class HostResource(Resource):
         """
         resp.body = '{}'
         try:
-            self.store.delete(util.etcd_host_key(address))
+            Host.delete(address)
             resp.status = falcon.HTTP_200
-        except etcd.EtcdKeyNotFound:
+        except:
             resp.status = falcon.HTTP_404
 
         # Also remove the host from all clusters.
@@ -150,25 +137,25 @@ class HostResource(Resource):
         #       so if an error occurs from here just log it and
         #       return.
         try:
-            clusters_dir = self.store.get('/commissaire/clusters')
-            self.logger.debug('Etcd Response: {0}'.format(clusters_dir))
-        except etcd.EtcdKeyNotFound:
+            clusters = Clusters.retrieve()
+        except:
             self.logger.warn('Etcd does not have any clusters')
             return
-        if len(clusters_dir._children):
-            self.logger.info(
-                'There are clusters associated with {0}...'.format(address))
-            for etcd_resp in clusters_dir.leaves:
-                cluster = Cluster(**json.loads(etcd_resp.value))
+        try:
+            for cluster_name in clusters.clusters:
+                self.logger.debug('Checking cluster {0}'.format(cluster_name))
+                cluster = Cluster.retrieve(cluster_name)
                 if address in cluster.hostset:
-                    cluster_name = etcd_resp.key.split('/')[-1]
                     self.logger.info('Removing {0} from cluster {1}'.format(
-                        address, cluster_name))
+                                     address, cluster_name))
                     cluster.hostset.remove(address)
-                    self.store.set(etcd_resp.key, cluster.to_json(secure=True))
+                    cluster.save(cluster_name)
                     self.logger.info(
                         '{0} has been removed from cluster {1}'.format(
                             address, cluster_name))
+        except:
+            self.logger.warn('Failed to remove {0} from cluster {1}'.format(
+                address, cluster_name))
 
 
 class ImplicitHostResource(Resource):

@@ -18,6 +18,8 @@ Models for handlers.
 
 import json
 
+import cherrypy
+
 from commissaire.model import Model
 
 
@@ -74,6 +76,7 @@ class Clusters(Model):
     """
     _json_type = list
     _attributes = ('clusters',)
+    _key = '/commissaire/clusters/'
 
 
 class Host(Model):
@@ -85,6 +88,7 @@ class Host(Model):
         'address', 'status', 'os', 'cpus', 'memory',
         'space', 'last_check', 'ssh_priv_key')
     _hidden_attributes = ('ssh_priv_key', )
+    _key = '/commissaire/hosts/{0}'
 
 
 class Hosts(Model):
@@ -93,6 +97,25 @@ class Hosts(Model):
     """
     _json_type = list
     _attributes = ('hosts', )
+    _key = '/commissaire/hosts/'
+
+    @classmethod
+    def retrieve(klass, *parts):
+        """
+        Gets the model from the object store.
+
+        :raises: Exception if unable to save
+        :returns: Itself
+        :rtype: model
+        """
+        key = klass._key.format(*parts)
+        hosts = []
+        etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
+
+        for host in etcd_resp.leaves:
+            hosts.append(Host(**json.loads(host.value)))
+
+        return klass(hosts=hosts)
 
 
 class Status(Model):
