@@ -5,7 +5,7 @@ ENV MHM_RELEASE v0.0.1rc3
 ENV PYTHONPATH  /commissaire/src/
 
 # Install required dependencies and commissaire
-RUN dnf -y update && dnf -y install --setopt=tsflags=nodocs rsync openssh-clients redhat-rpm-config python-pip python-virtualenv git gcc libffi-devel ; dnf clean all && \
+RUN dnf -y update && dnf -y install --setopt=tsflags=nodocs rsync openssh-clients redhat-rpm-config python-pip python-virtualenv git gcc libffi-devel openssl-devel ; dnf clean all && \
 git clone https://github.com/projectatomic/commissaire.git && \
 virtualenv /environment && \
 . /environment/bin/activate && \
