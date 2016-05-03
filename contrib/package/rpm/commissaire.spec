@@ -64,7 +64,7 @@ Example tasks include:
 %py2_build
 
 # Build docs
-%{__python2} setup.py build_sphinx -c doc -b text
+%{__python2} setup.py build_sphinx -b text
 
 %install
 %py2_install
