@@ -1,3 +1,11 @@
+%if 0%{?rhel} != 0 && 0%{?rhel} <= 7
+%bcond_with tests
+%global py2_build %{__python} setup.py build '--executable=/usr/bin/python2 -s'
+%global py2_install %{__python} setup.py install --root %{buildroot}
+%else
+%bcond_without tests
+%endif
+
 Name:           commissaire
 Version:        0.0.1rc3
 Release:        1%{?dist}
@@ -14,10 +22,12 @@ BuildRequires:  python-devel
 BuildRequires:  python-sphinx
 
 # For tests
+%if %{with tests}
 BuildRequires:  python-coverage
 BuildRequires:  python-mock
 BuildRequires:  python-nose
 BuildRequires:  python-flake8
+%endif
 BuildRequires:  pkgconfig(systemd)
 
 Requires:  python-setuptools
