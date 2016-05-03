@@ -58,6 +58,7 @@ class CherryPyStorePlugin(plugins.SimplePlugin):
         self.bus.subscribe("store-save", self.store_save)
         self.bus.subscribe("store-get", self.store_get)
         self.bus.subscribe("store-delete", self.store_delete)
+        self.bus.subscribe("store-list", self.store_list)
 
     def stop(self):
         """
@@ -67,6 +68,7 @@ class CherryPyStorePlugin(plugins.SimplePlugin):
         self.bus.unsubscribe("store-save", self.store_save)
         self.bus.unsubscribe("store-get", self.store_get)
         self.bus.unsubscribe("store-delete", self.store_delete)
+        self.bus.unsubscribe("store-list", self.store_list)
 
     def store_save(self, key, json_entity, **kwargs):
         """
@@ -116,6 +118,22 @@ class CherryPyStorePlugin(plugins.SimplePlugin):
         try:
             store = self._get_store()
             return (store.delete(key), None)
+        except:
+            _, exc, _ = sys.exc_info()
+            return ([], exc)
+
+    def store_list(self, key):
+        """
+        Lists a directory.
+
+        :param key: The key to associate the data with.
+        :type key: str
+        :returns: The stores response and any errors that may have occured
+        :rtype: tuple(etcd.EtcdResult, Exception)
+        """
+        try:
+            store = self._get_store()
+            return (store.read(key, recursive=True), None)
         except:
             _, exc, _ = sys.exc_info()
             return ([], exc)
