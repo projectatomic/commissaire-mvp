@@ -129,7 +129,8 @@ class Model:
         :rtype: model
         """
         key = self._key.format(*parts)
-        etcd_resp, error = cherrypy.engine.publish('store-save', key)[0]
+        etcd_resp, error = cherrypy.engine.publish(
+            'store-save', key, self.to_json())[0]
         if error:
             raise Exception(error)
         return self

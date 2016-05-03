@@ -68,8 +68,9 @@ def etcd_cluster_has_host(name, address):
     :param address: Host address
     :type address: str
     """
-    cluster = get_cluster_model(name)
-    if not cluster:
+    try:
+        cluster = Cluster.retrieve(name)
+    except:
         raise KeyError
 
     return address in cluster.hostset
@@ -88,8 +89,9 @@ def etcd_cluster_add_host(name, address):
     :param address: Host address to add
     :type address: str
     """
-    cluster = get_cluster_model(name)
-    if not cluster:
+    try:
+        cluster = Cluster.retrieve(name)
+    except:
         raise KeyError
 
     # FIXME: Need input validation.
@@ -103,12 +105,7 @@ def etcd_cluster_add_host(name, address):
 
     if address not in cluster.hostset:
         cluster.hostset.append(address)
-
-    etcd_resp, _ = cherrypy.engine.publish(
-        'store-save',
-        cluster.etcd.key,
-        cluster.to_json(secure=True),
-        prevValue=cluster.etcd.value)[0]
+        cluster.save(name)
 
 
 def etcd_cluster_remove_host(name, address):

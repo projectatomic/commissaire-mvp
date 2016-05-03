@@ -97,9 +97,8 @@ class Test_HostsResource(TestCase):
         Verify listing Hosts.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
-            child = MagicMock(value=self.etcd_host)
-            self.return_value._children = [child]
-            self.return_value.leaves = self.return_value._children
+            child = MagicMock(etcd.EtcdResult, value=self.etcd_host)
+            self.return_value.children = [child]
             _publish.return_value = [[self.return_value, None]]
 
             body = self.simulate_request('/api/v0/hosts')

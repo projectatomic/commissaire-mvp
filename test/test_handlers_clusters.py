@@ -83,10 +83,11 @@ class Test_ClustersResource(TestCase):
         Verify listing Clusters.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
-            child = MagicMock(key=self.cluster_name)
+            child = MagicMock(key='/commissaire/clusters/' + self.cluster_name)
             return_value = MagicMock(etcd.EtcdResult)
-            return_value._children = [child]
-            return_value.leaves = return_value._children
+            return_value.children = [child]
+            return_value.leaves = return_value.children
+            return_value.key = '/commissaire/clusters/'
             _publish.return_value = [[return_value, None]]
 
             body = self.simulate_request('/api/v0/clusters')
@@ -182,10 +183,9 @@ class Test_ClusterResource(TestCase):
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
             # Verify if the cluster exists the data is returned
-            child = {'value': self.etcd_host}
+            child = MagicMock(etcd.EtcdResult, value=self.etcd_host)
             hosts_return_value = MagicMock(
-                etcd.EtcdResult, leaves=[child],
-                value=child, _children=[child])
+                etcd.EtcdResult, value=child, children=[child])
 
             _publish.side_effect = (
                 [[MagicMock(value=self.etcd_cluster), None]],
@@ -215,6 +215,7 @@ class Test_ClusterResource(TestCase):
             # Verify with creation
             _publish.side_effect = (
                 [[[], etcd.EtcdKeyNotFound]],
+                [[MagicMock(value=self.etcd_cluster), None]],
                 [[MagicMock(value=self.etcd_cluster), None]],
                 [[MagicMock(value=self.etcd_cluster), None]],
             )
@@ -325,10 +326,6 @@ class Test_ClusterRestartResource(TestCase):
                 mock.patch('etcd.Client'),
                 mock.patch('commissaire.handlers.clusters.Process')) as (
                     _publish, _, _):
-
-            # self.datasource.get.side_effect = (
-            #     MagicMock(value=self.etcd_cluster),
-            #     etcd.EtcdKeyNotFound)
 
             _publish.side_effect = (
                 [[MagicMock(value=self.etcd_cluster), None]],

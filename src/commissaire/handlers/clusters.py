@@ -19,7 +19,6 @@ Cluster(s) handlers.
 import datetime
 import json
 
-import cherrypy
 import falcon
 
 from multiprocessing import Process
@@ -27,7 +26,7 @@ from multiprocessing import Process
 from commissaire.resource import Resource
 from commissaire.jobs.clusterexec import clusterexec
 from commissaire.handlers.models import (
-    Cluster, Clusters, ClusterRestart, ClusterUpgrade, Host)
+    Cluster, Clusters, ClusterRestart, ClusterUpgrade, Hosts)
 
 import commissaire.handlers.util as util
 
@@ -46,27 +45,22 @@ class ClustersResource(Resource):
         :param resp: Response instance that will be passed through.
         :type resp: falcon.Response
         """
-        clusters_dir, error = cherrypy.engine.publish(
-            'store-get', '/commissaire/clusters/')[0]
-        if error:
+        req.context['model'] = None
+        try:
+            clusters = Clusters.retrieve()
+        except:
             self.logger.warn(
                 'Etcd does not have any clusters. Returning [] and 404.')
             resp.status = falcon.HTTP_404
-            req.context['model'] = None
             return
 
-        results = []
-        # Don't let an empty clusters directory through
-        if len(clusters_dir._children):
-            for cluster in clusters_dir.leaves:
-                results.append(cluster.key.split('/')[-1])
-            resp.status = falcon.HTTP_200
-            req.context['model'] = Clusters(clusters=results)
-        else:
+        if clusters.clusters == []:
             self.logger.debug(
                 'Etcd has a clusters directory but no content.')
             resp.status = falcon.HTTP_200
-            req.context['model'] = None
+            return
+
+        req.context['model'] = clusters
 
 
 class ClusterResource(Resource):
@@ -85,18 +79,19 @@ class ClusterResource(Resource):
         #      the host data in one etcd call and sort through
         #      them, or fetch the ones we need individually.
         #      For the MVP phase, fetch all is better.
-        etcd_resp, error = cherrypy.engine.publish(
-            'store-get', '/commissaire/hosts')[0]
+        # etcd_resp, error = cherrypy.engine.publish(
+        #     'store-get', '/commissaire/hosts')[0]
 
-        if error:
+        # if error:
+        try:
+            hosts = Hosts.retrieve()
+        except:
             self.logger.warn(
                 'Etcd does not have any hosts. '
                 'Cannot determine cluster stats.')
             return
-
         available = unavailable = total = 0
-        for child in etcd_resp._children:
-            host = Host(**json.loads(child['value']))
+        for host in hosts.hosts:
             if host.address in cluster.hostset:
                 total += 1
                 if host.status == 'active':
@@ -119,14 +114,13 @@ class ClusterResource(Resource):
         :param name: The name of the Cluster being requested.
         :type name: str
         """
-        key = util.etcd_cluster_key(name)
-        etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
-
-        if error:
+        try:
+            cluster = Cluster.retrieve(name)
+            # key = util.etcd_cluster_key(name)
+            # etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
+        except:
             resp.status = falcon.HTTP_404
             return
-
-        cluster = Cluster(**json.loads(etcd_resp.value))
 
         if not cluster:
             resp.status = falcon.HTTP_404
@@ -151,18 +145,18 @@ class ClusterResource(Resource):
         # PUT is idempotent, and since there's no body to this request,
         # there's nothing to conflict with.  The request should always
         # succeed, even if we didn't actually do anything.
-        if util.etcd_cluster_exists(name):
+        try:
+            Cluster.retrieve(name)
             self.logger.info(
                 'Creation of already exisiting cluster {0} requested.'.format(
                     name))
-        else:
-            key = util.etcd_cluster_key(name)
-            cluster = Cluster(status='ok', hostset=[])
-            etcd_resp, _ = cherrypy.engine.publish(
-                'store-save', key, cluster.to_json(secure=True))[0]
-            self.logger.info(
-                'Created cluster {0} per request.'.format(name))
-            self.logger.debug('Etcd Response: {0}'.format(etcd_resp))
+        except:
+            pass
+
+        cluster = Cluster(status='ok', hostset=[])
+        cluster.save(name)
+        self.logger.info(
+            'Created cluster {0} per request.'.format(name))
         resp.status = falcon.HTTP_201
 
     def on_delete(self, req, resp, name):
@@ -177,16 +171,17 @@ class ClusterResource(Resource):
         :type name: str
         """
         resp.body = '{}'
-        if not util.etcd_cluster_exists(name):
+
+        try:
+            Cluster.delete(name)
+            resp.status = falcon.HTTP_200
+            self.logger.info(
+                'Deleted cluster {0} per request.'.format(name))
+        except:
             self.logger.info(
                 'Deleting for non-existent cluster {0} requested.'.format(
                     name))
             resp.status = falcon.HTTP_404
-        else:
-            self.store.delete(util.etcd_cluster_key(name))
-            resp.status = falcon.HTTP_200
-            self.logger.info(
-                'Deleted cluster {0} per request.'.format(name))
 
 
 class ClusterHostsResource(Resource):
@@ -205,8 +200,9 @@ class ClusterHostsResource(Resource):
         :param name: The name of the Cluster being requested.
         :type name: str
         """
-        cluster = util.get_cluster_model(name)
-        if not cluster:
+        try:
+            cluster = Cluster.retrieve(name)
+        except:
             resp.status = falcon.HTTP_404
             return
 
@@ -236,8 +232,9 @@ class ClusterHostsResource(Resource):
             resp.status = falcon.HTTP_400
             return
 
-        cluster = util.get_cluster_model(name)
-        if not cluster:
+        try:
+            cluster = Cluster.retrieve(name)
+        except:
             resp.status = falcon.HTTP_404
             return
 
@@ -260,8 +257,7 @@ class ClusterHostsResource(Resource):
         #        with the etcd 'modifiedIndex'.  Deferring for now.
 
         cluster.hostset = list(new_hosts)
-        cherrypy.engine.publish(
-            'store-save', cluster.etcd.key, cluster.to_json(secure=True))
+        cluster.save(name)
         resp.status = falcon.HTTP_200
 
 
@@ -285,8 +281,9 @@ class ClusterSingleHostResource(ClusterHostsResource):
         :param address: The address of the Host being requested.
         :type address: str
         """
-        cluster = util.get_cluster_model(name)
-        if not cluster:
+        try:
+            cluster = Cluster.retrieve(name)
+        except:
             resp.status = falcon.HTTP_404
             return
 
@@ -352,16 +349,16 @@ class ClusterRestartResource(Resource):
         :param name: The name of the Cluster being restarted.
         :type name: str
         """
-        key = '/commissaire/cluster/{0}/restart'.format(name)
         if not util.etcd_cluster_exists(name):
             self.logger.info(
                 'Restart GET requested for nonexistent cluster {0}'.format(
                     name))
             resp.status = falcon.HTTP_404
             return
-        status, error = cherrypy.engine.publish('store-get', key)[0]
-        self.logger.debug('Etcd Response: {0}'.format(status))
-        if error:
+
+        try:
+            cluster_restart = ClusterRestart.retrieve(name)
+        except:
             # Return "204 No Content" if we have no status,
             # meaning no restart is in progress.  The client
             # can't be expected to know that, so it's not a
@@ -372,7 +369,7 @@ class ClusterRestartResource(Resource):
             resp.status = falcon.HTTP_204
             return
         resp.status = falcon.HTTP_200
-        req.context['model'] = ClusterRestart(**json.loads(status.value))
+        req.context['model'] = cluster_restart
 
     def on_put(self, req, resp, name):
         """
@@ -395,17 +392,18 @@ class ClusterRestartResource(Resource):
 
         # If the operation is already in progress, return the current
         # status with response code 200 OK.
-        key = '/commissaire/cluster/{0}/restart'.format(name)
-        etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
-        if not error:
-            self.logger.debug('Etcd Response: {0}'.format(etcd_resp))
-            cluster_restart = ClusterRestart(**json.loads(etcd_resp.value))
+        try:
+            cluster_restart = ClusterRestart.retrieve(name)
+            self.logger.debug('Found a ClusterRestart for {0}'.format(name))
             if not cluster_restart.finished_at:
                 self.logger.debug(
                     'Cluster {0} restart already in progress'.format(name))
                 resp.status = falcon.HTTP_200
                 req.context['model'] = cluster_restart
                 return
+        except:
+            # This means one doesn't already exist
+            pass
 
         # TODO: Move to a poll?
         p = Process(target=clusterexec, args=(name, 'restart'))
@@ -421,7 +419,7 @@ class ClusterRestartResource(Resource):
             'finished_at': None
         }
         cluster_restart = ClusterRestart(**cluster_restart_default)
-        cherrypy.engine.publish('store-save', key, cluster_restart.to_json())
+        cluster_restart.save(name)
         resp.status = falcon.HTTP_201
         req.context['model'] = cluster_restart
 
@@ -442,7 +440,6 @@ class ClusterUpgradeResource(Resource):
         :param name: The name of the Cluster being upgraded.
         :type name: str
         """
-        key = '/commissaire/cluster/{0}/upgrade'.format(name)
         if not util.etcd_cluster_exists(name):
             self.logger.info(
                 'Upgrade GET requested for nonexistent cluster {0}'.format(
@@ -450,10 +447,10 @@ class ClusterUpgradeResource(Resource):
             resp.status = falcon.HTTP_404
             return
 
-        status, error = cherrypy.engine.publish('store-get', key)[0]
-        self.logger.debug('Etcd Response: {0}'.format(status))
-
-        if error:
+        try:
+            cluster_upgrade = ClusterUpgrade.retrieve(name)
+            self.logger.debug('Found ClusterUpgrade for {0}'.format(name))
+        except:
             # Return "204 No Content" if we have no status,
             # meaning no upgrade is in progress.  The client
             # can't be expected to know that, so it's not a
@@ -461,11 +458,12 @@ class ClusterUpgradeResource(Resource):
             self.logger.debug((
                 'Upgrade GET requested for {0} but no upgrade '
                 'has ever been executed.').format(name))
+
             resp.status = falcon.HTTP_204
             return
 
         resp.status = falcon.HTTP_200
-        req.context['model'] = ClusterUpgrade(**json.loads(status.value))
+        req.context['model'] = cluster_upgrade
 
     def on_put(self, req, resp, name):
         """
@@ -498,11 +496,9 @@ class ClusterUpgradeResource(Resource):
         # matches, return the current status with response code 200 OK.
         # If the requested version conflicts with the operation in progress,
         # return the current status with response code 409 Conflict.
-        key = '/commissaire/cluster/{0}/upgrade'.format(name)
-        etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
-        self.logger.debug('Etcd Response: {0}'.format(etcd_resp))
-        if not error:
-            cluster_upgrade = ClusterUpgrade(**json.loads(etcd_resp.value))
+        try:
+            cluster_upgrade = ClusterUpgrade.retrieve(name)
+            self.logger.debug('Found ClusterUpgrade for {0}'.format(name))
             if not cluster_upgrade.finished_at:
                 if cluster_upgrade.upgrade_to == upgrade_to:
                     self.logger.debug(
@@ -517,6 +513,8 @@ class ClusterUpgradeResource(Resource):
                     resp.status = falcon.HTTP_409
                 req.context['model'] = cluster_upgrade
                 return
+        except:
+            pass
 
         # FIXME: How do I pass 'upgrade_to'?
         p = Process(target=clusterexec, args=(name, 'upgrade'))
@@ -532,7 +530,6 @@ class ClusterUpgradeResource(Resource):
             'finished_at': None
         }
         cluster_upgrade = ClusterUpgrade(**cluster_upgrade_default)
-        cherrypy.engine.publish(
-            'store-save', key, cluster_upgrade.to_json())
+        cluster_upgrade.save(name)
         resp.status = falcon.HTTP_201
         req.context['model'] = cluster_upgrade

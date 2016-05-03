@@ -30,6 +30,7 @@ class Cluster(Model):
     _json_type = dict
     _attributes = ('status', 'hostset')
     _hidden_attributes = ('hostset',)
+    _key = '/commissaire/clusters/{0}'
 
     def __init__(self, **kwargs):
         Model.__init__(self, **kwargs)
@@ -49,6 +50,21 @@ class Cluster(Model):
         data['hosts'] = self.hosts
         return json.dumps(data)
 
+    def save(self, *parts):
+        """
+        Saves the model to the object store.
+
+        :raises: Exception if unable to save
+        :returns: Itself
+        :rtype: model
+        """
+        key = self._key.format(*parts)
+        etcd_resp, error = cherrypy.engine.publish(
+            'store-save', key, self.to_json(secure=True))[0]
+        if error:
+            raise Exception(error)
+        return self
+
 
 class ClusterRestart(Model):
     """
@@ -58,6 +74,7 @@ class ClusterRestart(Model):
     _attributes = (
         'status', 'restarted', 'in_process',
         'started_at', 'finished_at')
+    _key = '/commissaire/cluster/{0}/restart'
 
 
 class ClusterUpgrade(Model):
@@ -68,6 +85,7 @@ class ClusterUpgrade(Model):
     _attributes = (
         'status', 'upgrade_to', 'upgraded', 'in_process',
         'started_at', 'finished_at')
+    _key = '/commissaire/cluster/{0}/upgrade'
 
 
 class Clusters(Model):
@@ -77,6 +95,27 @@ class Clusters(Model):
     _json_type = list
     _attributes = ('clusters',)
     _key = '/commissaire/clusters/'
+
+    @classmethod
+    def retrieve(klass, *parts):
+        """
+        Gets a list of hosts from the store.
+
+        :raises: Exception if unable to save
+        :returns: Itself
+        :rtype: model
+        """
+        key = klass._key.format(*parts)
+        etcd_resp, error = cherrypy.engine.publish('store-list', key)[0]
+        if error:
+            raise Exception(error)
+        clusters = []
+        for x in etcd_resp.children:
+            if etcd_resp.key != x.key:
+                name = x.key.split('/')[-1]
+                if name:
+                    clusters.append(name)
+        return klass(clusters=clusters)
 
 
 class Host(Model):
@@ -112,7 +151,7 @@ class Hosts(Model):
         hosts = []
         etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
 
-        for host in etcd_resp.leaves:
+        for host in etcd_resp.children:
             hosts.append(Host(**json.loads(host.value)))
 
         return klass(hosts=hosts)
