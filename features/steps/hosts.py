@@ -49,7 +49,7 @@ def impl(context, host):
     request = requests.delete(
         context.SERVER + '/api/v0/host/{0}'.format(host),
         auth=(VALID_USERNAME, VALID_PASSWORD))
-    assert_status_code(request.status_code, 410)
+    assert_status_code(request.status_code, 200)
 
 
 @when('we list all hosts')
