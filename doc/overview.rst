@@ -7,15 +7,13 @@ Overview
 
    -- Ryan Cook
 
-commissaire provides a lightweight, unified REST endpoint for common operational
-tasks across groups of hosts. These tasks include:
+commissaire is a lightweight REST interface for upgrading, restarting, and bootstrapping new hosts into an existing Container Management cluster. Examples include:
 
-- Registering new hosts in to a Container Manager
+- Registering new hosts in to a Container Manager cluster
 - Restarting hosts
 - Upgrading hosts
 
-In the future other operations and tighter integrations with Container Managers
-will be added.
+In the future other operations and tighter integrations with Container Manager(s) will be added.
 
 
 Flow

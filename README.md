@@ -1,6 +1,6 @@
 Commissaire
 ===========
-A REST based cluster host manager.
+A lightweight REST interface for upgrading, restarting, and bootstrapping new hosts into an existing Container Management cluster.
 
 [![Documentation](https://readthedocs.org/projects/commissaire/badge/?version=latest)](http://commissaire.readthedocs.org/) [![Build Status](https://travis-ci.org/projectatomic/commissaire.svg)](https://travis-ci.org/projectatomic/commissaire)
 
