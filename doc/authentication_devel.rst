@@ -17,19 +17,10 @@ override ``__init__`` adding in keyword arguments.
    ``falcon.HTTPForbidden`` on failure.
 
 Once created it can be used via the ``--authentication-plugin`` and
-``--authentication-plugin-kwargs`` command line switches.
+``--authentication-plugin-kwargs`` command line switches, or via an
+``"authentication-plugin"`` member in commissaire's configuration file.
 
 Example
 ```````
 
-.. literalinclude:: ../src/commissaire/authentication/httpauth.py
-
-
-Example With Config
-````````````````````
-
-.. note::
-
-   This subclasses the first example.
-
-.. literalinclude:: ../src/commissaire/authentication/httpauthbyfile.py
+.. literalinclude:: ../src/commissaire/authentication/httpbasicauth.py

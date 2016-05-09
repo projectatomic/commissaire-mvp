@@ -12,8 +12,21 @@ plugin has required configuration options you may also need to use the
 .. code-block:: shell
 
    $ commissaire [...] \
-   --authentication-plugin commissaire.authentication.httpauthbyfile
+   --authentication-plugin commissaire.authentication.httpbasicauth
    --authentication-plugin-kwargs "filepath=/path/to/users.json"
+
+commissaire's configuration file can use an alternative syntax to specify
+plugin configuration.  The following is equivalent to the command-line
+example above.
+
+.. code-block:: javascript
+
+   {
+       "authentication-plugin": {
+           "name": "commissaire.authentication.httpbasicauth",
+           "filepath": "/path/to/users.json"
+       }
+   }
 
 
 Modifying Users

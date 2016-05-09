@@ -6,9 +6,7 @@ Submodules
 
 .. toctree::
 
-   commissaire.authentication.httpauth
-   commissaire.authentication.httpauthbyetcd
-   commissaire.authentication.httpauthbyfile
+   commissaire.authentication.httpbasicauth
 
 Module contents
 ---------------

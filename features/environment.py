@@ -87,7 +87,7 @@ def before_all(context):
             server_cli_args = [
                 'python', 'src/commissaire/script.py',
                 '--authentication-plugin',
-                'commissaire.authentication.httpauthbyfile',
+                'commissaire.authentication.httpbasicauth',
                 '--authentication-plugin-kwargs',
                 'filepath=conf/users.json',
                 '-e', context.ETCD, '-k', 'http://127.0.0.1:8080',

@@ -44,8 +44,7 @@ from commissaire.middleware import JSONify
 def create_app(
         store,
         authentication_module_name,
-        authentication_kwargs,
-        users_paths=('/etc/commissaire/users.json', './conf/users.json')):
+        authentication_kwargs):
     """
     Creates a new WSGI compliant commissaire application.
 
@@ -153,6 +152,21 @@ def _read_config_file(path=None):
     json_object = dict([(k.replace('-', '_'), v)
                         for k, v in json_object.items()])
 
+    # Special case:
+    #
+    # In the configuration file, the "authentication_plugin" member
+    # can also be specified as a JSON object.  The object must have
+    # at least a 'name' member specifying the plugin module name.
+    auth_key = 'authentication_plugin'
+    auth_plugin = json_object.get(auth_key)
+    if type(auth_plugin) is dict:
+        if 'name' not in auth_plugin:
+            raise ValueError(
+                '{0}: "{1}" is missing a "name" member'.format(
+                    path, auth_key))
+        json_object[auth_key] = auth_plugin.pop('name')
+        json_object['authentication_plugin_kwargs'] = auth_plugin
+
     return argparse.Namespace(**json_object)
 
 
@@ -204,9 +218,9 @@ def parse_args(parser):
         help='Full path to the TLS certfile for the commissaire server')
     parser.add_argument(
         '--authentication-plugin', type=str,
-        default='commissaire.authentication.httpauthbyetcd',
+        default='commissaire.authentication.httpbasicauth',
         help=('Authentication Plugin module. '
-              'EX: commissaire.authentication.httpauth'))
+              'EX: commissaire.authentication.httpbasicauth'))
     parser.add_argument(
         '--authentication-plugin-kwargs', type=str, default={},
         help='Authentication Plugin configuration (key=value)')
@@ -374,10 +388,15 @@ def main():  # pragma: no cover
     try:
         # Make and mount the app
         authentication_kwargs = {}
-        if '=' in args.authentication_plugin_kwargs:
-            for item in args.authentication_plugin_kwargs.split(','):
-                key, value = item.split('=')
-                authentication_kwargs[key.strip()] = value.strip()
+        if type(args.authentication_plugin_kwargs) is str:
+            if '=' in args.authentication_plugin_kwargs:
+                for item in args.authentication_plugin_kwargs.split(','):
+                    key, value = item.split('=')
+                    authentication_kwargs[key.strip()] = value.strip()
+        elif type(args.authentication_plugin_kwargs) is dict:
+            # _read_config_file() sets this up.
+            authentication_kwargs = args.authentication_plugin_kwargs
+
         app = create_app(
             ds,
             args.authentication_plugin,

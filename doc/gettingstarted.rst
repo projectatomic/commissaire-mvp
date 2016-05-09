@@ -109,7 +109,7 @@ and then bind-mount the directory to ``/etc/commissaire`` in the container.
 .. note::
 
    These commands assume you have put user configuration in etcd and are using
-   the ``commissaire.authentication.httpauthbyetcd`` authentication plugin.
+   the ``commissaire.authentication.httpbasicauth`` authentication plugin.
 
 .. note::
 
