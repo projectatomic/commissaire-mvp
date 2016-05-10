@@ -21,6 +21,7 @@ import json
 import logging
 import logging.config
 import os
+import sys
 
 import etcd
 import falcon
@@ -39,6 +40,7 @@ from commissaire.queues import INVESTIGATE_QUEUE
 from commissaire.jobs import PROCS
 from commissaire.jobs.investigator import investigator
 from commissaire.middleware import JSONify
+from commissaire.ssl_adapter import ClientCertBuiltinSSLAdapter
 
 
 def create_app(
@@ -217,6 +219,10 @@ def parse_args(parser):
         '--tls-certfile', type=str,
         help='Full path to the TLS certfile for the commissaire server')
     parser.add_argument(
+        '--tls-clientverifyfile', type=str, required=False,
+        help='Full path to the TLS file containing the certificate '
+             'authorities that client certificates should be verified against')
+    parser.add_argument(
         '--authentication-plugin', type=str,
         default='commissaire.authentication.httpbasicauth',
         help=('Authentication Plugin module. '
@@ -310,6 +316,7 @@ def main():  # pragma: no cover
         if not found_logger_config:
             parser.error(
                 'Unable to find any logging configuration. Exiting ...')
+
     except etcd.EtcdConnectionFailed:
         _, ecf, _ = exception.raise_if_not(etcd.EtcdConnectionFailed)
         err = 'Unable to connect to Etcd: {0}. Exiting ...'.format(ecf)
@@ -322,6 +329,8 @@ def main():  # pragma: no cover
         'tlskeyfile', args.tls_keyfile, None, ds)
     tls_certfile = cli_etcd_or_default(
         'tlscertfile', args.tls_certfile, None, ds)
+    tls_clientverifyfile = cli_etcd_or_default(
+        'tls-clientverifyfile', args.tls_clientverifyfile, None, ds)
 
     interface = cli_etcd_or_default(
         'listeninterface', args.listen_interface, '0.0.0.0', ds)
@@ -358,6 +367,18 @@ def main():  # pragma: no cover
                             'log.error_file': '',
                             'engine.autoreload.on': False})
 
+    new_ssl_adapter_cls = type(
+        "CustomClientCertBuiltinSSLAdapter",
+        (ClientCertBuiltinSSLAdapter,),
+        {"verify_location": tls_clientverifyfile}
+    )
+
+    if sys.version_info < (3, 0):
+        from cherrypy.wsgiserver.wsgiserver2 import ssl_adapters
+    else:
+        from cherrypy.wsgiserver.wsgiserver3 import ssl_adapters
+    ssl_adapters['builtin_client'] = new_ssl_adapter_cls
+
     server = cherrypy._cpserver.Server()
     server.socket_host = interface
     server.socket_port = int(port)
@@ -367,8 +388,13 @@ def main():  # pragma: no cover
         parser.error(
             'Both a keyfile and certfile must be '
             'given for commissaire server TLS. Exiting ...')
+    elif bool(tls_clientverifyfile) and not bool(tls_certfile):
+        parser.error(
+            'If a client verify file is given a TLS keyfile and '
+            'certfile must be given as well. Exiting ...')
+
     if tls_keyfile and tls_certfile:
-        server.ssl_module = 'builtin'
+        server.ssl_module = 'builtin_client'
         server.ssl_certificate = tls_certfile
         server.ssl_private_key = tls_keyfile
         logging.info('Commissaire server TLS will be enabled.')

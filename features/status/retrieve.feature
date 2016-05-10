@@ -25,3 +25,22 @@ Feature: Retrieving Status
       when we get status
       then commissaire will allow access
       and commissaire will return status
+
+  @clientcert
+  Scenario: Retrieve status with client certificate
+     Given we have client as a client certificate
+      when we get status
+      then commissaire will allow access
+      and commissaire will return status
+
+  @clientcert
+  Scenario: Retrieve status with invalid client certificate
+     Given we have self-client as a client certificate
+      when we get status
+      then commissaire ssl will error
+
+  @clientcert
+  Scenario: Retrieve status with mismatched client certificate
+     Given we have other as a client certificate
+      when we get status
+      then commissaire will deny access

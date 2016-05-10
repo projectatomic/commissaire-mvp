@@ -13,16 +13,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import requests
+from requests.exceptions import SSLError
 
 from behave import *
 
 
 @when('we get status')
 def impl(context):
-    context.request = requests.get(
-        context.SERVER + '/api/v0/status', auth=context.auth)
+    verify=False
+    if context.SERVER.startswith("https"):
+        verify=os.path.join(context.CERT_DIR, "ca.pem")
 
+    try:
+        context.request = requests.get(
+            context.SERVER + '/api/v0/status',
+            auth=context.auth,
+            verify=verify,
+            cert=getattr(context, "cert", None))
+    except SSLError, e:
+        context.request_ssl_error = e
 
 @then('commissaire will return status')
 def impl(context):
@@ -30,3 +41,7 @@ def impl(context):
     print(results.keys())
     for key in ('investigator', 'etcd'):
         assert key in results.keys()
+
+@then('commissaire ssl will error')
+def impl(context):
+    assert context.request_ssl_error

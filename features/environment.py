@@ -15,8 +15,10 @@
 
 import etcd
 import json
+import os
 import platform
 import random
+import shutil
 import subprocess
 import tempfile
 import time
@@ -29,6 +31,112 @@ else:
     from urllib.parse import urlparse as _urlparse
 urlparse = _urlparse
 
+default_server_args = [
+    '--authentication-plugin',
+    'commissaire.authentication.httpbasicauth',
+    '--authentication-plugin-kwargs',
+    'filepath=conf/users.json',
+    '-k', 'http://127.0.0.1:8080'
+]
+
+def generate_certificates(context):
+    context.CERT_DIR = tempfile.mkdtemp()
+    subprocess.check_call(["openssl", "req", "-x509", "-nodes",
+                "-newkey", "rsa:2048", "-keyout", "ca.key",
+                "-out", "ca.pem", "-days", "1",
+                "-subj", "/CN=test-ca"], cwd=context.CERT_DIR)
+    subprocess.check_call(["openssl", "req", "-x509", "-nodes",
+                "-newkey", "rsa:2048", "-keyout", "self-client.key",
+                "-out", "self-client.pem", "-days", "1",
+                "-subj", "/CN=test-client"], cwd=context.CERT_DIR)
+    subprocess.check_call(["openssl", "req", "-nodes",
+                "-newkey", "rsa:2048", "-keyout", "server.key",
+                "-out", "server.req",
+                "-subj", "/CN=localhost"], cwd=context.CERT_DIR)
+    subprocess.check_call(["openssl", "req", "-nodes",
+                "-newkey", "rsa:2048", "-keyout", "client.key",
+                "-out", "client.req",
+                "-subj", "/CN=test-client"], cwd=context.CERT_DIR)
+    subprocess.check_call(["openssl", "req", "-nodes",
+                "-newkey", "rsa:2048", "-keyout", "other.key",
+                "-out", "other.req",
+                "-subj", "/CN=test-other"], cwd=context.CERT_DIR)
+    subprocess.check_call(["openssl", "x509", "-req", "-days", "1", "-in", "server.req",
+                "-CA", "ca.pem", "-CAkey", "ca.key", "-set_serial", "01",
+                "-out", "server.pem"], cwd=context.CERT_DIR)
+    subprocess.check_call(["openssl", "x509", "-req", "-days", "1", "-in", "client.req",
+                "-CA", "ca.pem", "-CAkey", "ca.key", "-set_serial", "02",
+                "-out", "client.pem"], cwd=context.CERT_DIR)
+    subprocess.check_call(["openssl", "x509", "-req", "-days", "1", "-in", "other.req",
+                "-CA", "ca.pem", "-CAkey", "ca.key", "-set_serial", "03",
+                "-out", "other.pem"], cwd=context.CERT_DIR)
+
+def start_server(context, *args):
+    for retry in range(1, 4):
+        server_port = random.randint(8500, 9000)
+        context.SERVER = 'http://127.0.0.1:{0}'.format(server_port)
+        context.SERVER_PORT = server_port
+        # TODO: add kubernetes URL to options
+        server_cli_args = [
+            'python', 'src/commissaire/script.py',
+            '--listen-port', str(server_port)]
+
+        server_cli_args += args
+
+        if context.ETCD:
+            server_cli_args += ['-e', context.ETCD]
+
+        # Add any other server-args
+        extra_server_args = context.config.userdata.get(
+            'server-args', None)
+        if extra_server_args:
+            server_cli_args += extra_server_args.split(' ')
+
+        print("Running server: {0}".format(" ".join(server_cli_args)))
+        server = subprocess.Popen(server_cli_args)
+        time.sleep(3)
+        server.poll()
+        # If the returncode is not set then the server is running
+        if server.returncode is None:
+            return server
+        if retry == 3:
+            raise Exception("Could not find a random port")
+
+def stop_server(context, attr):
+    server = getattr(context, attr, None)
+    if server:
+        server.terminate()
+        server.wait()
+
+def before_tag(context, tag):
+    if tag == "clientcert":
+        verifyfile = os.path.join(context.CERT_DIR, "ca.pem")
+        certfile = os.path.join(context.CERT_DIR, "server.pem")
+        keyfile = os.path.join(context.CERT_DIR, "server.key")
+
+        try:
+            server = start_server(context,
+                '--authentication-plugin',
+                'commissaire.authentication.httpauthclientcert',
+                '--authentication-plugin-kwargs',
+                'cn=test-client',
+                '-k', 'http://127.0.0.1:8080',
+                '--tls-keyfile={}'.format(keyfile),
+                '--tls-certfile={}'.format(certfile),
+                '--tls-clientverifyfile={}'.format(verifyfile),
+            )
+            context.SERVER = "https://localhost:{}".format(context.SERVER_PORT)
+            context.SSL_SERVER_PROCESS = server
+        except:
+            print("Could not find a random port to use for "
+                  "ssl commissaire. Exiting...")
+            stop_server(context, "SERVER_PROCESS")
+            raise SystemExit(1)
+
+
+def after_tag(context, tag):
+    if tag == "clientcert":
+        stop_server(context, "SSL_SERVER_PROCESS")
 
 def before_all(context):
     """
@@ -41,6 +149,8 @@ def before_all(context):
     # Set ETCD via -D etcd=... or use a default
     context.ETCD = context.config.userdata.get(
         'etcd', 'http://127.0.0.1:2379')
+
+    generate_certificates(context)
 
     # Start etcd up via -D start-etcd=$ANYTHING
     if context.config.userdata.get('start-etcd', None):
@@ -78,38 +188,13 @@ def before_all(context):
     context.etcd = etcd.Client(host=url.hostname, port=url.port)
     context.etcd.write('/commissaire/config/kubetoken', 'test')
 
-    # Start the server up via -D start-server=$ANYTHING
     if context.config.userdata.get('start-server', None):
-        for retry in range(1, 4):
-            server_port = random.randint(8500, 9000)
-            context.SERVER = 'http://127.0.0.1:{0}'.format(server_port)
-            # TODO: add kubernetes URL to options
-            server_cli_args = [
-                'python', 'src/commissaire/script.py',
-                '--authentication-plugin',
-                'commissaire.authentication.httpbasicauth',
-                '--authentication-plugin-kwargs',
-                'filepath=conf/users.json',
-                '-e', context.ETCD, '-k', 'http://127.0.0.1:8080',
-                '--listen-port', str(server_port)]
-
-            # Add any other server-args
-            extra_server_args = context.config.userdata.get(
-                'server-args', None)
-            if extra_server_args:
-                server_cli_args += extra_server_args.split(' ')
-
-            print("Running server: {0}".format(" ".join(server_cli_args)))
-            context.SERVER_PROCESS = subprocess.Popen(server_cli_args)
-            time.sleep(3)
-            context.SERVER_PROCESS.poll()
-            # If the returncode is not set then etcd is running
-            if context.SERVER_PROCESS.returncode is None:
-                break
-            if retry == 3:
-                print("Could not find a random port to use for "
-                      "commissaire. Exiting...")
-                raise SystemExit(1)
+        try:
+            context.SERVER_PROCESS = start_server(context, *default_server_args)
+        except:
+            print("Could not find a random port to use for "
+                  "commissaire. Exiting...")
+            raise SystemExit(1)
 
 
 def before_scenario(context, scenario):
@@ -167,6 +252,6 @@ def after_all(context):
     """
     if hasattr(context, 'ETCD_PROCESS'):
         context.ETCD_PROCESS.kill()
-    if hasattr(context, 'SERVER_PROCESS'):
-        context.SERVER_PROCESS.terminate()
-        context.SERVER_PROCESS.wait()
+    stop_server(context, "SERVER_PROCESS")
+    if getattr(context, 'CERT_DIR', None):
+        shutil.rmtree(context.CERT_DIR)

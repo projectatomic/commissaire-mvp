@@ -23,7 +23,8 @@ import mock
 from . import TestCase, get_fixture_file_path
 from falcon.testing.helpers import create_environ
 from commissaire.authentication import httpbasicauth
-
+from commissaire.authentication import httpauthclientcert
+from commissaire.ssl_adapter import SSL_CLIENT_VERIFY
 
 class Test_HTTPBasicAuth(TestCase):
     """
@@ -234,3 +235,62 @@ class TestHTTPBasicAuthByEtcd(TestCase):
                 falcon.HTTPForbidden,
                 http_basic_auth.authenticate,
                 req, resp)
+
+class TestHTTPClientCertAuth(TestCase):
+    """
+    Tests for the HTTPBasicAuthByEtcd class.
+    """
+
+    def setUp(self):
+        self.cert = {
+            "version": 3,
+            "notAfter": "Apr 11 08:32:52 2018 GMT",
+            "notBefore": "Apr 11 08:32:51 2016 GMT",
+            "serialNumber": "07",
+            "subject": [
+                [["organizationName", "system:master"]],
+                [["commonName", "system:master-proxy"]]],
+            "issuer": [
+                [["commonName", "openshift-signer@1460363571"]]
+             ]
+        }
+
+    def expect_forbidden(self, data=None, cn=None):
+        auth = httpauthclientcert.HTTPClientCertAuth(cn=cn)
+        req = falcon.Request(create_environ())
+        if data is not None:
+            req.env[SSL_CLIENT_VERIFY] = data
+
+        resp = falcon.Response()
+        self.assertRaises(
+            falcon.HTTPForbidden,
+            auth.authenticate,
+            req, resp)
+
+    def test_invalid_certs(self):
+        """
+        Verify authenticate denies when cert is missing or invalid
+        """
+        self.expect_forbidden()
+        self.expect_forbidden(data={"bad": "data"})
+        self.expect_forbidden(data={"subject": (("no", "cn"),)})
+
+
+    def test_valid_certs(self):
+        """
+        Verify authenticate succeeds when cn matches, fails when it doesn't
+        """
+        self.expect_forbidden(data=self.cert, cn="other-cn")
+
+        auth = httpauthclientcert.HTTPClientCertAuth(cn="system:master-proxy")
+        req = falcon.Request(create_environ())
+        req.env[SSL_CLIENT_VERIFY] = self.cert
+        resp = falcon.Response()
+        self.assertEqual(None, auth.authenticate(req, resp))
+
+        # With no cn any is valid
+        auth = httpauthclientcert.HTTPClientCertAuth()
+        req = falcon.Request(create_environ())
+        req.env[SSL_CLIENT_VERIFY] = self.cert
+        resp = falcon.Response()
+        self.assertEqual(None, auth.authenticate(req, resp))

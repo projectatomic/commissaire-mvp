@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
+import os
 import requests
 
 from behave import *
@@ -41,6 +42,13 @@ def impl(context):
     context.password = VALID_PASSWORD
     context.auth = (context.username, context.password)
 
+@given('we have {cert} as a client certificate')
+def impl(context, cert):
+    context.auth = None
+    context.cert = (
+        os.path.join(context.CERT_DIR, "{}.pem".format(cert)),
+        os.path.join(context.CERT_DIR, "{}.key".format(cert))
+    )
 
 @then('commissaire will {access} access')
 def impl(context, access):
