@@ -26,6 +26,7 @@ Submodules
    commissaire.queues
    commissaire.resource
    commissaire.script
+   commissaire.ssl_adapter
 
 Module contents
 ---------------
