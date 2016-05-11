@@ -23,6 +23,57 @@ users    No       Dictionary of users to directly load
 
    If no argument is provided the plugin will consult etcd for the JSON content.
 
+
+Modifying Users
+```````````````
+
+By default this plugin will look at Etcd for user/hash combinations under
+the ``/commissaire/config/httpbasicauthbyuserlist`` key.
+
+commissaire can also use a local file for authentication using the same JSON
+schema.
+
+.. code-block:: javascript
+
+   {
+       "username(string)": {
+           "hash": "bcrypthash(string)"
+       }...
+   }
+
+
+Generating a hash
+`````````````````
+commctl has a built-in command for creating bcrypt hashes.
+
+.. include:: examples/commctl_note.rst
+
+.. code-block:: shell
+
+  $ commctl create passhash
+  Password:
+  $2b$12$rq/RN.Y1WD0ZyKPpLJkFVOv3XdLxW5thJ3OEaRgaMMFCgzLzHjiJG
+  $
+
+
+.. _json_users_example:
+
+Example
+```````
+
+.. literalinclude:: ../conf/users.json
+   :language: json
+
+
+Using Etcd
+``````````
+
+To put the configuration in Etcd set the ``/commissaire/config/httpbasicauthbyuserlist`` key with
+valid JSON.
+
+.. include:: examples/etcd_authentication_example.rst
+
+
 commissaire.authentication.httpauthclientcert
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -60,53 +111,3 @@ example above.
            "filepath": "/path/to/users.json"
        }
    }
-
-
-Modifying Users
----------------
-
-By default commissaire will look at Etcd for user/hash combinations under
-the ``/commissaire/config/httpbasicauthbyuserlist`` key.
-
-commissaire can also use a local file for authentication using the same JSON
-schema.
-
-.. code-block:: javascript
-
-   {
-       "username(string)": {
-           "hash": "bcrypthash(string)"
-       }...
-   }
-
-
-Generating a hash
-~~~~~~~~~~~~~~~~~
-commctl has a built-in command for creating bcrypt hashes.
-
-.. include:: examples/commctl_note.rst
-
-.. code-block:: shell
-
-	$ commctl create passhash
-	Password:
-	$2b$12$rq/RN.Y1WD0ZyKPpLJkFVOv3XdLxW5thJ3OEaRgaMMFCgzLzHjiJG
-	$
-
-
-.. _json_users_example:
-
-Example
-~~~~~~~
-
-.. literalinclude:: ../conf/users.json
-   :language: json
-
-
-Using Etcd
-----------
-
-To put the configuration in Etcd set the ``/commissaire/config/httpbasicauthbyuserlist`` key with
-valid JSON.
-
-.. include:: examples/etcd_authentication_example.rst
