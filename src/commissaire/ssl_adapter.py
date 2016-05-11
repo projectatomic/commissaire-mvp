@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+Custom SSL adapter for use with CherryPy.
 """
 
 import ssl
@@ -31,6 +32,14 @@ class ClientCertBuiltinSSLAdapter(BuiltinSSLAdapter):
     """
 
     def __init__(self, *args, **kwargs):
+        """
+        Initializes an instance of ClientCertBuiltinSSLAdapter.
+
+        :param args: All other non-keyword arguments.
+        :type args: list
+        :param kwargs: All other keyword arguments.
+        :type kwargs: dict
+        """
         super(ClientCertBuiltinSSLAdapter, self).__init__(*args, **kwargs)
         if not getattr(self, "context", None):
             self.context = ssl.create_default_context(
@@ -43,9 +52,13 @@ class ClientCertBuiltinSSLAdapter(BuiltinSSLAdapter):
             self.context.verify_mode = ssl.CERT_OPTIONAL
 
     def wrap(self, sock):
-        """Forced to overide since older cherrypy versions don't support
-           self.context. Once we require a version >= 3.2.3. This method
-           can be removed.
+        """
+        Forced to overide since older cherrypy versions don't support
+        self.context. Once we require a version >= 3.2.3. This method
+        can be removed.
+
+        :param sock: Current socket.
+        :type sock: socket.socket
         """
         try:
             s = self.context.wrap_socket(sock, do_handshake_on_connect=True,
@@ -71,6 +84,13 @@ class ClientCertBuiltinSSLAdapter(BuiltinSSLAdapter):
         return s, self.get_environ(s)
 
     def get_environ(self, sock):
+        """
+        Creates WSGI environ entries to be merged into each request.
+        Overriden adding SSL_CLIENT_VERIFY to the peer certificate.
+
+        :param sock: Current socket.
+        :type sock: socket.socket
+        """
         env = super(ClientCertBuiltinSSLAdapter, self).get_environ(sock)
         env[SSL_CLIENT_VERIFY] = sock.getpeercert()
         return env

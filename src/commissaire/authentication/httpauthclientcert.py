@@ -12,7 +12,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+"""
+Client certificate authentication plugin.
+"""
 
 import falcon
 
@@ -30,9 +32,24 @@ class HTTPClientCertAuth(Authenticator):
     """
 
     def __init__(self, cn=None):
+        """
+        Initializes an instance of HTTPClientCertAuth.
+
+        :param cn: Optional CommonName to use when checking certificates.
+        :type cn: str or None
+        """
         self.cn = cn
 
     def authenticate(self, req, resp):
+        """
+        Implements the authentication logic.
+
+        :param req: Request instance that will be passed through.
+        :type req: falcon.Request
+        :param resp: Response instance that will be passed through.
+        :type resp: falcon.Response
+        :raises: falcon.HTTPForbidden
+        """
         cert = req.env.get(SSL_CLIENT_VERIFY, {})
         if cert:
             for obj in cert.get('subject', ()):
