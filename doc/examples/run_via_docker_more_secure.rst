@@ -7,7 +7,11 @@
         "tls-certfile": "/certs/server.crt",
         "tls-keyfile": "/certs/server.key",
         "etcd-cert-path": "/certs/etcd.crt",
-        "etcd-cert-key-path": "/certs/etcd.key"
+        "etcd-cert-key-path": "/certs/etcd.key",
+        "authentication-plugin": {
+            "name": "commissaire.authentication.httpauthclientcert",
+            "cn": "yourcn.example.org"
+        }
     }
 
     $ sudo docker run -d \
