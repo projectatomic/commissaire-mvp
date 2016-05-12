@@ -7,13 +7,20 @@ Overview
 
    -- Ryan Cook
 
-commissaire is a lightweight REST interface for upgrading, restarting, and bootstrapping new hosts into an existing Container Management cluster. Examples include:
+commissaire is a lightweight REST interface for upgrading, restarting, and bootstrapping new hosts into an existing Container Management cluster.
 
-- Registering new hosts in to a Container Manager cluster
-- Restarting hosts
-- Upgrading hosts
+Feature Overview
+----------------
 
-In the future other operations and tighter integrations with Container Manager(s) will be added.
+- Restart hosts in a container cluster
+- Upgrade hosts in a container cluster
+- Bootstrap new hosts into an existing container cluster
+- No agent required for hosts: All communication is done over SSH
+- Simple REST interface for automation
+- Service status for health checking
+- Plug-in based authentication framework
+- Command line interface for operators
+- Built in support for Atomic, RHEL, Fedora, and CentOS
 
 
 Flow
