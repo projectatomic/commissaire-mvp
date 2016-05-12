@@ -13,8 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+@create
+@hosts
 Feature: Creating Hosts
 
+  @anonymous
   Scenario: Creating a new host without authentication
      Given we are anonymous
       when we create the host 10.2.0.2

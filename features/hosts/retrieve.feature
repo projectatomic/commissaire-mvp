@@ -13,8 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+@retrieve
+@hosts
 Feature: Retrieving Hosts
 
+  @anonymous
   Scenario: Retrieve existing host without authentication
      Given we are anonymous
        and we have a host at 10.2.0.2

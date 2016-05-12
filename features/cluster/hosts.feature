@@ -13,14 +13,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+@cluster
 Feature: Manipulating Hosts In A Cluster
 
+  @anonymous
   Scenario: Examining hosts in a cluster without authentication
      Given we are anonymous
        and we have a cluster named honeynut
       when we get hosts in the cluster honeynut
       then commissaire will deny access
 
+  @anonymous
   Scenario: Checking for a host in a cluster without authentication
      Given we are anonymous
        and we have a cluster named honeynut
@@ -57,6 +60,7 @@ Feature: Manipulating Hosts In A Cluster
       then commissaire will allow access
        and commissaire will note it's not found
 
+  @anonymous
   Scenario: Adding a host to a cluster without authentication
      Given we are anonymous
        and we have a cluster named honeynut
@@ -103,6 +107,7 @@ Feature: Manipulating Hosts In A Cluster
       then commissaire will allow access
        and commissaire will note success
 
+  @anonymous
   Scenario: Removing a host from a cluster without authentication
      Given we are anonymous
        and we have a cluster named honeynut
@@ -154,6 +159,7 @@ Feature: Manipulating Hosts In A Cluster
       then commissaire will allow access
        and commissaire will note it's not found
 
+  @anonymous
   Scenario: Directly setting a cluster host list without authentication
      Given we are anonymous
        and we have a cluster named honeynut

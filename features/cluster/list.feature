@@ -13,8 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+@list
+@cluster
 Feature: Listing Clusters
 
+  @anonymous
   Scenario: List all clusters without authentication
      Given we are anonymous
       when we list all clusters
