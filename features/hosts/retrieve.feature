@@ -20,13 +20,13 @@ Feature: Retrieving Hosts
   @anonymous
   Scenario: Retrieve existing host without authentication
      Given we are anonymous
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
       when we get the host 10.2.0.2
       then commissaire will deny access
 
   Scenario: Retrieve existing host with authentication
      Given we have a valid username and password
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
       when we get the host 10.2.0.2
       then commissaire will allow access
       and commissaire will return the single host

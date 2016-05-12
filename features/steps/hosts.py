@@ -33,6 +33,14 @@ def impl(context, cluster):
     context.HOST_DATA['cluster'] = cluster
 
 
+@given('a host already exists at {host}')
+def impl(context, host):
+    data = dict(context.HOST_DATA)
+    data['address'] = host
+    context.etcd.set(
+        '/commissaire/hosts/{0}'.format(host),
+        json.dumps(data))
+
 @given('we have a host at {host}')
 def impl(context, host):
     data = dict(context.HOST_DATA)

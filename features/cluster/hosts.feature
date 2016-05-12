@@ -33,7 +33,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Verifying hosts are not implicitly added to clusters (1)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
       when we get the cluster honeynut
       then commissaire will allow access
        and commissaire will note success
@@ -45,7 +45,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Verifying hosts are not implicitly added to clusters (2)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
       when we get hosts in the cluster honeynut
       then commissaire will allow access
        and commissaire will note success
@@ -55,7 +55,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Verifying hosts are not implicitly added to clusters (3)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
       when we check for host 10.2.0.2 in the cluster honeynut
       then commissaire will allow access
        and commissaire will note it's not found
@@ -64,14 +64,14 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Adding a host to a cluster without authentication
      Given we are anonymous
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
       when we add host 10.2.0.2 to the cluster honeynut
       then commissaire will deny access
 
   Scenario: Adding a host to a cluster with authentication
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
       when we add host 10.2.0.2 to the cluster honeynut
       then commissaire will allow access
        and commissaire will note success
@@ -79,7 +79,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Verifying a cluster after adding a host (1)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
        and we have added host 10.2.0.2 to cluster honeynut
       when we get the cluster honeynut
       then commissaire will allow access
@@ -90,7 +90,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Verifying a cluster after adding a host (2)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
        and we have added host 10.2.0.2 to cluster honeynut
       when we get hosts in the cluster honeynut
       then commissaire will allow access
@@ -101,7 +101,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Verifying a cluster after adding a host (3)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
        and we have added host 10.2.0.2 to cluster honeynut
       when we check for host 10.2.0.2 in the cluster honeynut
       then commissaire will allow access
@@ -111,7 +111,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Removing a host from a cluster without authentication
      Given we are anonymous
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
        and we have added host 10.2.0.2 to cluster honeynut
       when we remove host 10.2.0.2 from the cluster honeynut
       then commissaire will deny access
@@ -119,7 +119,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Removing a host from a cluster with authentication
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
        and we have added host 10.2.0.2 to cluster honeynut
       when we remove host 10.2.0.2 from the cluster honeynut
       then commissaire will allow access
@@ -128,7 +128,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Verifying a cluster after adding and removing a host (1)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
        and we have added host 10.2.0.2 to cluster honeynut
        and we have removed host 10.2.0.2 from cluster honeynut
       when we get the cluster honeynut
@@ -140,7 +140,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Verifying a cluster after adding and removing a host (2)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
        and we have added host 10.2.0.2 to cluster honeynut
        and we have removed host 10.2.0.2 from cluster honeynut
       when we get hosts in the cluster honeynut
@@ -152,7 +152,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Verifying a cluster after adding and removing a host (3)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
        and we have added host 10.2.0.2 to cluster honeynut
        and we have removed host 10.2.0.2 from cluster honeynut
       when we check for host 10.2.0.2 in the cluster honeynut
@@ -163,14 +163,14 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Directly setting a cluster host list without authentication
      Given we are anonymous
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
       when we set the host list for cluster honeynut to ["10.2.0.2"],
       then commissaire will deny access
 
   Scenario Outline: Directly setting a cluster host list
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
       when we set the host list for cluster honeynut to <json>
       then commissaire will allow access
        and commissaire will note <note>
@@ -185,7 +185,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Deleting a host also removes it from its cluster (1)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
        and we have added host 10.2.0.2 to cluster honeynut
        and we have deleted host 10.2.0.2
       when we get the cluster honeynut
@@ -197,7 +197,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Deleting a host also removes it from its cluster (2)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
        and we have added host 10.2.0.2 to cluster honeynut
        and we have deleted host 10.2.0.2
       when we get hosts in the cluster honeynut
@@ -209,7 +209,7 @@ Feature: Manipulating Hosts In A Cluster
   Scenario: Deleting a host also removes it from its cluster (3)
      Given we have a valid username and password
        and we have a cluster named honeynut
-       and we have a host at 10.2.0.2
+       and a host already exists at 10.2.0.2
        and we have added host 10.2.0.2 to cluster honeynut
        and we have deleted host 10.2.0.2
       when we check for host 10.2.0.2 in the cluster honeynut
@@ -219,7 +219,7 @@ Feature: Manipulating Hosts In A Cluster
    Scenario: Creating a new host with an invalid cluster name
       Given we have a valid username and password
         and we set the cluster name to headache
-       when we create the host 10.2.0.2
+       when we create the host at 10.2.0.2
        then commissaire will allow access
         and commissaire will note a conflict
 
