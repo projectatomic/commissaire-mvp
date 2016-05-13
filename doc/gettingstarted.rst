@@ -10,7 +10,7 @@ To test out the current code you will need the following installed:
 * Python2.6+
 * virtualenv
 * etcd2 (running)
-* Kubernetes Cluster with a bearer token for access (running)
+* OpenShift or Kubernetes Cluster (running)
 * (Optional) docker (running)
 
 Set up virtualenv
@@ -42,10 +42,10 @@ commissaire will default back to the local files but using Etcd is where configu
 .. include:: examples/etcd_logging_example.rst
 
 
-(Optional) Set The Kubernetes Access Method
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(Optional) Set The OpenShift or Kubernetes Access Method
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are two methods for accessing Kubernetes: Client Side Certificate and Bearer Token. Only one is needed when working with a secured Kubernetes installation.
+There are two methods for accessing the container manager: Client Side Certificate and Bearer Token. Only one is needed when working with a secured Kubernetes installation.
 
 (Recommended) Client Certificate
 ````````````````````````````````

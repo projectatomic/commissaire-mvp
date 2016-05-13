@@ -28,10 +28,10 @@ etcd
 etcd is used as the data store for commissaire. Any persistent data is kept
 within etcd as either traditional *key* = *value* pairs or as *key* = *JSON*. While
 any etcd instance will work it's recommended to use the same etcd cluster with
-kubernetes.
+Kubernetes.
 
-kubernetes
-~~~~~~~~~~
-kubernetes is used as the container manager. commissaire utilizes kubernetes
-api to ensure that new host nodes register properly. From this point forward
-kubernetes is able to use the host node to schedule pods, etc...
+Container Manager
+~~~~~~~~~~~~~~~~~
+OpenShift or Kubernetes can be used as the container manager. commissaire utilizes
+Kubernetes api to ensure that new host nodes register properly. From this point
+forward Kubernetes is able to use the host node to schedule pods, etc...
