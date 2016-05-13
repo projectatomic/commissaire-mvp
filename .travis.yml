@@ -1,13 +1,17 @@
 language: python
 python:
-  - "2.6"
+  - "2.7"
 #  - "3.3"
 install:
   - "pip install -r requirements.txt"
   - "pip install -r test-requirements.txt"
+  - "pip install importlib"
+  - "pip install -e ."
+  - "curl -L  https://github.com/coreos/etcd/releases/download/v2.3.3/etcd-v2.3.3-linux-amd64.tar.gz -o etcd-v2.3.3-linux-amd64.tar.gz && tar xvzf etcd-v2.3.3-linux-amd64.tar.gz"
 script:
   - "python setup.py flake8"
   - "python setup.py nosetests"
+  - "PYTHONPATH=$PYTHONPATH:`pwd`/src/commissaire PATH=$PATH:`pwd`/etcd-v2.3.3-linux-amd64 behave -D start-etcd=true -D start-server=true features/"
 notifications:
   email: false
   # This is Colin's instance of Homu, in the future
