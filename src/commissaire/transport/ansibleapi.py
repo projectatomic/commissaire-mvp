@@ -16,8 +16,6 @@
 Ansible API transport.
 """
 
-import logging
-
 from collections import namedtuple
 from pkg_resources import resource_filename
 from time import sleep
@@ -29,6 +27,7 @@ from ansible.playbook.play import Play
 from ansible.executor.task_queue_manager import TaskQueueManager
 from ansible.plugins.callback import default
 from ansible.utils.display import Display
+from commissaire.compat.logger import logging
 
 
 class LogForward(default.CallbackModule):

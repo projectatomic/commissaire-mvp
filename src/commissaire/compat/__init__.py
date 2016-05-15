@@ -19,4 +19,7 @@ Python2/3 compat module.
 import platform
 
 #: Version of the current interpreter
-__python_version__ = platform.python_version()[0]
+__python_semver__ = platform.python_version().split('.')
+
+#: Major version of the current interpreter
+__python_version__ = __python_semver__[0]

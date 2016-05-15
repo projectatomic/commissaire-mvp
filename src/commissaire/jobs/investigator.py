@@ -19,7 +19,6 @@ The investigator job.
 import cherrypy
 import datetime
 import json
-import logging
 import os
 import sys
 import tempfile
@@ -27,6 +26,7 @@ import tempfile
 from time import sleep
 
 from commissaire.compat.b64 import base64
+from commissaire.compat.logger import logging
 from commissaire.containermgr.kubernetes import KubeContainerManager
 from commissaire.oscmd import get_oscmd
 from commissaire.transport import ansibleapi

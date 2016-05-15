@@ -18,8 +18,6 @@
 import argparse
 import cherrypy
 import json
-import logging
-import logging.config
 import os
 import sys
 
@@ -28,6 +26,7 @@ import falcon
 
 from commissaire.compat.urlparser import urlparse
 from commissaire.compat import exception
+from commissaire.compat.logger import logging
 from commissaire.config import Config, cli_etcd_or_default
 from commissaire.handlers.clusters import (
     ClustersResource, ClusterResource,
