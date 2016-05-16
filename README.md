@@ -8,3 +8,8 @@ A lightweight REST interface for upgrading, restarting, and bootstrapping new ho
 Development: Getting Up And Running
 ===================================
 See [Getting Started](http://commissaire.readthedocs.org/en/latest/gettingstarted.html#development-manual)
+
+
+Python Versions
+===============
+Development is done mainly on Python 2.7 but 2.6 compatibility is attempted to make usage on older distributions possible.
