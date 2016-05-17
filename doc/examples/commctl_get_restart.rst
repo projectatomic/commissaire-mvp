@@ -1,4 +1,4 @@
 .. code-block:: shell
 
-   commctl get restart datacenter1
+   commctl cluster restart status datacenter1
    ...

@@ -1,4 +1,4 @@
 .. code-block:: shell
 
-   commctl list hosts
+   commctl host list
    ...
