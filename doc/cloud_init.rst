@@ -16,6 +16,18 @@ Here's a sample config file showing all recognized parameters:
 .. literalinclude:: ../contrib/cloud-init/commissaire.txt
    :language: shell
 
+
+Create the Cloud-Config File
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A cloud-config file is required when using Cloud-Init. Commissaire doesn't
+require any special data within the cloud-config file itself. A cloud-config
+as simple as the following, found in ``contrib/cloud-init/cloud-config.txt``
+will work fine:
+
+.. literalinclude:: ../contrib/cloud-init/cloud-config.txt
+   :language: yaml
+
+
 Create the User-Data File
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -27,13 +39,13 @@ generate such a file with the make-mime.py_ script in cloud-init's
 
 Suppose the config file above is named ``commissaire.txt``.  To assemble
 it, the ``part-handler.py`` script and a cloud-config file named, say,
-``config.txt`` into a valid MIME multipart/mixed structure, use the
+``cloud-config.txt`` into a valid MIME multipart/mixed structure, use the
 ``make-mime.py`` script as follows:
 
 .. code-block:: shell
 
    $ python make-mime.py \
-            --attach config.txt:cloud-config \
+            --attach cloud-config.txt:cloud-config \
             --attach part-handler.py:part-handler \
             --attach commissaire.txt:x-commissaire-host \
             > user-data
@@ -49,7 +61,7 @@ script from a URL at boot time by attaching a ``text/x-include-url`` file:
 .. code-block:: shell
 
    $ python make-mime.py \
-            --attach config.txt:cloud-config \
+            --attach cloud-config.txt:cloud-config \
             --attach include.txt:x-include-url \
             --attach commissaire.txt:x-commissaire-host \
             > user-data
@@ -61,8 +73,11 @@ script from a URL at boot time by attaching a ``text/x-include-url`` file:
    part so cloud-init knows how to handle the ``text/x-commissaire-host`` part.
 
 
-Example
--------
+Example: User-Data Creation
+---------------------------
+This example shows how to create the ``user-data`` file which can be passed
+on boot via your OS/cloud provider. See your OS/cloud provider for specific
+details on how to pass the user-data file properly.
 
 .. code-block:: shell
 
@@ -78,10 +93,14 @@ Example
   # <snip>
   2016-03-24 10:57:07 (752 MB/s) - ‘commissaire.txt’ saved [866/866]
 
-  $ $EDITOR config.txt     # Edit the cloud config to your liking
-  $ $EDITOR commisaire.txt # Edit the commissaire config to your liking
+  $ wget "https://raw.githubusercontent.com/projectatomic/commissaire/master/contrib/cloud-init/cloud-config.txt"
+  # <snip>
+  2016-03-24 10:59:01 (677 MB/s) - ‘cloud-config.txt’ saved [48/48]
+
+  $ $EDITOR cloud-config.txt     # Edit the cloud config to your liking
+  $ $EDITOR commissaire.txt      # Edit the commissaire config to your liking
   $ python make-mime.py \
-         --attach config.txt:cloud-config \
+         --attach cloud-config.txt:cloud-config \
          --attach part-handler.py:part-handler \
          --attach commissaire.txt:x-commissaire-host \
          > user-data
