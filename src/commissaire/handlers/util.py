@@ -161,7 +161,7 @@ def get_cluster_model(name):
     return cluster
 
 
-def etcd_host_create(address, ssh_priv_key, cluster_name=None):
+def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
     """
     Creates a new host record in etcd and optionally adds the host to
     the specified cluster.  Returns a (status, host) tuple where status
@@ -175,6 +175,8 @@ def etcd_host_create(address, ssh_priv_key, cluster_name=None):
     :type address: str
     :param ssh_priv_key: Host's SSH key, base64-encoded.
     :type ssh_priv_key: str
+    :param remote_user: The user to use with SSH.
+    :type remote_user: str
     :param cluster_name: Name of the cluster to join, or None
     :type cluster_name: str or None
     :return: (status, host)
@@ -207,7 +209,8 @@ def etcd_host_create(address, ssh_priv_key, cluster_name=None):
         'cpus': -1,
         'memory': -1,
         'space': -1,
-        'last_check': None
+        'last_check': None,
+        'remote_user': remote_user,
     }
 
     # Verify the cluster exists, if given.  Do it now
@@ -225,6 +228,6 @@ def etcd_host_create(address, ssh_priv_key, cluster_name=None):
     if cluster_name:
         etcd_cluster_add_host(cluster_name, address)
 
-    INVESTIGATE_QUEUE.put((host_creation, ssh_priv_key))
+    INVESTIGATE_QUEUE.put((host_creation, ssh_priv_key, remote_user))
 
     return (falcon.HTTP_201, Host(**json.loads(new_host.value)))

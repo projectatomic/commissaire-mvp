@@ -306,7 +306,8 @@ Creates a new host record.
 .. code-block:: javascript
 
    {
-       "ssh_priv_key": string // base64 encoded ssh private key
+       "ssh_priv_key": string, // base64 encoded ssh private key
+       "remote_user": string,  // Optional name of ssh user to use (default=root)
        "cluster": string      // Optional cluster the host should be associated with
    }
 
@@ -327,6 +328,7 @@ Example
 
    {
        "cluster": "default",
+       "remote_user": "root",
        "ssh_priv_key": "dGVzdAo..."
    }
 

@@ -123,7 +123,7 @@ def clusterexec(cluster_name, command):
         f.close()
 
         try:
-            transport = ansibleapi.Transport()
+            transport = ansibleapi.Transport(a_host['remote_user'])
             exe = getattr(transport, command)
             result, facts = exe(
                 a_host['address'], key_file, oscmd)

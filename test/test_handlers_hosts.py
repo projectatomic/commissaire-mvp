@@ -53,6 +53,7 @@ class Test_Hosts(TestCase):
         hosts_model = hosts.Hosts(
             hosts=[hosts.Host(
                 ssh_priv_key='dGVzdAo=',
+                remote_user='root',
                 address='127.0.0.1',
                 status='status',
                 os='atomic',
@@ -78,7 +79,8 @@ class Test_HostsResource(TestCase):
              ' "cpus": 2, "memory": 11989228, "space": 487652,'
              ' "last_check": "2015-12-17T15:48:18.710454"}')
 
-    etcd_host = ('{"address": "10.2.0.2", "ssh_priv_key": "dGVzdAo=",'
+    etcd_host = ('{"address": "10.2.0.2",'
+                 ' "ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                  ' "status": "available", "os": "atomic",'
                  ' "cpus": 2, "memory": 11989228, "space": 487652,'
                  ' "last_check": "2015-12-17T15:48:18.710454"}')
@@ -152,6 +154,7 @@ class Test_Host(TestCase):
         # Make sure a Host creates expected results
         host_model = hosts.Host(
             ssh_priv_key='dGVzdAo=',
+            remote_user='root',
             address='127.0.0.1',
             status='status',
             os='atomic',
@@ -173,7 +176,8 @@ class Test_HostResource(TestCase):
              ' "cpus": 2, "memory": 11989228, "space": 487652,'
              ' "last_check": "2015-12-17T15:48:18.710454"}')
 
-    etcd_host = ('{"address": "10.2.0.2", "ssh_priv_key": "dGVzdAo=",'
+    etcd_host = ('{"address": "10.2.0.2",'
+                 ' "ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                  ' "status": "available", "os": "atomic",'
                  ' "cpus": 2, "memory": 11989228, "space": 487652,'
                  ' "last_check": "2015-12-17T15:48:18.710454"}')
@@ -258,7 +262,7 @@ class Test_HostResource(TestCase):
                 [[MagicMock(value=self.etcd_host), None]],
                 [[MagicMock(value=self.etcd_cluster), None]],
                 [[MagicMock(value=self.etcd_cluster), None]])
-            data = ('{"ssh_priv_key": "dGVzdAo=",'
+            data = ('{"ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                     ' "cluster": "testing"}')
             body = self.simulate_request(
                 '/api/v0/host/10.2.0.2', method='PUT', body=data)
@@ -319,7 +323,8 @@ class Test_ImplicitHostResource(TestCase):
              ' "cpus": 2, "memory": 11989228, "space": 487652,'
              ' "last_check": "2015-12-17T15:48:18.710454"}')
 
-    etcd_host = ('{"address": "127.0.0.1", "ssh_priv_key": "dGVzdAo=",'
+    etcd_host = ('{"address": "127.0.0.1",'
+                 ' "ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                  ' "status": "available", "os": "atomic",'
                  ' "cpus": 2, "memory": 11989228, "space": 487652,'
                  ' "last_check": "2015-12-17T15:48:18.710454"}')
@@ -355,7 +360,7 @@ class Test_ImplicitHostResource(TestCase):
                 [[MagicMock(value=self.etcd_cluster), None]],
                 [[MagicMock(value=self.etcd_host), None]])
 
-            data = ('{"ssh_priv_key": "dGVzdAo=",'
+            data = ('{"ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                     ' "cluster": "testing"}')
             body = self.simulate_request(
                 '/api/v0/host', method='PUT', body=data)

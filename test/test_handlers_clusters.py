@@ -158,7 +158,8 @@ class Test_ClusterResource(TestCase):
                 '           "unavailable": 0}}')
 
     etcd_cluster = '{"status": "ok", "hostset": ["10.2.0.2"]}'
-    etcd_host = ('{"address": "10.2.0.2", "ssh_priv_key": "dGVzdAo=",'
+    etcd_host = ('{"address": "10.2.0.2",'
+                 ' "ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                  ' "status": "active", "os": "atomic",'
                  ' "cpus": 2, "memory": 11989228, "space": 487652,'
                  ' "last_check": "2015-12-17T15:48:18.710454",'

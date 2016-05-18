@@ -49,7 +49,8 @@ class Test_JobsInvestigator(TestCase):
     Tests for the investigator job.
     """
 
-    etcd_host = ('{"address": "10.2.0.2", "ssh_priv_key": "dGVzdAo=",'
+    etcd_host = ('{"address": "10.2.0.2",'
+                 ' "ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                  ' "status": "available", "os": "atomic",'
                  ' "cpus": 2, "memory": 11989228, "space": 487652,'
                  ' "last_check": "2015-12-17T15:48:18.710454"}')
@@ -91,7 +92,7 @@ class Test_JobsInvestigator(TestCase):
                 }
             }
 
-            q.put_nowait((to_investigate, ssh_priv_key))
+            q.put_nowait((to_investigate, ssh_priv_key, 'root'))
             investigator(q, connection_config, True)
 
             self.assertEquals(3, _publish.call_count)

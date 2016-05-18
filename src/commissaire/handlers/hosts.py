@@ -100,6 +100,8 @@ class HostResource(Resource):
             req_data = req.stream.read()
             req_body = json.loads(req_data.decode())
             ssh_priv_key = req_body['ssh_priv_key']
+            # Remote user is optional.
+            remote_user = req_body.get('remote_user', 'root')
             # Cluster member is optional.
             cluster_name = req_body.get('cluster', None)
         except (KeyError, ValueError):
@@ -110,7 +112,7 @@ class HostResource(Resource):
             return
 
         resp.status, host_model = util.etcd_host_create(
-            address, ssh_priv_key, cluster_name)
+            address, ssh_priv_key, remote_user, cluster_name)
 
         req.context['model'] = host_model
 
@@ -187,6 +189,8 @@ class ImplicitHostResource(Resource):
             req_data = req.stream.read()
             req_body = json.loads(req_data.decode())
             ssh_priv_key = req_body['ssh_priv_key']
+            # Remote user is optional.
+            remote_user = req_body.get('remote_user', 'root')
             # Cluster member is optional.
             cluster_name = req_body.get('cluster', None)
         except (KeyError, ValueError):
@@ -197,6 +201,6 @@ class ImplicitHostResource(Resource):
             return
 
         resp.status, host_model = util.etcd_host_create(
-            address, ssh_priv_key, cluster_name)
+            address, ssh_priv_key, remote_user, cluster_name)
 
         req.context['model'] = host_model

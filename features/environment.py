@@ -204,6 +204,7 @@ def before_scenario(context, scenario):
     # Reset HOST_DATA
     context.HOST_DATA = {
         "address": "",
+        "remote_user": "root",
         "status": "active",
         "os": "fedora",
         "cpus": 1,

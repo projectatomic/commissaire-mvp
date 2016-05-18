@@ -65,12 +65,14 @@ def investigator(queue, config, run_once=False):
     while True:
         # Statuses follow:
         # http://commissaire.readthedocs.org/en/latest/enums.html#host-statuses
-        transport = ansibleapi.Transport()
-        to_investigate, ssh_priv_key = queue.get()
+        to_investigate, ssh_priv_key, remote_user = queue.get()
         address = to_investigate['address']
         logger.info('{0} is now in investigating.'.format(address))
-        logger.debug('Investigation details: key={0}, data={1}'.format(
-            to_investigate, ssh_priv_key))
+        logger.debug(
+            'Investigation details: key={0}, data={1}, remote_user={2}'.format(
+                to_investigate, ssh_priv_key, remote_user))
+
+        transport = ansibleapi.Transport(remote_user)
 
         f = tempfile.NamedTemporaryFile(prefix='key', delete=False)
         key_file = f.name

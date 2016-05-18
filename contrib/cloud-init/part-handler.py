@@ -18,10 +18,17 @@
 #  "cluster"  (optional)
 #    The name of the cluster to join.
 #
-#  "root_ssh_key_path"  (optional)
+#  "remote_user"  (optional)
+#    The user used to ssh into the remote system. By default this is "root"
+#
+#  "ssh_key_path"  (optional)
 #    The private SSH key file for the root account of this host.
 #    Defaults to '/root/.ssh/id_rsa' and, if necessary, generates
 #    a public/private key pair with no passphrase.
+#
+#  "authorized_keys_path"  (optional)
+#    The path to the authorized_keys file. By default this is
+#    /root/.ssh/authorized_keys
 #
 #
 # TO CREATE A USER-DATA FILE
@@ -71,8 +78,10 @@ import requests
 
 MIME_TYPE = 'text/x-commissaire-host'
 
+
 def list_types():
     return [MIME_TYPE]
+
 
 def handle_part(data, ctype, filename, payload):
     if ctype == '__begin__':
@@ -101,7 +110,18 @@ def handle_part(data, ctype, filename, payload):
     username = config.get('username')
     password = config.get('password')
     cluster = config.get('cluster')
-    keyfile = config.get('root_ssh_key_path', '/root/.ssh/id_rsa')
+    remote_user = config.get('remote_user', 'root')
+    keyfile = config.get('ssh_key_path', '/root/.ssh/id_rsa')
+    authorized_keys = config.get(
+        'authorized_keys_path', '/root/.ssh/authorized_keys')
+
+    # Verify the authorized_keys file exists
+    if not os.path.isfile(authorized_keys):
+        authorized_keys_path, _ = authorized_keys.rsplit('/', 1)
+        os.makedirs(authorized_keys_path)
+        with open(authorized_keys, 'w', ) as _:
+            pass
+        os.chmod(authorized_keys, 0600)
 
     if not os.path.isfile(keyfile):
         try:
@@ -116,7 +136,6 @@ def handle_part(data, ctype, filename, payload):
             raise
 
     try:
-        authorized_keys = '/root/.ssh/authorized_keys'
         with open(keyfile + '.pub') as inpf:
             # If creating a new file, set mode to 0600.
             fd = os.open(authorized_keys,
@@ -128,7 +147,9 @@ def handle_part(data, ctype, filename, payload):
         print(str(ex), file=sys.stderr)
         raise
 
-    body = {}
+    body = {
+        'remote_user': remote_user,
+    }
 
     try:
         with open(keyfile, 'rb') as f:

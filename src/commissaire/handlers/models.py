@@ -125,8 +125,8 @@ class Host(Model):
     _json_type = dict
     _attributes = (
         'address', 'status', 'os', 'cpus', 'memory',
-        'space', 'last_check', 'ssh_priv_key')
-    _hidden_attributes = ('ssh_priv_key', )
+        'space', 'last_check', 'ssh_priv_key', 'remote_user')
+    _hidden_attributes = ('ssh_priv_key', 'remote_user')
     _key = '/commissaire/hosts/{0}'
 
 

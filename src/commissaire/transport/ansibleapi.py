@@ -102,7 +102,7 @@ class Transport:
     Transport using Ansible.
     """
 
-    def __init__(self):
+    def __init__(self, remote_user='root'):
         """
         Creates an instance of the Transport.
         """
@@ -117,6 +117,7 @@ class Transport:
         self.variable_manager = VariableManager()
         self.loader = DataLoader()
         self.passwords = {}
+        self.remote_user = remote_user
 
     def _run(self, ips, key_file, play_file,
              expected_results=[0], play_vars={}):
@@ -139,12 +140,23 @@ class Transport:
 
         ssh_args = ('-o StrictHostKeyChecking=no -o '
                     'ControlMaster=auto -o ControlPersist=60s')
+        become = {
+            'become': None,
+            'become_user': None,
+        }
+        if self.remote_user != 'root':
+            self.logger.debug('Using user {0} for ssh communication.'.format(
+                self.remote_user))
+            become['become'] = True
+            become['become_user'] = 'root'
+
         options = self.Options(
             connection='ssh', module_path=None, forks=1,
-            remote_user='root', private_key_file=key_file,
+            remote_user=self.remote_user, private_key_file=key_file,
             ssh_common_args=ssh_args, ssh_extra_args=ssh_args,
             sftp_extra_args=None, scp_extra_args=None,
-            become=None, become_method=None, become_user=None,
+            become=become['become'], become_method='sudo',
+            become_user=become['become_user'],
             verbosity=None, check=False)
         # create inventory and pass to var manager
         inventory = Inventory(
