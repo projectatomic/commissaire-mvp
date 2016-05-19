@@ -3,7 +3,7 @@
 Cloud-Init Integration
 ======================
 
-commissaire provides a script in ``config/cloud-init/part-handler.py``
+commissaire provides a script in ``contrib/cloud-init/part-handler.py``
 to help automatically register hosts to the commissaire server during
 bootup by way of cloud-init.
 
