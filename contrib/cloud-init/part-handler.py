@@ -65,7 +65,6 @@
 
 from __future__ import print_function
 
-import sys
 import stat
 import os
 import os.path
@@ -77,13 +76,26 @@ import json
 import requests
 
 MIME_TYPE = 'text/x-commissaire-host'
+handler_version = 2
 
 
 def list_types():
     return [MIME_TYPE]
 
 
-def handle_part(data, ctype, filename, payload):
+def run_cmd(cmd, desc, shell=False):
+    try:
+        print('Executing {}'.format(desc))
+        subprocess.check_call(cmd, shell=shell)
+    except FileNotFoundError:
+        print('Missing binary for command {}'.format(cmd))
+        raise
+    except subprocess.CalledProcessError as ex:
+        print('Error trying to {}: {}'.format(desc, str(ex)))
+        raise
+
+
+def handle_part(data, ctype, filename, payload, *args, **kwargs):
     if ctype == '__begin__':
         return
 
@@ -97,13 +109,11 @@ def handle_part(data, ctype, filename, payload):
         config = json.loads(payload)
         assert type(config) is dict
     except (AssertionError, ValueError):
-        print('{0}: {1} data must be a JSON object'.format(filename, ctype),
-              file=sys.stderr)
+        print('{0}: {1} data must be a JSON object'.format(filename, ctype))
         return
 
     if 'endpoint' not in config:
-        print('{0}: Missing required "endpoint" URI'.format(filename),
-              file=sys.stderr)
+        print('{0}: Missing required "endpoint" URI'.format(filename))
         return
 
     endpoint = config.get('endpoint')
@@ -117,23 +127,43 @@ def handle_part(data, ctype, filename, payload):
 
     # Verify the authorized_keys file exists
     if not os.path.isfile(authorized_keys):
+        print('Creating authorized_keys {}'.format(authorized_keys))
         authorized_keys_path, _ = authorized_keys.rsplit('/', 1)
         os.makedirs(authorized_keys_path)
         with open(authorized_keys, 'w', ) as _:
             pass
-        os.chmod(authorized_keys, 0600)
+        print('Chowning authorized_keys')
+        os.chmod(authorized_keys, 0o600)
+
+    if remote_user != 'root':
+        print('User is {}. Adding...'.format(remote_user))
+        run_cmd(
+            ['/sbin/useradd', remote_user],
+            'add user {}'.format(remote_user))
+        tmp_sudoers = '/tmp/{}'.format(remote_user)
+        run_cmd('/bin/echo "{}    ALL=NOPASSWD: ALL" > {}'.format(
+                remote_user, tmp_sudoers),
+                'create a suoders file for the {}'.format(remote_user),
+                shell=True)
+        run_cmd(
+            ['/bin/cp', tmp_sudoers,
+             '/etc/sudoers.d/{}'.format(remote_user)],
+            'add {} for sudoers'.format(remote_user))
 
     if not os.path.isfile(keyfile):
-        try:
-            subprocess.check_call(
-                ['/usr/bin/ssh-keygen', '-q', '-N', '',
-                 '-t', 'rsa', '-f', keyfile])
-        except FileNotFoundError:
-            print('Missing /usr/bin/ssh-keygen', file=sys.stderr)
-            raise
-        except subprocess.CalledProcessError as ex:
-            print(str(ex), file=sys.stderr)
-            raise
+        run_cmd(
+            ['/usr/bin/ssh-keygen', '-q', '-N', '',
+             '-t', 'rsa', '-f', keyfile],
+            'generate key file')
+        home_dir = os.path.expanduser('~' + remote_user)
+        print('home_dir is {}. Calling restorcon'.format(home_dir))
+        run_cmd(
+            ['/sbin/restorecon', '-R', '-v',
+             os.path.sep.join([home_dir, '.ssh'])],
+            'run restorcon on {}'.format(home_dir))
+        run_cmd(
+            ['/bin/chown', '-R', remote_user, home_dir],
+            'chown {} to {}'.format(home_dir, remote_user))
 
     try:
         with open(keyfile + '.pub') as inpf:
@@ -144,7 +174,7 @@ def handle_part(data, ctype, filename, payload):
             with os.fdopen(fd, 'a') as outf:
                 outf.writelines(inpf.readlines())
     except Exception as ex:
-        print(str(ex), file=sys.stderr)
+        print('Error writing key to authorized_keys: {}'.format(str(ex)))
         raise
 
     body = {
@@ -156,7 +186,7 @@ def handle_part(data, ctype, filename, payload):
             b64_bytes = base64.b64encode(f.read())
             body['ssh_priv_key'] = b64_bytes.decode()
     except Exception as ex:
-        print(str(ex), file=sys.stderr)
+        print(str(ex))
         raise
 
     if cluster:
