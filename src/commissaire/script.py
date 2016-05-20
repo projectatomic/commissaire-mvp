@@ -198,7 +198,9 @@ def parse_args(parser):
         '--listen-port', '-p', type=int, help='Port to listen on')
     parser.add_argument(
         '--etcd-uri', '-e', type=str,
-        help='Full URI for etcd EX: http://127.0.0.1:2379')
+        help=('Full URI for etcd. This value is used for both local and remote'
+              ' host node connections to etcd.'
+              ' EX: http://192.168.152.100:2379'))
     parser.add_argument(
         '--etcd-cert-path', '-C', type=str,
         help='Full path to the client side certificate.')
@@ -210,7 +212,9 @@ def parse_args(parser):
         help='Full path to the CA file.')
     parser.add_argument(
         '--kube-uri', '-k', type=str,
-        help='Full URI for kubernetes EX: http://127.0.0.1:8080')
+        help=('Full URI for kubernetes. This value is used for both local and'
+              ' remote host node connection to kubernetes.'
+              ' EX: http://192.168.152.101:8080'))
     parser.add_argument(
         '--tls-keyfile', type=str,
         help='Full path to the TLS keyfile for the commissaire server')

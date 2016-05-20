@@ -86,6 +86,12 @@ as specified by the ``--config-file`` option.
 
    Command-line options take precedence over the configuration file.
 
+.. note::
+
+   The URI you give for etcd and Kubernetes via the CLI will be fed into the
+   configuration files on remote host nodes. Make sure to use the public IP of
+   the etcd and Kubernetes hosts.
+
 From Source
 ```````````
 To launch the server from the repo root, with a configuration file such
