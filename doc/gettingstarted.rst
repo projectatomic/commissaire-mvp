@@ -7,7 +7,7 @@ Manual Installation
 -------------------
 To test out the current code you will need the following installed:
 
-* Python2.6+
+* Python2.7 or Python3.1+
 * virtualenv
 * etcd2 (running)
 * OpenShift or Kubernetes Cluster (running)
