@@ -43,6 +43,14 @@ Like most projects commissaire expects specific coding standards to be followed.
 `pep8 <https://www.python.org/dev/peps/pep-0008/>`_ is followed strictly with
 the exception of E402: module level import not at top of file.
 
+Commissaire Proposal Document
+`````````````````````````````
+A Commissaire Proposal Document (CPD) must be submitted and approved before
+significantly changing the current implementation. This applies to
+changes which  break backward compatibility, replace a subsystem, change the
+user experience, etc.. For information on the CPD process see 
+`CPD-1: CPD Process <https://github.com/projectatomic/commissaire/wiki/cpd-1>`_ and the `CPD Template <https://github.com/projectatomic/commissaire/wiki/cpd_template>`_.
+
 Ansible Templates
 `````````````````
 Variables are used with jinja2 templates and should always prefix
