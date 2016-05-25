@@ -123,7 +123,6 @@ Retrieve the current status of upgrades.
 
    {
        "status": string,
-       "upgrade_to": string,
        "upgraded": HOST_LIST,
        "in_process": HOST_LIST,
        "started_at": string,
@@ -137,7 +136,6 @@ Example
 
    {
        "status": "in_process",
-       "upgrade_to": "7.2.1",
        "upgraded": [{...}],
        "in_process": [{...}],
        "started_at": "2015-12-17T15:48:18.710454",
@@ -148,20 +146,7 @@ PUT
 ```
 Start a new upgrade.
 
-.. code-block:: javascript
-
-   {
-       "upgrade_to": string
-   }
-
-Example
-~~~~~~~
-
-.. code-block:: javascript
-
-   {
-       "upgrade_to": "7.2.1"
-   }
+No body.
 
 Example Response
 ~~~~~~~~~~~~~~~~
@@ -170,7 +155,6 @@ Example Response
 
    {
        "status": "in_process",
-       "upgrade_to": "7.2.1",
        "upgraded": [{...}],
        "in_process": [{...}],
        "started_at": "2015-12-17T15:48:18.710454",

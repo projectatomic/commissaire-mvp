@@ -297,19 +297,17 @@ expected_status(r, 200)
 
 print("=> Initiate Cluster Upgrade Without Auth (Should Fail)")
 r = requests.put(
-    SERVER + '/api/v0/cluster/honeynut/upgrade',
-    json={"upgrade_to": "7.2.1"})
+    SERVER + '/api/v0/cluster/honeynut/upgrade')
 print(r.json())
 expected_status(r, 403)
 
 print("=> Initiate Cluster Upgrade With Auth")
 r = requests.put(
-    SERVER + '/api/v0/cluster/honeynut/upgrade', auth=AUTH,
-    json={"upgrade_to": "7.2.1"})
+    SERVER + '/api/v0/cluster/honeynut/upgrade', auth=AUTH)
 actual = r.json()
 print(actual)
 del actual['started_at']  # Disregard timestamp
-expect = {'status': 'in_process', 'upgrade_to': '7.2.1', 'upgraded': [], 'in_process': [], 'finished_at': None}
+expect = {'status': 'in_process', 'upgraded': [], 'in_process': [], 'finished_at': None}
 expected_json(actual, expect) and expected_status(r, 201)
 
 print("=> Query Cluster Upgrade Status Without Auth (Should Fail)")

@@ -476,14 +476,6 @@ class ClusterUpgradeResource(Resource):
         :param name: The name of the Cluster being upgraded.
         :type name: str
         """
-        data = req.stream.read().decode()
-        try:
-            args = json.loads(data)
-            upgrade_to = args['upgrade_to']
-        except (KeyError, ValueError):
-            resp.status = falcon.HTTP_400
-            return
-
         # Make sure the cluster name is valid.
         if not util.etcd_cluster_exists(name):
             self.logger.info(
@@ -492,38 +484,29 @@ class ClusterUpgradeResource(Resource):
             resp.status = falcon.HTTP_404
             return
 
-        # If the operation is already in progress and the requested version
-        # matches, return the current status with response code 200 OK.
-        # If the requested version conflicts with the operation in progress,
-        # return the current status with response code 409 Conflict.
+        # If the operation is already in progress, return the current
+        # status with response code 200 OK.
         try:
             cluster_upgrade = ClusterUpgrade.retrieve(name)
             self.logger.debug('Found ClusterUpgrade for {0}'.format(name))
             if not cluster_upgrade.finished_at:
-                if cluster_upgrade.upgrade_to == upgrade_to:
-                    self.logger.debug(
-                        'Cluster {0} upgrade to {1} already in progress'.
-                        format(name, upgrade_to))
-                    resp.status = falcon.HTTP_200
-                else:
-                    self.logger.debug(
-                        'Cluster upgrade to {0} requested while '
-                        'upgrade to {1} was already in progress'.
-                        format(upgrade_to, cluster_upgrade.upgrade_to))
-                    resp.status = falcon.HTTP_409
+                self.logger.debug(
+                    'Cluster {0} upgrade already in progress'.format(name))
+                resp.status = falcon.HTTP_200
                 req.context['model'] = cluster_upgrade
                 return
         except:
+            # This means one doesn't already exist.
             pass
 
-        # FIXME: How do I pass 'upgrade_to'?
+        # TODO: Move to a poll?
         p = Process(target=clusterexec, args=(name, 'upgrade'))
         p.start()
+
         self.logger.debug('Started upgrade in clusterexecpool for {0}'.format(
             name))
         cluster_upgrade_default = {
             'status': 'in_process',
-            'upgrade_to': upgrade_to,
             'upgraded': [],
             'in_process': [],
             'started_at': datetime.datetime.utcnow().isoformat(),

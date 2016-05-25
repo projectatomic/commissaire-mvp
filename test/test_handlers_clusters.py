@@ -543,7 +543,7 @@ class Test_ClusterUpgrade(TestCase):
 
         # Make sure a Cluster Upgrade creates expected results
         cluster_upgrade_model = clusters.ClusterUpgrade(
-            status='in_process', upgrade_to='', upgraded=[], in_process=[],
+            status='in_process', upgraded=[], in_process=[],
             started_at=None, finished_at=None)
 
         self.assertEquals(type(str()), type(cluster_upgrade_model.to_json()))
@@ -554,7 +554,7 @@ class Test_ClusterUpgradeResource(TestCase):
     Tests for the ClusterUpgrade resource.
     """
 
-    aupgrade = ('{"status": "ok", "upgrade_to": "7.0.2", "upgraded": [],'
+    aupgrade = ('{"status": "ok", "upgraded": [],'
                 ' "in_process": [], "started_at": "",'
                 ' "finished_at": "0001-01-01T00:00:00"}')
 
@@ -613,23 +613,11 @@ class Test_ClusterUpgradeResource(TestCase):
                 [[[], etcd.EtcdKeyNotFound]],
                 [[MagicMock(etcd.EtcdResult, value=self.aupgrade), None]])
 
-            # Verify sending no/bad data returns a 400
-            for put_data in (None, '{"nothing": "here"}"'):
-                body = self.simulate_request(
-                    '/api/v0/cluster/development/upgrade',
-                    method='PUT',
-                    body=put_data)
-                self.assertEquals(falcon.HTTP_400, self.srmock.status)
-                self.assertEquals('{}', body[0])
-
             # Verify with creation
             body = self.simulate_request(
-                '/api/v0/cluster/development/upgrade',
-                method='PUT',
-                body='{"upgrade_to": "7.0.2"}')
+                '/api/v0/cluster/development/upgrade', method='PUT')
             self.assertEquals(falcon.HTTP_201, self.srmock.status)
             result = json.loads(body[0])
             self.assertEquals('in_process', result['status'])
-            self.assertEquals('7.0.2', result['upgrade_to'])
             self.assertEquals([], result['upgraded'])
             self.assertEquals([], result['in_process'])

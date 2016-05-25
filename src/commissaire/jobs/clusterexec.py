@@ -41,7 +41,6 @@ def clusterexec(cluster_name, command):
         finished_hosts_key = 'upgraded'
         cluster_status = {
             "status": 'in_process',
-            "upgrade_to": 'latest',
             "upgraded": [],
             "in_process": [],
             "started_at": datetime.datetime.utcnow().isoformat(),

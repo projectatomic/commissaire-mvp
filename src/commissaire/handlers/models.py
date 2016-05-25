@@ -83,8 +83,7 @@ class ClusterUpgrade(Model):
     """
     _json_type = dict
     _attributes = (
-        'status', 'upgrade_to', 'upgraded', 'in_process',
-        'started_at', 'finished_at')
+        'status', 'upgraded', 'in_process', 'started_at', 'finished_at')
     _key = '/commissaire/cluster/{0}/upgrade'
 
 
