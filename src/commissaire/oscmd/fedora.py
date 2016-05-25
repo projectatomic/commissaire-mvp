@@ -28,6 +28,20 @@ class OSCmd(OSCmdBase):
     os_type = 'fedora'
 
     @classmethod
+    def deploy(cls, version):
+        """
+        Faux Fedora deploy command.
+
+        Deploy only works on atomic OS's.
+
+        :param version: The tree image version to deploy
+        :type version: str
+        :return: The command to execute as a list
+        :rtype: list
+        """
+        return ['true']
+
+    @classmethod
     def restart(cls):
         """
         Fedora restart command.

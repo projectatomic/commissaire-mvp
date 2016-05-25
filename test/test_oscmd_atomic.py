@@ -37,6 +37,7 @@ class Test_Atomic_OSCmd(_Test_OSCmd):
         """
         Verify Atomic's OSCmd returns proper data on restart.
         """
-        for meth in self.expected_methods:
-            cmd = getattr(self.instance, meth)()
+        for meth, nargs in self.expected_methods:
+            args = tuple(range(nargs))
+            cmd = getattr(self.instance, meth)(*args)
             self.assertEquals(list, type(cmd))

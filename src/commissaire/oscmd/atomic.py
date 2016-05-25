@@ -37,6 +37,18 @@ class OSCmd(OSCmdBase):
     os_type = 'atomic'
 
     @classmethod
+    def deploy(cls, version):
+        """
+        Atomic deploy command.
+
+        :param version: The tree image version to deploy
+        :type version: str
+        :return: The command to execute as a list
+        :rtype: list
+        """
+        return ['rpm-ostree', 'deploy', version]
+
+    @classmethod
     def restart(cls):
         """
         Atomic restart command.

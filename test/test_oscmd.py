@@ -26,8 +26,14 @@ class _Test_OSCmd(TestCase):
     """
 
     oscmdcls = None
-    expected_methods = ('restart', 'upgrade', 'install_libselinux_python',
-                        'install_docker', 'install_flannel', 'install_kube')
+    # (method_name, nargs)
+    expected_methods = (('deploy', 1),
+                        ('restart', 0),
+                        ('upgrade', 0),
+                        ('install_libselinux_python', 0),
+                        ('install_docker', 0),
+                        ('install_flannel', 0),
+                        ('install_kube', 0))
 
     def before(self):
         """
@@ -47,10 +53,11 @@ class Test_OSCmdBase(_Test_OSCmd):
         """
         Verify OSCmdBase base methods all raises.
         """
-        for meth in self.expected_methods:
+        for meth, nargs in self.expected_methods:
             self.assertRaises(
                 NotImplementedError,
-                getattr(self.instance, meth))
+                getattr(self.instance, meth),
+                *tuple(range(nargs)))
 
 
 class Test_get_oscmd(TestCase):

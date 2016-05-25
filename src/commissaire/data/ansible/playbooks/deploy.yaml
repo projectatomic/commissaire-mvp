@@ -12,26 +12,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
-Test cases for the commissaire.oscmd.fedora module.
-"""
+---
+- hosts: commissaire_targets
+  name: deploy
+  gather_facts: no
+  tasks:
+    - name: deploy tree image
+      command: "{{ commissaire_deploy_command }}"
 
-from . test_oscmd import _Test_OSCmd
-from commissaire.oscmd import fedora
-
-
-class Test_Fedora_OSCmd(_Test_OSCmd):
-    """
-    Tests for the OSCmd class for Fedora.
-    """
-
-    oscmdcls = fedora.OSCmd
-
-    def test_fedora_oscmd_commands(self):
-        """
-        Verify Fedora's OSCmd returns proper data on restart.
-        """
-        for meth, nargs in self.expected_methods:
-            args = tuple(range(nargs))
-            cmd = getattr(self.instance, meth)(*args)
-            self.assertEquals(list, type(cmd))

@@ -66,6 +66,17 @@ class Cluster(Model):
         return self
 
 
+class ClusterDeploy(Model):
+    """
+    Representation of a Cluster deploy operation.
+    """
+    _json_type = dict
+    _attributes = (
+        'status', 'version', 'deployed', 'in_process',
+        'started_at', 'finished_at')
+    _key = '/commissaire/cluster/{0}/deploy'
+
+
 class ClusterRestart(Model):
     """
     Representation of a Cluster restart operation.

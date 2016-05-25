@@ -225,6 +225,27 @@ class Transport:
         self.logger.debug('{0}: Bad result {1}'.format(ip, result))
         raise Exception('Can not run for {0}'.format(ip))
 
+    def deploy(self, ips, key_file, oscmd, kwargs):
+        """
+        Deploys a tree image on a host via ansible.
+
+        :param ips: IP address(es) to upgrade.
+        :type ips: str or list
+        :param key_file: Full path to the file holding the private SSH key.
+        :type key_file: str
+        :param oscmd: OSCmd class to use
+        :type oscmd: commissaire.oscmd.OSCmdBase
+        :param kwargs: keyword arguments for the remote command
+        :type kwargs: dict
+        :returns: tuple -- (exitcode(int), facts(dict)).
+        """
+        play_file = resource_filename(
+            'commissaire', 'data/ansible/playbooks/deploy.yaml')
+        deploy_command = " ".join(oscmd.deploy(kwargs['version']))
+        return self._run(
+            ips, key_file, play_file, [0],
+            {'commissaire_deploy_command': deploy_command})
+
     def upgrade(self, ips, key_file, oscmd, kwargs):
         """
         Upgrades a host via ansible.

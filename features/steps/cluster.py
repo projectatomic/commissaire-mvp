@@ -114,6 +114,11 @@ def impl(context, async_operation, cluster):
         context.request = requests.put(
             context.SERVER + '/api/v0/cluster/{0}/restart'.format(cluster),
             auth=context.auth)
+    elif async_operation == 'a tree deployment':
+        context.request = requests.put(
+            context.SERVER + '/api/v0/cluster/{0}/deploy'.format(cluster),
+            auth=context.auth,
+            data=json.dumps({'version': '1.2.3'}))
     else:
         raise NotImplementedError
 
@@ -164,6 +169,9 @@ def impl(context, async_operation):
     elif async_operation == 'restart':
         expected_keys = set(('status', 'restarted', 'in_process',
                              'started_at', 'finished_at'))
+    elif async_operation == 'deployment':
+        expected_keys = set(('status', 'version', 'deployed',
+                             'in_process', 'started_at', 'finished_at'))
     actual_keys = set(json.keys())
     assert actual_keys == expected_keys, \
            'Expected keys {0}, got {1}'.format(expected_keys, actual_keys)

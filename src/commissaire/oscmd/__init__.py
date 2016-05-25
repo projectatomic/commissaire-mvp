@@ -55,6 +55,19 @@ class OSCmdBase:
     kubelet_proxy_service = 'kube-proxy'
 
     @classmethod
+    def deploy(cls, version):
+        """
+        Deploy command. Must be overridden.
+
+        :param version: The tree image version to deploy
+        :type version: str
+        :return: The command to execute as a list
+        :rtype: list
+        """
+        raise NotImplementedError(
+            '{0}.deploy() must be overridden.'.format(cls.__name__))
+
+    @classmethod
     def restart(cls):
         """
         Restart command. Must be overriden.

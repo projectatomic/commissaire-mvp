@@ -31,7 +31,8 @@ from commissaire.config import Config, cli_etcd_or_default
 from commissaire.handlers.clusters import (
     ClustersResource, ClusterResource,
     ClusterHostsResource, ClusterSingleHostResource,
-    ClusterRestartResource, ClusterUpgradeResource)
+    ClusterDeployResource, ClusterRestartResource,
+    ClusterUpgradeResource)
 from commissaire.handlers.hosts import (
     HostsResource, HostResource, ImplicitHostResource)
 from commissaire.handlers.status import StatusResource
@@ -77,6 +78,9 @@ def create_app(
     app.add_route(
         '/api/v0/cluster/{name}/hosts/{address}',
         ClusterSingleHostResource(store, None))
+    app.add_route(
+        '/api/v0/cluster/{name}/deploy',
+        ClusterDeployResource(store, None))
     app.add_route(
         '/api/v0/cluster/{name}/restart',
         ClusterRestartResource(store, None))

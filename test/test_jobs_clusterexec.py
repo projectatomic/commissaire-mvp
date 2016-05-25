@@ -50,7 +50,7 @@ class Test_JobsClusterExec(TestCase):
         """
         Verify the clusterexec.
         """
-        for cmd in ('restart', 'upgrade'):
+        for cmd in ('deploy', 'restart', 'upgrade'):
             with contextlib.nested(
                     mock.patch('cherrypy.engine.publish'),
                     mock.patch('commissaire.transport.ansibleapi.Transport'),

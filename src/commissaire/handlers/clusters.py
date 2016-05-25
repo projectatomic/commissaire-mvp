@@ -26,7 +26,7 @@ from multiprocessing import Process
 from commissaire.resource import Resource
 from commissaire.jobs.clusterexec import clusterexec
 from commissaire.handlers.models import (
-    Cluster, Clusters, ClusterRestart, ClusterUpgrade, Hosts)
+    Cluster, Clusters, ClusterDeploy, ClusterRestart, ClusterUpgrade, Hosts)
 
 import commissaire.handlers.util as util
 
@@ -331,6 +331,120 @@ class ClusterSingleHostResource(ClusterHostsResource):
             resp.status = falcon.HTTP_200
         except KeyError:
             resp.status = falcon.HTTP_404
+
+
+class ClusterDeployResource(Resource):
+    """
+    Resource for initiating or querying the deployment of a particular
+    tree image across a Cluster.
+    """
+
+    def on_get(self, req, resp, name):
+        """
+        Handles GET (or "status") requests for a tree image deployment
+        across a Cluster.
+
+        :param req: Request instance that will be passed through.
+        :type req: falcon.Request
+        :param resp: Response instance that will be passed through.
+        :type resp: falcon.Response
+        :param name: The name of the Cluster undergoing deployment.
+        :type name: str
+        """
+        if not util.etcd_cluster_exists(name):
+            self.logger.info(
+                'Upgrade GET requested for nonexistent cluster {0}'.format(
+                    name))
+            resp.status = falcon.HTTP_404
+            return
+
+        try:
+            cluster_deploy = ClusterDeploy.retrieve(name)
+            self.logger.debug('Found ClusterDeploy for {0}'.format(name))
+        except:
+            # Return "204 No Content" if we have no status,
+            # meaning no upgrade is in progress.  The client
+            # can't be expected to know that, so it's not a
+            # client error (4xx).
+            self.logger.debug((
+                'Upgrade GET requested for {0} but no upgrade '
+                'has ever been executed.').format(name))
+
+            resp.status = falcon.HTTP_204
+            return
+
+        resp.status = falcon.HTTP_200
+        req.context['model'] = cluster_deploy
+
+    def on_put(self, req, resp, name):
+        """
+        Handles PUT (or "initiate") requests for a tree image deployment
+        across a Cluster.
+
+        :param req: Request instance that will be passed through.
+        :type req: falcon.Request
+        :param resp: Response instance that will be passed through.
+        :type resp: falcon.Response
+        :param name: The name of the Cluster undergoing deployment.
+        :type name: str
+        """
+        data = req.stream.read().decode()
+        try:
+            args = json.loads(data)
+            version = args['version']
+        except (KeyError, ValueError):
+            resp.status = falcon.HTTP_400
+            return
+
+        # Make sure the cluster name is valid.
+        if not util.etcd_cluster_exists(name):
+            self.logger.info(
+                'Upgrade PUT requested for nonexistent cluster {0}'.format(
+                    name))
+            resp.status = falcon.HTTP_404
+            return
+
+        # If the operation is already in progress and the requested version
+        # matches, return the current status with response code 200 OK.
+        # If the requested version conflicts with the operation in progress,
+        # return the current status with response code 409 Conflict.
+        try:
+            cluster_deploy = ClusterDeploy.retrieve(name)
+            self.logger.debug('Found ClusterDeploy for {0}'.format(name))
+            if not cluster_deploy.finished_at:
+                if cluster_deploy.version == version:
+                    self.logger.debug(
+                        'Cluster {0} deployment to {1} already in progress'.
+                        format(name, version))
+                    resp.status = falcon.HTTP_200
+                else:
+                    self.logger.debug(
+                        'Cluster deployment to {0} requested while '
+                        'upgrade to {1} was already in progress'.
+                        format(version, cluster_deploy.version))
+                    resp.status = falcon.HTTP_409
+                req.context['model'] = cluster_deploy
+                return
+        except:
+            pass
+
+        p = Process(target=clusterexec,
+                    args=(name, 'upgrade', {'version': version}))
+        p.start()
+        self.logger.debug('Started upgrade in clusterexecpool for {0}'.format(
+            name))
+        cluster_deploy_default = {
+            'status': 'in_process',
+            'version': version,
+            'deployed': [],
+            'in_process': [],
+            'started_at': datetime.datetime.utcnow().isoformat(),
+            'finished_at': None
+        }
+        cluster_deploy = ClusterDeploy(**cluster_deploy_default)
+        cluster_deploy.save(name)
+        resp.status = falcon.HTTP_201
+        req.context['model'] = cluster_deploy
 
 
 class ClusterRestartResource(Resource):

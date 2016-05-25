@@ -56,6 +56,18 @@ def clusterexec(cluster_name, command, kwargs={}):
             "started_at": datetime.datetime.utcnow().isoformat(),
             "finished_at": None
         }
+    elif command == 'deploy':
+        finished_hosts_key = 'deployed'
+        version = kwargs.get('version')
+        command_args = (version,)
+        cluster_status = {
+            "status": 'in_process',
+            "version": version,
+            "deployed": [],
+            "in_process": [],
+            "started_at": datetime.datetime.utcnow().isoformat(),
+            "finished_at": None
+        }
 
     end_status = 'finished'
 
