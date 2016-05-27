@@ -225,7 +225,7 @@ class Transport:
         self.logger.debug('{0}: Bad result {1}'.format(ip, result))
         raise Exception('Can not run for {0}'.format(ip))
 
-    def upgrade(self, ips, key_file, oscmd):
+    def upgrade(self, ips, key_file, oscmd, kwargs):
         """
         Upgrades a host via ansible.
 
@@ -235,15 +235,18 @@ class Transport:
         :type key_file: str
         :param oscmd: OSCmd class to use
         :type oscmd: commissaire.oscmd.OSCmdBase
+        :param kwargs: keyword arguments for the remote command
+        :type kwargs: dict
         :returns: tuple -- (exitcode(int), facts(dict)).
         """
         play_file = resource_filename(
             'commissaire', 'data/ansible/playbooks/upgrade.yaml')
+        upgrade_command = " ".join(oscmd.upgrade())
         return self._run(
             ips, key_file, play_file, [0],
-            {'commissaire_upgrade_command': " ".join(oscmd.upgrade())})
+            {'commissaire_upgrade_command': upgrade_command})
 
-    def restart(self, ips, key_file, oscmd):
+    def restart(self, ips, key_file, oscmd, kwargs):
         """
         Restarts a host via ansible.
 
@@ -253,13 +256,16 @@ class Transport:
         :type key_file: str
         :param oscmd: OSCmd class to use
         :type oscmd: commissaire.oscmd.OSCmdBase
+        :param kwargs: keyword arguments for the remote command
+        :type kwargs: dict
         :returns: tuple -- (exitcode(int), facts(dict)).
         """
         play_file = resource_filename(
             'commissaire', 'data/ansible/playbooks/restart.yaml')
+        restart_command = " ".join(oscmd.restart())
         return self._run(
             ips, key_file, play_file, [0, 2],
-            {'commissaire_restart_command': " ".join(oscmd.restart())})
+            {'commissaire_restart_command': restart_command})
 
     def get_info(self, ip, key_file):
         """
