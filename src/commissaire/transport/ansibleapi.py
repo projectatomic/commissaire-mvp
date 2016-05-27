@@ -126,7 +126,7 @@ class Transport:
 
         :param ips: IP address(es) to check.
         :type ips: str or list
-        :param key_file: Full path the the file holding the private SSH key.
+        :param key_file: Full path to the file holding the private SSH key.
         :type key_file: string
         :param play_file: Path to the ansible play file.
         :type play_file: str
@@ -231,10 +231,10 @@ class Transport:
 
         :param ips: IP address(es) to upgrade.
         :type ips: str or list
-        :param key_file: Full path the the file holding the private SSH key.
+        :param key_file: Full path to the file holding the private SSH key.
+        :type key_file: str
         :param oscmd: OSCmd class to use
         :type oscmd: commissaire.oscmd.OSCmdBase
-        :type key_file: str
         :returns: tuple -- (exitcode(int), facts(dict)).
         """
         play_file = resource_filename(
@@ -249,7 +249,7 @@ class Transport:
 
         :param ips: IP address(es) to restart.
         :type ips: str or list
-        :param key_file: Full path the the file holding the private SSH key.
+        :param key_file: Full path to the file holding the private SSH key.
         :type key_file: str
         :param oscmd: OSCmd class to use
         :type oscmd: commissaire.oscmd.OSCmdBase
@@ -267,7 +267,7 @@ class Transport:
 
         :param ip: IP address to check.
         :type ip: str
-        :param key_file: Full path the the file holding the private SSH key.
+        :param key_file: Full path to the file holding the private SSH key.
         :type key_file: str
         :returns: tuple -- (exitcode(int), facts(dict)).
         """
@@ -312,7 +312,7 @@ class Transport:
 
         :param ip: IP address to reboot.
         :type ip: str
-        :param key_file: Full path the the file holding the private SSH key.
+        :param key_file: Full path to the file holding the private SSH key.
         :type key_file: str
         :param config: Configuration information.
         :type config: commissaire.config.Config
