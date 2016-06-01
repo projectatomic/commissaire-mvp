@@ -16,7 +16,6 @@
 Test cases for the commissaire.handlers.clusters module.
 """
 
-import contextlib
 import json
 import mock
 
@@ -322,11 +321,9 @@ class Test_ClusterRestartResource(TestCase):
         # etcd.Client Patched to avoid the internal connection
         # Process is patched because we don't want to exec the subprocess
         # during unittesting
-        with contextlib.nested(
-                mock.patch('cherrypy.engine.publish'),
-                mock.patch('etcd.Client'),
-                mock.patch('commissaire.handlers.clusters.Process')) as (
-                    _publish, _, _):
+        with mock.patch('cherrypy.engine.publish') as _publish, \
+             mock.patch('etcd.Client'), \
+             mock.patch('commissaire.handlers.clusters.Process'):
 
             _publish.side_effect = (
                 [[MagicMock(value=self.etcd_cluster), None]],
@@ -599,11 +596,10 @@ class Test_ClusterUpgradeResource(TestCase):
         # etcd.Client Patched to avoid the internal connection
         # Process is patched because we don't want to exec the subprocess
         # during unittesting
-        with contextlib.nested(
-                mock.patch('cherrypy.engine.publish'),
-                mock.patch('etcd.Client'),
-                mock.patch('commissaire.handlers.clusters.Process')) as (
-                    _publish, _, _):
+        with mock.patch('cherrypy.engine.publish') as _publish, \
+             mock.patch('etcd.Client'), \
+             mock.patch('commissaire.handlers.clusters.Process'):
+
             self.datasource.get.side_effect = (
                 MagicMock(value=self.etcd_cluster),
                 etcd.EtcdKeyNotFound)

@@ -16,7 +16,7 @@
 The container manager package.
 """
 
-from commissaire.compat.logger import logging
+import logging
 
 
 class ContainerManagerBase(object):  # pragma: no cover

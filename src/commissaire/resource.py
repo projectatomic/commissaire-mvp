@@ -16,7 +16,7 @@
 Basic Resource for commissaire.
 """
 
-from commissaire.compat.logger import logging
+import logging
 
 
 class Resource:

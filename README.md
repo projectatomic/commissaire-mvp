@@ -12,4 +12,4 @@ See [Getting Started](http://commissaire.readthedocs.org/en/latest/gettingstarte
 
 Python Versions
 ===============
-Development is done mainly on Python 2.7 but 2.6 compatibility is attempted to make usage on older distributions possible.
+Commissaire is intended to work on both Python 2.7 and Python 3.1+.

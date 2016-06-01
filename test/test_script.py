@@ -17,7 +17,6 @@ Test cases for the commissaire.script module.
 """
 
 import argparse
-import contextlib
 import errno
 import etcd
 import falcon
@@ -104,10 +103,8 @@ class Test_ParseArgs(TestCase):
         for argv in failing_cases:
             sys.argv = argv
             parser = argparse.ArgumentParser()
-            with contextlib.nested(
-                    mock.patch('__builtin__.open'),
-                    mock.patch('argparse.ArgumentParser._print_message')
-                ) as (_open, _print):
+            with mock.patch('__builtin__.open') as _open, \
+                 mock.patch('argparse.ArgumentParser._print_message') as _print:
                 # Make sure no config file is opened.
                 _open.side_effect = IOError(
                     errno.ENOENT, os.strerror(errno.ENOENT))

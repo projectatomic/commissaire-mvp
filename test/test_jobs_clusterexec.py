@@ -16,7 +16,6 @@
 Test cases for the commissaire.jobs.clusterexec module.
 """
 
-import contextlib
 import etcd
 import mock
 import cherrypy
@@ -51,10 +50,10 @@ class Test_JobsClusterExec(TestCase):
         Verify the clusterexec.
         """
         for cmd in ('deploy', 'restart', 'upgrade'):
-            with contextlib.nested(
-                    mock.patch('cherrypy.engine.publish'),
-                    mock.patch('commissaire.transport.ansibleapi.Transport'),
-                    mock.patch('etcd.Client')) as (_publish, _tp, _store):
+            with mock.patch('cherrypy.engine.publish') as _publish, \
+                 mock.patch('commissaire.transport.ansibleapi.Transport') as _tp, \
+                 mock.patch('etcd.Client') as _store:
+
                 getattr(_tp(), cmd).return_value = (0, {})
 
                 child = {'value': self.etcd_host}
@@ -84,10 +83,10 @@ class Test_JobsClusterExec(TestCase):
         Verify the clusterexec will stop on first failure.
         """
         for cmd in ('restart', 'upgrade'):
-            with contextlib.nested(
-                    mock.patch('cherrypy.engine.publish'),
-                    mock.patch('commissaire.transport.ansibleapi.Transport'),
-                    mock.patch('etcd.Client')) as (_publish, _tp, _store):
+            with mock.patch('cherrypy.engine.publish') as _publish,
+                 mock.patch('commissaire.transport.ansibleapi.Transport') as _tp,
+                 mock.patch('etcd.Client') as _store:
+
                 getattr(_tp(), cmd).return_value = (1, {})
 
                 child = {'value': self.etcd_host}

@@ -17,8 +17,7 @@ Configuration.
 """
 
 import etcd
-
-from commissaire.compat.logger import logging
+import logging
 
 
 class Config(dict):

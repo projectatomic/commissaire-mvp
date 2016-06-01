@@ -19,11 +19,11 @@ The clusterexec job.
 import cherrypy
 import datetime
 import json
+import logging
 import tempfile
 
 from commissaire.transport import ansibleapi
 from commissaire.compat.b64 import base64
-from commissaire.compat.logger import logging
 from commissaire.oscmd import get_oscmd
 
 

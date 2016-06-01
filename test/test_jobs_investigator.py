@@ -16,7 +16,6 @@
 Test cases for the commissaire.jobs.investigator module.
 """
 
-import contextlib
 import mock
 import os
 
@@ -59,10 +58,10 @@ class Test_JobsInvestigator(TestCase):
         """
         Verify the investigator.
         """
-        with contextlib.nested(
-                mock.patch('cherrypy.engine.publish'),
-                mock.patch('commissaire.transport.ansibleapi.Transport'),
-                mock.patch('etcd.Client')) as (_publish, _tp, _store):
+        with mock.patch('cherrypy.engine.publish') as _publish, \
+             mock.patch('commissaire.transport.ansibleapi.Transport') as _tp, \
+             mock.patch('etcd.Client') as _store:
+
             _tp().get_info.return_value = (
                 0,
                 {

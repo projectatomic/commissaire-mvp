@@ -17,8 +17,7 @@ Authentication related code for commissaire.
 """
 
 import falcon
-
-from commissaire.compat.logger import logging
+import logging
 
 
 class Authenticator:

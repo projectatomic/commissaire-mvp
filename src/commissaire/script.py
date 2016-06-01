@@ -18,6 +18,8 @@
 import argparse
 import cherrypy
 import json
+import logging
+import logging.config
 import os
 import sys
 
@@ -26,7 +28,6 @@ import falcon
 
 from commissaire.compat.urlparser import urlparse
 from commissaire.compat import exception
-from commissaire.compat.logger import logging
 from commissaire.config import Config, cli_etcd_or_default
 from commissaire.handlers.clusters import (
     ClustersResource, ClusterResource,
@@ -152,10 +153,7 @@ def _read_config_file(path=None):
                         'File content must be a JSON object')
 
     # Normalize member names by converting hypens to underscores.
-    # FIXME Use a dictionary comprehension here when we no longer
-    #       have to support Python 2.6.
-    json_object = dict([(k.replace('-', '_'), v)
-                        for k, v in json_object.items()])
+    json_object = {k.replace('-', '_'): v for k, v in json_object.items()}
 
     # Special case:
     #
