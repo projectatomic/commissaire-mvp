@@ -16,8 +16,8 @@
 The investigator job.
 """
 
-import cherrypy
 import datetime
+import etcd
 import json
 import logging
 import os
@@ -50,7 +50,7 @@ def clean_up_key(key_file):
             '{0}. Exception:{1}'.format(key_file, exc_msg))
 
 
-def investigator(queue, config, run_once=False):
+def investigator(queue, config, store_kwargs={}, run_once=False):
     """
     Investigates new hosts to retrieve and store facts.
 
@@ -58,9 +58,13 @@ def investigator(queue, config, run_once=False):
     :type queue: Queue.Queue
     :param config: Configuration information.
     :type config: commissaire.config.Config
+    :param store_kwargs: Keyword arguments used to make the etcd client.
+    :type store_kwargs: dict
     """
     logger = logging.getLogger('investigator')
     logger.info('Investigator started')
+
+    store = etcd.Client(**store_kwargs)
 
     while True:
         # Statuses follow:
@@ -83,9 +87,10 @@ def investigator(queue, config, run_once=False):
         logger.info('Wrote key for {0}'.format(address))
         f.close()
 
-        key = '/commissaire/hosts/{0}'.format(address)
-        etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
-        if error:
+        try:
+            key = '/commissaire/hosts/{0}'.format(address)
+            etcd_resp = store.get(key)
+        except Exception as error:
             logger.warn(
                 'Unable to continue for {0} due to '
                 '{1}: {2}. Returning...'.format(address, type(error), error))
@@ -106,13 +111,13 @@ def investigator(queue, config, run_once=False):
             logger.warn('Getting info failed for {0}: {1}'.format(
                 address, exc_msg))
             data['status'] = 'failed'
-            cherrypy.engine.publish('store-save', key, json.dumps(data))[0]
+            store.write(key, json.dumps(data))
             clean_up_key(key_file)
             if run_once:
                 break
             continue
 
-        cherrypy.engine.publish('store-save', key, json.dumps(data))[0]
+        store.write(key, json.dumps(data))
         logger.info(
             'Finished and stored investigation data for {0}'.format(address))
         logger.debug('Finished investigation update for {0}: {1}'.format(
@@ -124,13 +129,13 @@ def investigator(queue, config, run_once=False):
             result, facts = transport.bootstrap(
                 address, key_file, config, oscmd)
             data['status'] = 'inactive'
-            cherrypy.engine.publish('store-save', key, json.dumps(data))[0]
+            store.write(key, json.dumps(data))
         except:
             exc_type, exc_msg, tb = sys.exc_info()
             logger.warn('Unable to start bootstraping for {0}: {1}'.format(
                 address, exc_msg))
             data['status'] = 'disassociated'
-            cherrypy.engine.publish('store-save', key, json.dumps(data))[0]
+            store.write(key, json.dumps(data))
             clean_up_key(key_file)
             if run_once:
                 break
@@ -161,7 +166,7 @@ def investigator(queue, config, run_once=False):
                 'the container manager: {1}'.format(address, exc_msg))
             data['status'] = 'inactive'
 
-        cherrypy.engine.publish('store-save', key, json.dumps(data))[0]
+        store.write(key, json.dumps(data))
         logger.info(
             'Finished bootstrapping for {0}'.format(address))
         logging.debug('Finished bootstrapping for {0}: {1}'.format(

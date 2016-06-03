@@ -58,9 +58,9 @@ class Test_JobsInvestigator(TestCase):
         """
         Verify the investigator.
         """
-        with mock.patch('cherrypy.engine.publish') as _publish, \
-             mock.patch('commissaire.transport.ansibleapi.Transport') as _tp, \
-             mock.patch('etcd.Client') as _store:
+        with mock.patch('commissaire.transport.ansibleapi.Transport') as _tp, \
+             mock.patch('etcd.Client.get') as _etcd_get, \
+             mock.patch('etcd.Client.write') as _etcd_write:
 
             _tp().get_info.return_value = (
                 0,
@@ -73,8 +73,9 @@ class Test_JobsInvestigator(TestCase):
             )
 
             q = Queue()
-            _publish.return_value = [[
-                MagicMock('etcd.EtcdResult', value=self.etcd_host), None]]
+
+            _etcd_get.return_value = MagicMock(
+                'etcd.EtcdResult', value=self.etcd_host)
 
             to_investigate = {
                 'address': '10.0.0.2',
@@ -92,6 +93,7 @@ class Test_JobsInvestigator(TestCase):
             }
 
             q.put_nowait((to_investigate, ssh_priv_key, 'root'))
-            investigator(q, connection_config, True)
+            investigator(q, connection_config, run_once=True)
 
-            self.assertEquals(3, _publish.call_count)
+            self.assertEquals(1, _etcd_get.call_count)
+            self.assertEquals(2, _etcd_write.call_count)

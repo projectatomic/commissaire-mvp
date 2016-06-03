@@ -19,7 +19,6 @@ Status handlers.
 import cherrypy
 import falcon
 
-from commissaire.jobs import PROCS
 from commissaire.resource import Resource
 from commissaire.handlers.models import Status
 
@@ -64,7 +63,7 @@ class StatusResource(Resource):
 
         # Check investigator proccess
         # XXX: Change investigator if more than 1 process is allowed
-        if PROCS['investigator'].is_alive():
+        if cherrypy.engine.publish('investigator-is-alive')[0]:
             kwargs['investigator']['status'] = 'OK'
             kwargs['investigator']['info']['size'] = 1
             kwargs['investigator']['info']['in_use'] = 1

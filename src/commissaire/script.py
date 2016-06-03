@@ -37,9 +37,6 @@ from commissaire.handlers.clusters import (
 from commissaire.handlers.hosts import (
     HostsResource, HostResource, ImplicitHostResource)
 from commissaire.handlers.status import StatusResource
-from commissaire.queues import INVESTIGATE_QUEUE
-from commissaire.jobs import PROCS
-from commissaire.jobs.investigator import investigator
 from commissaire.middleware import JSONify
 from commissaire.ssl_adapter import ClientCertBuiltinSSLAdapter
 
@@ -260,8 +257,8 @@ def main():  # pragma: no cover
     """
     Main script entry point.
     """
-    from multiprocessing import Process
-    from commissaire.cherrypy_plugins import CherryPyStorePlugin
+    from commissaire.cherrypy_plugins import (
+        CherryPyStorePlugin, CherryPyInvestigatorPlugin)
     config = Config()
 
     epilog = ('Example: ./commissaire -e http://127.0.0.1:2379'
@@ -405,16 +402,18 @@ def main():  # pragma: no cover
         logging.info('Commissaire server TLS will be enabled.')
     server.subscribe()
 
+    # Handle UNIX signals (SIGTERM, SIGHUP, SIGUSR1)
+    if hasattr(cherrypy.engine, 'signal_handler'):
+        cherrypy.engine.signal_handler.subscribe()
+
     # Add our plugins
     CherryPyStorePlugin(cherrypy.engine, store_kwargs).subscribe()
+    CherryPyInvestigatorPlugin(
+        cherrypy.engine, config, store_kwargs).subscribe()
+
     # NOTE: Anything that requires etcd should start AFTER
     # the engine is started
     cherrypy.engine.start()
-
-    # Start processes
-    PROCS['investigator'] = Process(
-        target=investigator, args=(INVESTIGATE_QUEUE, config))
-    PROCS['investigator'].start()
 
     try:
         # Make and mount the app
@@ -440,9 +439,6 @@ def main():  # pragma: no cover
         _, ex, _ = exception.raise_if_not(Exception)
         logging.fatal('Unable to start server: {0}'.format(ex))
         cherrypy.engine.stop()
-
-    PROCS['investigator'].terminate()
-    PROCS['investigator'].join()
 
 
 if __name__ == '__main__':  # pragma: no cover

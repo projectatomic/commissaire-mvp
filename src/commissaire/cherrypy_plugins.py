@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-CherryPy plugin for storing objects.
+Custom CherryPy plugins for commissaire.
 """
 
 import sys
@@ -21,6 +21,49 @@ import sys
 import etcd
 
 from cherrypy.process import plugins
+
+from multiprocessing import Process
+from commissaire.queues import INVESTIGATE_QUEUE
+from commissaire.jobs.investigator import investigator
+
+
+class CherryPyInvestigatorPlugin(plugins.SimplePlugin):
+
+    def __init__(self, bus, config, store_kwargs):
+        """
+        Creates a new instance of the CherryPyInvestigatorPlugin.
+
+        :param bus: The CherryPy bus.
+        :type bus: cherrypy.process.wspbus.Bus
+        :param config: Configuration information.
+        :type config: commissaire.config.Config
+        :param store_kwargs: Keyword arguments used to make the etcd client.
+        :type store_kwargs: dict
+        """
+        plugins.SimplePlugin.__init__(self, bus)
+        self.process = Process(
+            target=investigator,
+            args=(INVESTIGATE_QUEUE, config, store_kwargs))
+        self.process.daemon = True
+        self.bus.subscribe('investigator-is-alive', self.is_alive)
+
+    def start(self):
+        """
+        Starts the investigator process.
+        """
+        self.process.start()
+
+    def is_alive(self):
+        """
+        Returns whether the investigator process object is alive.
+
+        The investigator process object is alive from the moment the
+        start() method returns until the child process terminates.
+
+        :returns: Whether the investigator is alive
+        :rtype: bool
+        """
+        return self.process.is_alive()
 
 
 class CherryPyStorePlugin(plugins.SimplePlugin):
