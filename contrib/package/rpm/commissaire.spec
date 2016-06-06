@@ -6,17 +6,20 @@
 %bcond_without tests
 %endif
 
+%global prerelease rc3
+
 Name:           commissaire
-Version:        0.0.1rc3
-Release:        1%{?dist}
+Version:        0.0.1
+Release:        0.1.%{prerelease}%{?dist}
 Summary:        Simple cluster host management
 License:        GPLv3+
 URL:            http://github.com/projectatomic/commissaire
-Source0:        https://github.com/projectatomic/%{name}/archive/%{version}.tar.gz
+Source0:        https://github.com/projectatomic/%{name}/archive/%{version}%{prerelease}.tar.gz
 
 BuildArch:      noarch
 
 BuildRequires:  python-devel
+BuildRequires:  systemd
 
 # For docs
 BuildRequires:  python-sphinx
@@ -57,7 +60,7 @@ Example tasks include:
 
 
 %prep
-%autosetup
+%autosetup -n %{name}-%{version}%{prerelease}
 
 
 %build
@@ -87,11 +90,11 @@ install -D contrib/systemd/commissaire.service %{buildroot}%{_unitdir}/commissai
 
 
 %files
-%license COPYING
+%license LICENSE
 %doc README.md
 %doc CONTRIBUTORS
 %doc MAINTAINERS
-%doc doc/apidoc/*.rst
+%doc build/sphinx/text/*.txt
 %{_bindir}/commissaire
 %{python2_sitelib}/*
 %{_sysconfdir}/sysconfig/commissaire
