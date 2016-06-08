@@ -41,7 +41,6 @@ class Test_CreateApp(TestCase):
         with mock.patch('cherrypy.engine.publish') as _publish:
             _publish.return_value = [[[], etcd.EtcdKeyNotFound]]
             app = script.create_app(
-                None,
                 'commissaire.authentication.httpbasicauth',
                 {'filepath': os.path.realpath('../conf/users.json')})
             self.assertTrue(isinstance(app, falcon.API))

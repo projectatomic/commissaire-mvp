@@ -70,11 +70,7 @@ class Test_ClustersResource(TestCase):
 
     def before(self):
         self.api = falcon.API(middleware=[JSONify()])
-        self.datasource = etcd.Client()
-        self.return_value = MagicMock(etcd.EtcdResult)
-        self.datasource.get = MagicMock(name='get')
-        self.datasource.get.return_value = self.return_value
-        self.resource = clusters.ClustersResource(self.datasource)
+        self.resource = clusters.ClustersResource()
         self.api.add_route('/api/v0/clusters', self.resource)
 
     def test_clusters_listing(self):
@@ -166,15 +162,7 @@ class Test_ClusterResource(TestCase):
 
     def before(self):
         self.api = falcon.API(middleware=[JSONify()])
-        self.datasource = MagicMock(etcd.Client)
-        self.return_value = MagicMock(etcd.EtcdResult)
-        self.datasource.get = MagicMock(name='get')
-        self.datasource.get.return_value = self.return_value
-        self.datasource.set = MagicMock(name='set')
-        self.datasource.set.return_value = self.return_value
-        self.datasource.delete = MagicMock(name='delete')
-        self.datasource.delete.return_value = self.return_value
-        self.resource = clusters.ClusterResource(self.datasource)
+        self.resource = clusters.ClusterResource()
         self.api.add_route('/api/v0/cluster/{name}', self.resource)
 
     def test_cluster_retrieve(self):
@@ -289,10 +277,7 @@ class Test_ClusterRestartResource(TestCase):
 
     def before(self):
         self.api = falcon.API(middleware=[JSONify()])
-        self.datasource = MagicMock(etcd.Client)
-        self.datasource.get = MagicMock(name='get')
-        self.datasource.set = MagicMock(name='set')
-        self.resource = clusters.ClusterRestartResource(self.datasource)
+        self.resource = clusters.ClusterRestartResource()
         self.api.add_route('/api/v0/cluster/{name}/restart', self.resource)
 
     def test_cluster_restart_retrieve(self):
@@ -351,13 +336,7 @@ class Test_ClusterHostsResource(TestCase):
 
     def before(self):
         self.api = falcon.API(middleware=[JSONify()])
-        self.datasource = MagicMock(etcd.Client)
-        self.return_value = MagicMock(etcd.EtcdResult)
-        self.datasource.get = MagicMock(name='get')
-        self.datasource.get.return_value = self.return_value
-        self.datasource.set = MagicMock(name='set')
-        self.datasource.set.return_value = self.return_value
-        self.resource = clusters.ClusterHostsResource(self.datasource)
+        self.resource = clusters.ClusterHostsResource()
         self.api.add_route('/api/v0/cluster/{name}/hosts', self.resource)
 
     def test_cluster_hosts_retrieve(self):
@@ -389,8 +368,6 @@ class Test_ClusterHostsResource(TestCase):
             # Verify setting host list works with a proper request
             _publish.return_value = [[MagicMock(
                 value=self.etcd_cluster), None]]
-            # self.datasource.get.return_value = MagicMock(
-            #    value=self.etcd_cluster)
             body = self.simulate_request(
                 '/api/v0/cluster/development/hosts', method='PUT',
                 body='{"old": ["10.2.0.2"], "new": ["10.2.0.2", "10.2.0.3"]}')
@@ -442,15 +419,7 @@ class Test_ClusterSingleHostResource(TestCase):
 
     def before(self):
         self.api = falcon.API(middleware=[JSONify()])
-        self.datasource = MagicMock(etcd.Client)
-        self.return_value = MagicMock(etcd.EtcdResult)
-        self.datasource.get = MagicMock(name='get')
-        self.datasource.get.return_value = self.return_value
-        self.datasource.set = MagicMock(name='set')
-        self.datasource.set.return_value = self.return_value
-        self.datasource.write = MagicMock(name='set')
-        self.datasource.write.return_value = self.return_value
-        self.resource = clusters.ClusterSingleHostResource(self.datasource)
+        self.resource = clusters.ClusterSingleHostResource()
         self.api.add_route(
             '/api/v0/cluster/{name}/hosts/{address}', self.resource)
 
@@ -559,10 +528,7 @@ class Test_ClusterUpgradeResource(TestCase):
 
     def before(self):
         self.api = falcon.API(middleware=[JSONify()])
-        self.datasource = MagicMock(etcd.Client)
-        self.datasource.get = MagicMock(name='get')
-        self.datasource.set = MagicMock(name='set')
-        self.resource = clusters.ClusterUpgradeResource(self.datasource)
+        self.resource = clusters.ClusterUpgradeResource()
         self.api.add_route('/api/v0/cluster/{name}/upgrade', self.resource)
 
     def test_cluster_upgrade_retrieve(self):
@@ -571,8 +537,6 @@ class Test_ClusterUpgradeResource(TestCase):
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
             # Verify if the cluster upgrade exists the data is returned
-            self.datasource.get.return_value = MagicMock(
-                'etcd.EtcdResult', value=self.etcd_cluster)
             _publish.return_value = [[MagicMock(value=self.aupgrade), None]]
             body = self.simulate_request('/api/v0/cluster/development/upgrade')
             self.assertEqual(falcon.HTTP_200, self.srmock.status)
@@ -599,10 +563,6 @@ class Test_ClusterUpgradeResource(TestCase):
         with mock.patch('cherrypy.engine.publish') as _publish, \
              mock.patch('etcd.Client'), \
              mock.patch('commissaire.handlers.clusters.Process'):
-
-            self.datasource.get.side_effect = (
-                MagicMock(value=self.etcd_cluster),
-                etcd.EtcdKeyNotFound)
 
             _publish.side_effect = (
                 [[MagicMock(value=self.etcd_cluster), None]],

@@ -58,11 +58,8 @@ class Test_StatusResource(TestCase):
 
     def before(self):
         self.api = falcon.API(middleware=[JSONify()])
-        self.datasource = etcd.Client()
         self.return_value = MagicMock(etcd.EtcdResult)
-        self.datasource.get = MagicMock(name='get')
-        self.datasource.get.return_value = self.return_value
-        self.resource = status.StatusResource(self.datasource)
+        self.resource = status.StatusResource()
         self.api.add_route('/api/v0/status', self.resource)
 
     def test_status_retrieve(self):

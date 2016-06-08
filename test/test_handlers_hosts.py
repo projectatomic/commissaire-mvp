@@ -87,11 +87,8 @@ class Test_HostsResource(TestCase):
 
     def before(self):
         self.api = falcon.API(middleware = [JSONify()])
-        self.datasource = etcd.Client()
         self.return_value = MagicMock(etcd.EtcdResult)
-        self.datasource.get = MagicMock(name='get')
-        self.datasource.get.return_value = self.return_value
-        self.resource = hosts.HostsResource(self.datasource)
+        self.resource = hosts.HostsResource()
         self.api.add_route('/api/v0/hosts', self.resource)
 
     def test_hosts_listing(self):
@@ -188,17 +185,8 @@ class Test_HostResource(TestCase):
 
     def before(self):
         self.api = falcon.API(middleware = [JSONify()])
-        self.datasource = etcd.Client()
         self.return_value = MagicMock(etcd.EtcdResult)
-        self.datasource.get = MagicMock(name='get')
-        self.datasource.get.return_value = self.return_value
-        self.datasource.delete = MagicMock(name='delete')
-        self.datasource.delete.return_value = self.return_value
-        self.datasource.set = MagicMock(name='set')
-        self.datasource.set.return_value = self.return_value
-        self.datasource.write = MagicMock(name='set')
-        self.datasource.write.return_value = self.return_value
-        self.resource = hosts.HostResource(self.datasource)
+        self.resource = hosts.HostResource()
         self.api.add_route('/api/v0/host/{address}', self.resource)
 
     def test_host_retrieve(self):
@@ -335,17 +323,8 @@ class Test_ImplicitHostResource(TestCase):
 
     def before(self):
         self.api = falcon.API(middleware = [JSONify()])
-        self.datasource = etcd.Client()
         self.return_value = MagicMock(etcd.EtcdResult)
-        self.datasource.get = MagicMock(name='get')
-        self.datasource.get.return_value = self.return_value
-        self.datasource.delete = MagicMock(name='delete')
-        self.datasource.delete.return_value = self.return_value
-        self.datasource.set = MagicMock(name='set')
-        self.datasource.set.return_value = self.return_value
-        self.datasource.write = MagicMock(name='set')
-        self.datasource.write.return_value = self.return_value
-        self.resource = hosts.ImplicitHostResource(self.datasource)
+        self.resource = hosts.ImplicitHostResource()
         self.api.add_route('/api/v0/host', self.resource)
 
     def test_implicit_host_create(self):

@@ -42,14 +42,11 @@ from commissaire.ssl_adapter import ClientCertBuiltinSSLAdapter
 
 
 def create_app(
-        store,
         authentication_module_name,
         authentication_kwargs):
     """
     Creates a new WSGI compliant commissaire application.
 
-    :param store: The etcd client to for storing/retrieving data.
-    :type store: etcd.Client
     :param authentication_module_name: Full name of the authentication module.
     :type authentication_module_name: str
     :param authentication_kwargs: Keyword arguments to pass to the auth mod.
@@ -68,27 +65,27 @@ def create_app(
 
     app = falcon.API(middleware=[authentication, JSONify()])
 
-    app.add_route('/api/v0/status', StatusResource(store, None))
-    app.add_route('/api/v0/cluster/{name}', ClusterResource(store, None))
+    app.add_route('/api/v0/status', StatusResource())
+    app.add_route('/api/v0/cluster/{name}', ClusterResource())
     app.add_route(
         '/api/v0/cluster/{name}/hosts',
-        ClusterHostsResource(store, None))
+        ClusterHostsResource())
     app.add_route(
         '/api/v0/cluster/{name}/hosts/{address}',
-        ClusterSingleHostResource(store, None))
+        ClusterSingleHostResource())
     app.add_route(
         '/api/v0/cluster/{name}/deploy',
-        ClusterDeployResource(store, None))
+        ClusterDeployResource())
     app.add_route(
         '/api/v0/cluster/{name}/restart',
-        ClusterRestartResource(store, None))
+        ClusterRestartResource())
     app.add_route(
         '/api/v0/cluster/{name}/upgrade',
-        ClusterUpgradeResource(store, None))
-    app.add_route('/api/v0/clusters', ClustersResource(store, None))
-    app.add_route('/api/v0/host', ImplicitHostResource(store, None))
-    app.add_route('/api/v0/host/{address}', HostResource(store, None))
-    app.add_route('/api/v0/hosts', HostsResource(store, None))
+        ClusterUpgradeResource())
+    app.add_route('/api/v0/clusters', ClustersResource())
+    app.add_route('/api/v0/host', ImplicitHostResource())
+    app.add_route('/api/v0/host/{address}', HostResource())
+    app.add_route('/api/v0/hosts', HostsResource())
     return app
 
 
@@ -428,7 +425,6 @@ def main():  # pragma: no cover
             authentication_kwargs = args.authentication_plugin_kwargs
 
         app = create_app(
-            ds,
             args.authentication_plugin,
             authentication_kwargs)
         cherrypy.tree.graft(app, "/")
