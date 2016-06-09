@@ -40,6 +40,12 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         self.process = Process(
             target=investigator,
             args=(INVESTIGATE_QUEUE, config, store_kwargs))
+        # FIXME Calling self.process.terminate() from this plugin
+        #       fails because the internal popen has somehow become
+        #       None.  Further investigation needed.  Work around the
+        #       issue by setting the daemon flag on the Process object,
+        #       which causes it to automatically terminate the child
+        #       process with the parent.
         self.process.daemon = True
         # TODO: Move to start()
         self.bus.subscribe('investigator-is-alive', self.is_alive)
