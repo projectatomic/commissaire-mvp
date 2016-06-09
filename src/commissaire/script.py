@@ -257,8 +257,8 @@ def main():  # pragma: no cover
     """
     Main script entry point.
     """
-    from commissaire.cherrypy_plugins import (
-        CherryPyStorePlugin, CherryPyInvestigatorPlugin)
+    from commissaire.cherrypy_plugins.store import StorePlugin
+    from commissaire.cherrypy_plugins.investigator import InvestigatorPlugin
     config = Config()
 
     epilog = ('Example: ./commissaire -e http://127.0.0.1:2379'
@@ -407,8 +407,8 @@ def main():  # pragma: no cover
         cherrypy.engine.signal_handler.subscribe()
 
     # Add our plugins
-    CherryPyStorePlugin(cherrypy.engine, store_kwargs).subscribe()
-    CherryPyInvestigatorPlugin(
+    StorePlugin(cherrypy.engine, store_kwargs).subscribe()
+    InvestigatorPlugin(
         cherrypy.engine, config, store_kwargs).subscribe()
 
     # NOTE: Anything that requires etcd should start AFTER

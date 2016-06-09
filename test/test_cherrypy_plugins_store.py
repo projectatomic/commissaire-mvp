@@ -13,18 +13,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Test cases for the commissaire.cherrypy_plugins module.
+Test cases for the commissaire.cherrypy_plugins.store module.
 """
 
 import mock
 
 from . import TestCase
-from commissaire import cherrypy_plugins
+from commissaire.cherrypy_plugins.store import Plugin
 
 
-class Test_CherryPyStorePlugin(TestCase):
+class Test_StorePlugin(TestCase):
     """
-    Tests for the CherryPyStorePlugin class.
+    Tests for the StorePlugin class.
     """
 
     #: Topics that should be registered
@@ -36,8 +36,7 @@ class Test_CherryPyStorePlugin(TestCase):
         """
         self.bus = mock.MagicMock()
         self.store_kwargs = {}
-        self.plugin = cherrypy_plugins.CherryPyStorePlugin(
-            self.bus, self.store_kwargs)
+        self.plugin = Plugin(self.bus, self.store_kwargs)
 
     def after(self):
         """
@@ -46,7 +45,7 @@ class Test_CherryPyStorePlugin(TestCase):
         self.bus = None
         self.plugin = None
 
-    def test_cherrypy_store_plugin_creation(self):
+    def test_store_plugin_creation(self):
         """
         Verify that the creation of the plugin works as it should.
         """
@@ -56,7 +55,7 @@ class Test_CherryPyStorePlugin(TestCase):
             # The Store should not have been called in any way
             self.assertEquals(0, _store().call_count)
 
-    def test_cherrypy_store_plugin__get_store(self):
+    def test_store_plugin__get_store(self):
         """
         Verify _get_store properly obtains a store instance.
         """
@@ -68,7 +67,7 @@ class Test_CherryPyStorePlugin(TestCase):
             self.assertEquals(store, _store())
             self.assertEquals(store, self.plugin.store)
 
-    def test_cherrypy_store_plugin_start(self):
+    def test_store_plugin_start(self):
         """
         Verify start() subscribes the proper topics.
         """
@@ -79,7 +78,7 @@ class Test_CherryPyStorePlugin(TestCase):
         for topic in self.topics:
             self.bus.subscribe.assert_any_call(topic, mock.ANY)
 
-    def test_cherrypy_store_plugin_stop(self):
+    def test_store_plugin_stop(self):
         """
         Verify stop() unsubscribes the proper topics.
         """
@@ -91,7 +90,7 @@ class Test_CherryPyStorePlugin(TestCase):
         for topic in self.topics:
             self.bus.unsubscribe.assert_any_call(topic, mock.ANY)
 
-    def test_cherrypy_store_save(self):
+    def test_store_save(self):
         """
         Verify store_save handles data properly.
         """
@@ -107,7 +106,7 @@ class Test_CherryPyStorePlugin(TestCase):
             # The result should be a tuple
             self.assertEquals((expected_result, None), result)
 
-    def test_cherrypy_store_save_error(self):
+    def test_store_save_error(self):
         """
         Verify store_save handles errors properly.
         """
@@ -123,7 +122,7 @@ class Test_CherryPyStorePlugin(TestCase):
             # The result should be a tuple
             self.assertEquals(([], expected_result), result)
 
-    def test_cherrypy_store_get(self):
+    def test_store_get(self):
         """
         Verify store_get returns data properly.
         """
@@ -138,7 +137,7 @@ class Test_CherryPyStorePlugin(TestCase):
             # The result should be a tuple
             self.assertEquals((expected_result, None), result)
 
-    def test_cherrypy_store_get_error(self):
+    def test_store_get_error(self):
         """
         Verify store_get returns errors properly.
         """
