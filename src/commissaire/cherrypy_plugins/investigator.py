@@ -16,6 +16,8 @@
 Investigator plugin which allows control of investigators via the wsbus.
 """
 
+import os
+
 from cherrypy.process import plugins
 
 from multiprocessing import Process
@@ -37,16 +39,19 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         :type store_kwargs: dict
         """
         plugins.SimplePlugin.__init__(self, bus)
+        # multiprocessing.Process() uses fork() to execute the target
+        # function.  That means the child process inherits the entire
+        # state of the main process, this plugin included.
+        #
+        # When this process is forked, self.process will be a valid
+        # Process object but self.process in the child process will
+        # not.  We capture our own PID up front so the we can later
+        # distinguish whether we're the parent or child process and
+        # avoid interacting with an invalid Process object.
+        self.main_pid = os.getpid()
         self.process = Process(
             target=investigator,
             args=(INVESTIGATE_QUEUE, config, store_kwargs))
-        # FIXME Calling self.process.terminate() from this plugin
-        #       fails because the internal popen has somehow become
-        #       None.  Further investigation needed.  Work around the
-        #       issue by setting the daemon flag on the Process object,
-        #       which causes it to automatically terminate the child
-        #       process with the parent.
-        self.process.daemon = True
         # TODO: Move to start()
         self.bus.subscribe('investigator-is-alive', self.is_alive)
 
@@ -63,6 +68,9 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         """
         self.bus.log('Stopping down Investigator plugin')
         self.bus.unsubscribe('investigator-is-alive', self.is_alive)
+        if os.getpid() == self.main_pid:
+            self.process.terminate()
+            self.process.join()
 
     def is_alive(self):
         """
