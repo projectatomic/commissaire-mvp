@@ -43,8 +43,8 @@ Requires:  py-bcrypt
 
 # Ansible's Python API has no stability guarantees,
 # so keep the acceptable versions on a short leash.
-Requires:  ansible >= 2.0.1.0
-Requires:  ansible < 2.0.2.0
+Requires:  ansible >= 2.1.0.0
+Requires:  ansible < 2.1.1.0
 
 %description
 Commissaire allows administrators of a Kubernetes, Atomic Enterprise or
@@ -102,6 +102,9 @@ install -D contrib/systemd/commissaire.service %{buildroot}%{_unitdir}/commissai
 
 
 %changelog
+* Tue Jun 14 2016 Steve Milner <smilner@redhat.com> - 0.0.1rc3-2
+- Bumped up ansible version.
+
 * Tue Apr 19 2016 Matthew Barnes <mbarnes@redhat.com> - 0.0.1rc3-1
 - Update for RC3.
 
