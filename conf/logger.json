@@ -58,6 +58,11 @@
             "level": "INFO",
             "propagate": false
         },
+        "store": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": false
+        },
         "transport": {
             "handlers": ["console"],
             "level": "INFO",

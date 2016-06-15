@@ -99,6 +99,7 @@ class Test_StorePlugin(TestCase):
         with mock.patch('etcd.Client') as _store:
             store = _store()
             expected_result = mock.MagicMock('etcd.EtcdResult')
+            expected_result.value = {}
             store.write.return_value = expected_result
             result = self.plugin.store_save(key, data)
             # The store should be called to set the data

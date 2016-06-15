@@ -16,6 +16,7 @@
 Custom CherryPy plugins for commissaire.
 """
 
+import logging
 import sys
 
 import etcd
@@ -35,6 +36,7 @@ class StorePlugin(plugins.SimplePlugin):
         :type store_kwargs: dict
         """
         plugins.SimplePlugin.__init__(self, bus)
+        self.logger = logging.getLogger('store')
         self.store_kwargs = store_kwargs
         self.store = None
 
@@ -85,7 +87,10 @@ class StorePlugin(plugins.SimplePlugin):
         """
         try:
             store = self._get_store()
-            return (store.write(key, json_entity, **kwargs), None)
+            self.logger.debug('> SAVE {0} : {1}'.format(key, json_entity))
+            response = store.write(key, json_entity, **kwargs)
+            self.logger.debug('< SAVE {0} : {1}'.format(key, response))
+            return (response, None)
         except:
             _, exc, _ = sys.exc_info()
             return ([], exc)
@@ -101,7 +106,10 @@ class StorePlugin(plugins.SimplePlugin):
         """
         try:
             store = self._get_store()
-            return (store.get(key), None)
+            self.logger.debug('> GET {0}'.format(key))
+            response = store.get(key)
+            self.logger.debug('< GET {0} : {1}'.format(key, response))
+            return (response, None)
         except:
             _, exc, _ = sys.exc_info()
             return ([], exc)
@@ -117,7 +125,10 @@ class StorePlugin(plugins.SimplePlugin):
         """
         try:
             store = self._get_store()
-            return (store.delete(key), None)
+            self.logger.debug('> DELETE {0}'.format(key))
+            response = store.delete(key)
+            self.logger.debug('< DELETE {0} : {1}'.format(key, response))
+            return (response, None)
         except:
             _, exc, _ = sys.exc_info()
             return ([], exc)
@@ -133,7 +144,10 @@ class StorePlugin(plugins.SimplePlugin):
         """
         try:
             store = self._get_store()
-            return (store.read(key, recursive=True), None)
+            self.logger.debug('> LIST {0}'.format(key))
+            response = store.read(key, recursive=True)
+            self.logger.debug('< LIST {0} : {1}'.format(key, response))
+            return (response, None)
         except:
             _, exc, _ = sys.exc_info()
             return ([], exc)
