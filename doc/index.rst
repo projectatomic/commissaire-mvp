@@ -8,6 +8,7 @@ Contents
 
    overview
    gettingstarted
+   tested_host_node_oss
    operations
    authentication
    logging
@@ -32,4 +33,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

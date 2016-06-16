@@ -20,7 +20,7 @@ Feature Overview
 - Service status for health checking
 - Plug-in based authentication framework
 - Command line interface for operators
-- Built in support for Atomic, RHEL, Fedora, and CentOS
+- :ref:`Built in support for Atomic, RHEL, Fedora, and CentOS <tested_host_node_oss>`
 
 
 Flow
@@ -31,7 +31,7 @@ Flow
 
 What commissaire Is Not
 -----------------------
-There are a lot of overloaded words in technology. It's important to note what 
+There are a lot of overloaded words in technology. It's important to note what
 commissaire is not as much as what it is. commissaire is not:
 
 - A Container Manager or scheduler (such as OpenShift or Kubernetes)
