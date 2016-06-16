@@ -1,6 +1,8 @@
 REST Endpoints
 ==============
 
+.. _rest_endpoints:
+
 Cluster
 -------
 **Endpoint**: /api/v0/cluster/{NAME}
@@ -452,4 +454,3 @@ Example
            }
        }
    }
-

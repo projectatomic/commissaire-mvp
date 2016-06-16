@@ -60,6 +60,9 @@ used when creating while *GET* must be used for retrieving.
 
 Bootstrapping
 -------------
+
+.. _bootstrapping:
+
 Bootstrapping happens when a new host is added to commissaire via the Host
 endpoint.
 
@@ -83,6 +86,8 @@ For specifics on the endpoint see :ref:`host_op`
 
 Cluster Operations with commctl
 -------------------------------
+
+.. _cluster_operations_with_commctl:
 
 These operations are done across all hosts associated with a cluster.
 

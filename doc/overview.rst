@@ -14,12 +14,12 @@ Feature Overview
 
 - Restart hosts in an OpenShift or Kubernetes cluster
 - Upgrade hosts in a OpenShift or Kubernetes cluster
-- Bootstrap new hosts into an existing OpenShift or Kubernetes cluster
+- :ref:`Bootstrap new hosts into an existing OpenShift or Kubernetes cluster <bootstrapping>`
 - No agent required for hosts: All communication is done over SSH
-- Simple REST interface for automation
+- :ref:`Simple REST interface for automation <rest_endpoints>`
 - Service status for health checking
 - Plug-in based authentication framework
-- Command line interface for operators
+- :ref:`Command line interface for operators <cluster_operations_with_commctl>`
 - :ref:`Built in support for Atomic, RHEL, Fedora, and CentOS <tested_host_node_oss>`
 
 
