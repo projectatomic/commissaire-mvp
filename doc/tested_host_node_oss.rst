@@ -11,9 +11,9 @@ to work.
 ================ ========= ========== ===========
 Operating System OS Family Version    Status
 ================ ========= ========== ===========
-CentOS Atomic    Linux     7.20160404 Should Work
-CentOS           Linux     7.2        Should Work
-Fedora Atomic    Linux     24         Should Work
+CentOS Atomic    Linux     7.20160404 Works
+CentOS           Linux     7.2        Works
+Fedora Atomic    Linux     24         Works
 Fedora Atomic    Linux     23         Works
 Fedora           Linux     24         Should Work
 Fedora           Linux     23         Works
