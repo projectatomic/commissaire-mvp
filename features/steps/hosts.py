@@ -86,6 +86,21 @@ def impl(context, operation, host):
             auth=context.auth)
 
 
+@when('we get host credentials for {host}')
+def impl(context, host):
+    context.host = host
+    context.request = requests.get(
+        context.SERVER + '/api/v0/host/{0}/creds'.format(context.host),
+        auth=context.auth)
+
+
+@then('commissaire will return the host credentials')
+def impl(context):
+    data = context.request.json()
+    assert 'ssh_priv_key' in data.keys()
+    assert 'remote_user' in data.keys()
+
+
 @then('commissaire will return {kind} host')
 def impl(context, kind):
     if kind == 'the single':
