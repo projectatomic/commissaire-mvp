@@ -57,6 +57,39 @@ class HostsResource(Resource):
             return
 
 
+class HostCredsResource(Resource):
+    """
+    Resource for getting credentials for a single host.
+    """
+
+    def on_get(self, req, resp, address):
+        """
+        Handles retrieval of existing Host credentials.
+
+        :param req: Request instance that will be passed through.
+        :type req: falcon.Request
+        :param resp: Response instance that will be passed through.
+        :type resp: falcon.Response
+        :param address: The address of the Host being requested.
+        :type address: str
+        """
+        # TODO: Verify input
+        # TODO: Decide if this should be a model or if it makes sense to
+        #       stay a subset off of Host and bypass the req.context
+        #       middleware system.
+        try:
+            host = Host.retrieve(address)
+            resp.status = falcon.HTTP_200
+            body = {
+                'ssh_priv_key': host.ssh_priv_key,
+                'remote_user': host.remote_user or 'root',
+            }
+            resp.body = json.dumps(body)
+        except:
+            resp.status = falcon.HTTP_404
+            return
+
+
 class HostResource(Resource):
     """
     Resource for working with a single Host.

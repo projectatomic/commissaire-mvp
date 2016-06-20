@@ -68,6 +68,50 @@ class Test_Hosts(TestCase):
         hosts_model = hosts.Hosts(hosts=[object()])
 
 
+class Test_HostCredsResource(TestCase):
+    """
+    Tests for the HostCreds Resource.
+    """
+    # TODO: This test could use some work
+
+    ahost = '{"ssh_priv_key": "dGVzdAo=", "remote_user": "root"}'
+
+    etcd_host = ('{"address": "10.2.0.2",'
+                 ' "ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
+                 ' "status": "available", "os": "atomic",'
+                 ' "cpus": 2, "memory": 11989228, "space": 487652,'
+                 ' "last_check": "2015-12-17T15:48:18.710454"}')
+
+    def before(self):
+        self.api = falcon.API(middleware = [JSONify()])
+        self.return_value = MagicMock(etcd.EtcdResult)
+        self.resource = hosts.HostCredsResource()
+        self.api.add_route('/api/v0/host/{address}/creds', self.resource)
+
+    def test_host_creds_retrieve(self):
+        """
+        Verify retrieving Host Credentials.
+        """
+        with mock.patch('cherrypy.engine.publish') as _publish:
+            # Verify if the host exists the data is returned
+            self.return_value.value = self.etcd_host
+            _publish.return_value = [[self.return_value, None]]
+
+            body = self.simulate_request('/api/v0/host/10.2.0.2/creds')
+            # datasource's get should have been called once
+            self.assertEqual(self.srmock.status, falcon.HTTP_200)
+            self.assertEqual(
+                json.loads(self.ahost),
+                json.loads(body[0]))
+
+            # Verify no host returns the proper result
+            _publish.reset_mock()
+            _publish.return_value = [[[], etcd.EtcdKeyNotFound()]]
+
+            body = self.simulate_request('/api/v0/host/10.9.9.9/creds')
+            self.assertEqual(self.srmock.status, falcon.HTTP_404)
+            self.assertEqual({}, json.loads(body[0]))
+
 class Test_HostsResource(TestCase):
     """
     Tests for the Hosts Resource.

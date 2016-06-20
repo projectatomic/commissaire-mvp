@@ -35,7 +35,7 @@ from commissaire.handlers.clusters import (
     ClusterDeployResource, ClusterRestartResource,
     ClusterUpgradeResource)
 from commissaire.handlers.hosts import (
-    HostsResource, HostResource, ImplicitHostResource)
+    HostCredsResource, HostsResource, HostResource, ImplicitHostResource)
 from commissaire.handlers.status import StatusResource
 from commissaire.middleware import JSONify
 from commissaire.ssl_adapter import ClientCertBuiltinSSLAdapter
@@ -85,6 +85,7 @@ def create_app(
     app.add_route('/api/v0/clusters', ClustersResource())
     app.add_route('/api/v0/host', ImplicitHostResource())
     app.add_route('/api/v0/host/{address}', HostResource())
+    app.add_route('/api/v0/host/{address}/creds', HostCredsResource())
     app.add_route('/api/v0/hosts', HostsResource())
     return app
 
