@@ -322,6 +322,22 @@ DELETE
 ``````
 Deletes a host record.
 
+HostCreds
+----
+
+**Endpoint**: /api/v0/host/{IP}/creds
+
+GET
+```
+Retrieve a specific hosts credentials.
+
+.. code-block:: javascript
+
+   {
+       "ssh_priv_key": string, // base64 encoded ssh private key
+       "remote_user":  string, // name of ssh user to use for connections
+   }
+
 
 Hosts
 -----

@@ -83,6 +83,22 @@ For specifics on the endpoint see :ref:`host_op`
    commissaire can help automate the bootstrapping of new hosts using
    cloud-init for early initialization.  See :ref:`cloud_init`.
 
+Connecting to a Host Node with commctl
+--------------------------------------
+
+.. _connecting_to_a_host_node_with_commctl:
+
+`commctl` provides a simple way to connect to your host node by pulling down
+the `ssh_priv_key` and `remote_user` from the server. The `ssh_priv_key` is
+stored temporarily and is removed upon the completion of the connection.
+
+To connect to a host node:
+
+.. include:: examples/commctl_host_ssh.rst
+
+To connect to a host node with extra ssh parameters:
+
+.. include:: examples/commctl_host_ssh_with_parameters.rst
 
 Cluster Operations with commctl
 -------------------------------
