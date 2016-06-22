@@ -1,6 +1,7 @@
 
 .. code-block:: shell
 
-   (virtualenv)$ PYTHONPATH=`pwd`/src python src/commissaire/script.py \
-       --config-file=/etc/commissaire/commissaire.conf &
+   (virtualenv)$ pip install -e /path/to/commissaire/checkout
+   ...
+   (virtualenv)$ commissaire --config-file=/etc/commissaire/commissaire.conf &
    ...
