@@ -353,7 +353,7 @@ class ClusterDeployResource(Resource):
         """
         if not util.etcd_cluster_exists(name):
             self.logger.info(
-                'Upgrade GET requested for nonexistent cluster {0}'.format(
+                'Deploy GET requested for nonexistent cluster {0}'.format(
                     name))
             resp.status = falcon.HTTP_404
             return
@@ -363,11 +363,11 @@ class ClusterDeployResource(Resource):
             self.logger.debug('Found ClusterDeploy for {0}'.format(name))
         except:
             # Return "204 No Content" if we have no status,
-            # meaning no upgrade is in progress.  The client
+            # meaning no deployment is in progress.  The client
             # can't be expected to know that, so it's not a
             # client error (4xx).
             self.logger.debug((
-                'Upgrade GET requested for {0} but no upgrade '
+                'Deploy GET requested for {0} but no deployment '
                 'has ever been executed.').format(name))
 
             resp.status = falcon.HTTP_204
@@ -399,7 +399,7 @@ class ClusterDeployResource(Resource):
         # Make sure the cluster name is valid.
         if not util.etcd_cluster_exists(name):
             self.logger.info(
-                'Upgrade PUT requested for nonexistent cluster {0}'.format(
+                'Deploy PUT requested for nonexistent cluster {0}'.format(
                     name))
             resp.status = falcon.HTTP_404
             return
@@ -420,7 +420,7 @@ class ClusterDeployResource(Resource):
                 else:
                     self.logger.debug(
                         'Cluster deployment to {0} requested while '
-                        'upgrade to {1} was already in progress'.
+                        'deployment to {1} was already in progress'.
                         format(version, cluster_deploy.version))
                     resp.status = falcon.HTTP_409
                 req.context['model'] = cluster_deploy
@@ -429,10 +429,11 @@ class ClusterDeployResource(Resource):
             pass
 
         p = Process(target=clusterexec,
-                    args=(name, 'upgrade', {'version': version}))
+                    args=(name, 'deploy', {'version': version}))
         p.start()
-        self.logger.debug('Started upgrade in clusterexecpool for {0}'.format(
-            name))
+        self.logger.debug(
+            'Started deployment to {0} in clusterexecpool for {1}'.format(
+                version, name))
         cluster_deploy_default = {
             'status': 'in_process',
             'version': version,
