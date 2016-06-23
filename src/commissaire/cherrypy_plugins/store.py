@@ -56,6 +56,7 @@ class StorePlugin(plugins.SimplePlugin):
         self.bus.subscribe("store-get", self.store_get)
         self.bus.subscribe("store-delete", self.store_delete)
         self.bus.subscribe("store-list", self.store_list)
+        self.bus.subscribe("store-manager-clone", self.store_manager_clone)
 
     def stop(self):
         """
@@ -66,6 +67,7 @@ class StorePlugin(plugins.SimplePlugin):
         self.bus.unsubscribe("store-get", self.store_get)
         self.bus.unsubscribe("store-delete", self.store_delete)
         self.bus.unsubscribe("store-list", self.store_list)
+        self.bus.unsubscribe("store-manager-clone", self.store_manager_clone)
 
     def store_save(self, key, json_entity, **kwargs):
         """
@@ -142,6 +144,15 @@ class StorePlugin(plugins.SimplePlugin):
         except:
             _, exc, _ = sys.exc_info()
             return ([], exc)
+
+    def store_manager_clone(self):
+        """
+        Creates a cloned instance of the configured StoreHandlerManager.
+
+        :returns: A cloned StoreHandlerManager
+        :rtype: commissaire.store.StoreHandlerManager
+        """
+        return self.manager.clone()
 
 
 #: Generic name for the plugin

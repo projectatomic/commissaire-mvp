@@ -26,6 +26,7 @@ from . import TestCase
 from mock import MagicMock
 from commissaire.handlers import clusters
 from commissaire.middleware import JSONify
+from commissaire.store.storehandlermanager import StoreHandlerManager
 
 
 class Test_Clusters(TestCase):
@@ -313,6 +314,7 @@ class Test_ClusterRestartResource(TestCase):
             _publish.side_effect = (
                 [[MagicMock(value=self.etcd_cluster), None]],
                 [[[], etcd.EtcdKeyNotFound]],
+                [MagicMock(StoreHandlerManager)],
                 [[MagicMock(etcd.EtcdResult, value=self.arestart), None]])
 
             body = self.simulate_request(
@@ -555,7 +557,7 @@ class Test_ClusterUpgradeResource(TestCase):
 
     def test_cluster_upgrade_create(self):
         """
-        Verify creating a cluster.
+        Verify creating a cluster upgrade.
         """
         # etcd.Client Patched to avoid the internal connection
         # Process is patched because we don't want to exec the subprocess
@@ -567,6 +569,7 @@ class Test_ClusterUpgradeResource(TestCase):
             _publish.side_effect = (
                 [[MagicMock(value=self.etcd_cluster), None]],
                 [[[], etcd.EtcdKeyNotFound]],
+                [MagicMock(StoreHandlerManager)],
                 [[MagicMock(etcd.EtcdResult, value=self.aupgrade), None]])
 
             # Verify with creation

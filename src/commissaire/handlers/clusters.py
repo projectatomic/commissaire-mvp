@@ -19,6 +19,7 @@ Cluster(s) handlers.
 import datetime
 import json
 
+import cherrypy
 import falcon
 
 from multiprocessing import Process
@@ -428,8 +429,9 @@ class ClusterDeployResource(Resource):
         except:
             pass
 
-        p = Process(target=clusterexec,
-                    args=(name, 'deploy', {'version': version}))
+        store_manager = cherrypy.engine.publish('store-manager-clone')[0]
+        args = (store_manager, name, 'deploy', {'version': version})
+        p = Process(target=clusterexec, args=args)
         p.start()
         self.logger.debug(
             'Started deployment to {0} in clusterexecpool for {1}'.format(
@@ -521,7 +523,9 @@ class ClusterRestartResource(Resource):
             pass
 
         # TODO: Move to a poll?
-        p = Process(target=clusterexec, args=(name, 'restart'))
+        store_manager = cherrypy.engine.publish('store-manager-clone')[0]
+        args = (store_manager, name, 'restart')
+        p = Process(target=clusterexec, args=args)
         p.start()
 
         self.logger.debug('Started restart in clusterexecpool for {0}'.format(
@@ -615,7 +619,9 @@ class ClusterUpgradeResource(Resource):
             pass
 
         # TODO: Move to a poll?
-        p = Process(target=clusterexec, args=(name, 'upgrade'))
+        store_manager = cherrypy.engine.publish('store-manager-clone')[0]
+        args = (store_manager, name, 'upgrade')
+        p = Process(target=clusterexec, args=args)
         p.start()
 
         self.logger.debug('Started upgrade in clusterexecpool for {0}'.format(

@@ -27,7 +27,7 @@ from commissaire.jobs.investigator import investigator
 
 class InvestigatorPlugin(plugins.SimplePlugin):
 
-    def __init__(self, bus, config, store_kwargs):
+    def __init__(self, bus, config):
         """
         Creates a new instance of the InvestigatorPlugin.
 
@@ -35,8 +35,6 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         :type bus: cherrypy.process.wspbus.Bus
         :param config: Configuration information.
         :type config: commissaire.config.Config
-        :param store_kwargs: Keyword arguments used to make the etcd client.
-        :type store_kwargs: dict
         """
         plugins.SimplePlugin.__init__(self, bus)
         # multiprocessing.Process() uses fork() to execute the target
@@ -51,7 +49,7 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         self.main_pid = os.getpid()
         self.process = Process(
             target=investigator,
-            args=(INVESTIGATE_QUEUE, config, store_kwargs))
+            args=(INVESTIGATE_QUEUE, config))
         # TODO: Move to start()
         self.bus.subscribe('investigator-is-alive', self.is_alive)
 

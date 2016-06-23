@@ -228,6 +228,8 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
     if cluster_name:
         etcd_cluster_add_host(cluster_name, address)
 
-    INVESTIGATE_QUEUE.put((host_creation, ssh_priv_key, remote_user))
+    store_manager = cherrypy.engine.publish('store-manager-clone')[0]
+    job_request = (store_manager, host_creation, ssh_priv_key, remote_user)
+    INVESTIGATE_QUEUE.put(job_request)
 
     return (falcon.HTTP_201, Host(**json.loads(new_host.value)))

@@ -16,7 +16,6 @@
 The clusterexec job.
 """
 
-import cherrypy
 import datetime
 import json
 import logging
@@ -27,12 +26,18 @@ from commissaire.compat.b64 import base64
 from commissaire.oscmd import get_oscmd
 
 
-def clusterexec(cluster_name, command, kwargs={}):
+def clusterexec(store_manager, cluster_name, command, kwargs={}):
     """
     Remote executes a shell commands across a cluster.
 
-    :param store: Data store to place results.
-    :type store: etcd.Client
+    :param store_manager: Proxy object for remtote stores
+    :type store_manager: commissaire.store.StoreHandlerManager
+    :param cluster_name: Name of the cluster to act on
+    :type cluster_name: str
+    :param command: Top-level command to execute
+    :type command: str
+    :param kwargs: Keyword arguments for the command
+    :type kwargs: dict
     """
     logger = logging.getLogger('clusterexec')
 
@@ -74,16 +79,15 @@ def clusterexec(cluster_name, command, kwargs={}):
     # Set the initial status in the store
     logger.info('Setting initial status.')
     logger.debug('Status={0}'.format(cluster_status))
-    cherrypy.engine.publish(
-        'store-save',
+    store_manager.save(
         '/commissaire/cluster/{0}/{1}'.format(cluster_name, command),
         json.dumps(cluster_status))
 
     # Collect all host addresses in the cluster
-    etcd_resp, error = cherrypy.engine.publish(
-        'store-get', '/commissaire/clusters/{0}'.format(cluster_name))[0]
-
-    if error:
+    try:
+        etcd_resp = store_manager.get(
+            '/commissaire/clusters/{0}'.format(cluster_name))
+    except Exception as error:
         logger.warn(
             'Unable to continue for {0} due to '
             '{1}: {2}. Returning...'.format(cluster_name, type(error), error))
@@ -98,9 +102,9 @@ def clusterexec(cluster_name, command, kwargs={}):
         logger.warn('No hosts in cluster {0}'.format(cluster_name))
 
     # TODO: Find better way to do this
-    a_hosts, error = cherrypy.engine.publish(
-        'store-get', '/commissaire/hosts')[0]
-    if error:
+    try:
+        a_hosts = store_manager.get('/commissaire/hosts')
+    except Exception as error:
         logger.warn(
             'No hosts in the cluster. Error: {0}. Exiting clusterexec'.format(
                 error))
@@ -120,8 +124,7 @@ def clusterexec(cluster_name, command, kwargs={}):
             command_list, a_host['address']))
 
         cluster_status['in_process'].append(a_host['address'])
-        cherrypy.engine.publish(
-            'store-save',
+        store_manager.save(
             '/commissaire/cluster/{0}/{1}'.format(cluster_name, command),
             json.dumps(cluster_status))
 
@@ -162,8 +165,7 @@ def clusterexec(cluster_name, command, kwargs={}):
             logger.warn('Host {0} was not in_process for {1} {2}'.format(
                 a_host['address'], command, cluster_name))
 
-        cherrypy.engine.publish(
-            'store-save',
+        store_manager.save(
             '/commissaire/cluster/{0}/{1}'.format(cluster_name, command),
             json.dumps(cluster_status))
         logger.info('Finished executing {0} for {1} in {2}'.format(
@@ -176,8 +178,7 @@ def clusterexec(cluster_name, command, kwargs={}):
     logger.debug('Cluster {0} final {1} status: {2}'.format(
         cluster_name, command, cluster_status))
 
-    cherrypy.engine.publish(
-        'store-save',
+    store_manager.save(
         '/commissaire/cluster/{0}/{1}'.format(cluster_name, command),
         json.dumps(cluster_status))
 

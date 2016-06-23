@@ -23,6 +23,7 @@ from . import TestCase
 from commissaire.compat.urlparser import urlparse
 
 from commissaire.jobs.investigator import clean_up_key, investigator
+from commissaire.store.storehandlermanager import StoreHandlerManager
 from Queue import Queue
 from mock import MagicMock
 
@@ -58,9 +59,7 @@ class Test_JobsInvestigator(TestCase):
         """
         Verify the investigator.
         """
-        with mock.patch('commissaire.transport.ansibleapi.Transport') as _tp, \
-             mock.patch('etcd.Client.get') as _etcd_get, \
-             mock.patch('etcd.Client.write') as _etcd_write:
+        with mock.patch('commissaire.transport.ansibleapi.Transport') as _tp:
 
             _tp().get_info.return_value = (
                 0,
@@ -73,9 +72,6 @@ class Test_JobsInvestigator(TestCase):
             )
 
             q = Queue()
-
-            _etcd_get.return_value = MagicMock(
-                'etcd.EtcdResult', value=self.etcd_host)
 
             to_investigate = {
                 'address': '10.0.0.2',
@@ -92,8 +88,12 @@ class Test_JobsInvestigator(TestCase):
                 }
             }
 
-            q.put_nowait((to_investigate, ssh_priv_key, 'root'))
+            manager = MagicMock(StoreHandlerManager)
+            manager.get.return_value = MagicMock(
+                'etcd.EtcdResult', value=self.etcd_host)
+
+            q.put_nowait((manager, to_investigate, ssh_priv_key, 'root'))
             investigator(q, connection_config, run_once=True)
 
-            self.assertEquals(1, _etcd_get.call_count)
-            self.assertEquals(2, _etcd_write.call_count)
+            self.assertEquals(1, manager.get.call_count)
+            self.assertEquals(2, manager.save.call_count)

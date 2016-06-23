@@ -26,6 +26,7 @@ from . import TestCase
 from mock import MagicMock
 from commissaire.handlers import hosts
 from commissaire.middleware import JSONify
+from commissaire.store.storehandlermanager import StoreHandlerManager
 
 
 class Test_Hosts(TestCase):
@@ -293,7 +294,8 @@ class Test_HostResource(TestCase):
                 [[MagicMock(value=self.etcd_host), None]],
                 [[MagicMock(value=self.etcd_host), None]],
                 [[MagicMock(value=self.etcd_cluster), None]],
-                [[MagicMock(value=self.etcd_cluster), None]])
+                [[MagicMock(value=self.etcd_cluster), None]],
+                [MagicMock(StoreHandlerManager)])
             data = ('{"ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                     ' "cluster": "testing"}')
             body = self.simulate_request(
@@ -381,7 +383,8 @@ class Test_ImplicitHostResource(TestCase):
                 [[MagicMock(value=self.etcd_host), None]],
                 [[MagicMock(value=self.etcd_host), None]],
                 [[MagicMock(value=self.etcd_cluster), None]],
-                [[MagicMock(value=self.etcd_host), None]])
+                [[MagicMock(value=self.etcd_host), None]],
+                [MagicMock(StoreHandlerManager)])
 
             data = ('{"ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                     ' "cluster": "testing"}')

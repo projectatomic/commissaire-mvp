@@ -35,8 +35,7 @@ class Test_InvestigatorPlugin(TestCase):
         Called before every test.
         """
         self.bus = mock.MagicMock()
-        self.store_kwargs = {}
-        self.plugin = Plugin(self.bus, {}, self.store_kwargs)
+        self.plugin = Plugin(self.bus, {})
 
     def after(self):
         """

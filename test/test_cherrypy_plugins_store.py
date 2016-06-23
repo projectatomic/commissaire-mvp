@@ -28,7 +28,11 @@ class Test_StorePlugin(TestCase):
     """
 
     #: Topics that should be registered
-    topics = ('store-get', 'store-save', 'store-delete', 'store-list')
+    topics = ('store-get',
+              'store-save',
+              'store-delete',
+              'store-list',
+              'store-manager-clone')
 
     def before(self):
         """
@@ -44,28 +48,6 @@ class Test_StorePlugin(TestCase):
         """
         self.bus = None
         self.plugin = None
-
-    def test_store_plugin_creation(self):
-        """
-        Verify that the creation of the plugin works as it should.
-        """
-        with mock.patch('etcd.Client') as _store:
-            # Store should be None
-            self.assertEquals(None, self.plugin.store)
-            # The Store should not have been called in any way
-            self.assertEquals(0, _store().call_count)
-
-    def test_store_plugin__get_store(self):
-        """
-        Verify _get_store properly obtains a store instance.
-        """
-        with mock.patch('etcd.Client') as _store:
-            store = self.plugin._get_store()
-            # We should have a store created with our kwargs
-            _store.assert_called_once_with(**self.store_kwargs)
-            # The returned stoer should be exactly the same
-            self.assertEquals(store, _store())
-            self.assertEquals(store, self.plugin.store)
 
     def test_store_plugin_start(self):
         """

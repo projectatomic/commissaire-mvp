@@ -406,8 +406,7 @@ def main():  # pragma: no cover
 
     # Add our plugins
     StorePlugin(cherrypy.engine, store_kwargs).subscribe()
-    InvestigatorPlugin(
-        cherrypy.engine, config, store_kwargs).subscribe()
+    InvestigatorPlugin(cherrypy.engine, config).subscribe()
 
     # NOTE: Anything that requires etcd should start AFTER
     # the engine is started

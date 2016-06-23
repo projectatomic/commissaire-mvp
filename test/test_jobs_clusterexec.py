@@ -24,6 +24,7 @@ from . import TestCase
 from commissaire.jobs.clusterexec import clusterexec
 from commissaire.config import Config
 from commissaire.compat.urlparser import urlparse
+from commissaire.store.storehandlermanager import StoreHandlerManager
 from mock import MagicMock
 
 
@@ -50,33 +51,25 @@ class Test_JobsClusterExec(TestCase):
         Verify the clusterexec.
         """
         for cmd in ('deploy', 'restart', 'upgrade'):
-            with mock.patch('cherrypy.engine.publish') as _publish, \
-                 mock.patch('commissaire.transport.ansibleapi.Transport') as _tp, \
+            with mock.patch('commissaire.transport.ansibleapi.Transport') as _tp, \
                  mock.patch('etcd.Client') as _store:
 
                 getattr(_tp(), cmd).return_value = (0, {})
 
                 child = {'value': self.etcd_host}
-                return_value = MagicMock(_children=[child])
-                return_value.leaves = return_value._children
+                hosts_return_value = MagicMock(_children=[child])
+                hosts_return_value.leaves = hosts_return_value._children
 
-                # store = _store()
-                # store.get = MagicMock('get')
-                # store.get.side_effect = (
-                _publish.side_effect = (
-                    [[MagicMock(value=self.etcd_cluster), None]],
-                    [[MagicMock(value=self.etcd_cluster), None]],
-                    [[return_value, None]],
-                    [[return_value, None]],
-                    [[return_value, None]],
-                    [[return_value, None]],
-                    [[return_value, None]],
+                manager = MagicMock(StoreHandlerManager)
+                manager.get.side_effect = (
+                    MagicMock(value=self.etcd_cluster),
+                    hosts_return_value
                 )
 
-                clusterexec('default', cmd)
+                clusterexec(manager, 'default', cmd)
 
-                # One for the cluster, one for the host
-                self.assertEquals(6, _publish.call_count)
+                self.assertEquals(2, manager.get.call_count)
+                self.assertEquals(4, manager.save.call_count)
 '''
     def test_clusterexec_stops_on_failure(self):
         """

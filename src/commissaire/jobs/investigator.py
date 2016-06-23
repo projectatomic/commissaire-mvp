@@ -17,7 +17,6 @@ The investigator job.
 """
 
 import datetime
-import etcd
 import json
 import logging
 import os
@@ -50,7 +49,7 @@ def clean_up_key(key_file):
             '{0}. Exception:{1}'.format(key_file, exc_msg))
 
 
-def investigator(queue, config, store_kwargs={}, run_once=False):
+def investigator(queue, config, run_once=False):
     """
     Investigates new hosts to retrieve and store facts.
 
@@ -58,18 +57,14 @@ def investigator(queue, config, store_kwargs={}, run_once=False):
     :type queue: Queue.Queue
     :param config: Configuration information.
     :type config: commissaire.config.Config
-    :param store_kwargs: Keyword arguments used to make the etcd client.
-    :type store_kwargs: dict
     """
     logger = logging.getLogger('investigator')
     logger.info('Investigator started')
 
-    store = etcd.Client(**store_kwargs)
-
     while True:
         # Statuses follow:
         # http://commissaire.readthedocs.org/en/latest/enums.html#host-statuses
-        to_investigate, ssh_priv_key, remote_user = queue.get()
+        store_manager, to_investigate, ssh_priv_key, remote_user = queue.get()
         address = to_investigate['address']
         logger.info('{0} is now in investigating.'.format(address))
         logger.debug(
@@ -89,7 +84,7 @@ def investigator(queue, config, store_kwargs={}, run_once=False):
 
         try:
             key = '/commissaire/hosts/{0}'.format(address)
-            etcd_resp = store.get(key)
+            etcd_resp = store_manager.get(key)
         except Exception as error:
             logger.warn(
                 'Unable to continue for {0} due to '
@@ -111,13 +106,13 @@ def investigator(queue, config, store_kwargs={}, run_once=False):
             logger.warn('Getting info failed for {0}: {1}'.format(
                 address, exc_msg))
             data['status'] = 'failed'
-            store.write(key, json.dumps(data))
+            store_manager.save(key, json.dumps(data))
             clean_up_key(key_file)
             if run_once:
                 break
             continue
 
-        store.write(key, json.dumps(data))
+        store_manager.save(key, json.dumps(data))
         logger.info(
             'Finished and stored investigation data for {0}'.format(address))
         logger.debug('Finished investigation update for {0}: {1}'.format(
@@ -129,13 +124,13 @@ def investigator(queue, config, store_kwargs={}, run_once=False):
             result, facts = transport.bootstrap(
                 address, key_file, config, oscmd)
             data['status'] = 'inactive'
-            store.write(key, json.dumps(data))
+            store_manager.save(key, json.dumps(data))
         except:
             exc_type, exc_msg, tb = sys.exc_info()
             logger.warn('Unable to start bootstraping for {0}: {1}'.format(
                 address, exc_msg))
             data['status'] = 'disassociated'
-            store.write(key, json.dumps(data))
+            store_manager.save(key, json.dumps(data))
             clean_up_key(key_file)
             if run_once:
                 break
@@ -166,7 +161,7 @@ def investigator(queue, config, store_kwargs={}, run_once=False):
                 'the container manager: {1}'.format(address, exc_msg))
             data['status'] = 'inactive'
 
-        store.write(key, json.dumps(data))
+        store_manager.save(key, json.dumps(data))
         logger.info(
             'Finished bootstrapping for {0}'.format(address))
         logging.debug('Finished bootstrapping for {0}: {1}'.format(
