@@ -19,9 +19,13 @@ Custom CherryPy plugins for commissaire.
 import logging
 import sys
 
-import etcd
-
 from cherrypy.process import plugins
+
+from commissaire.store.storehandlermanager import StoreHandlerManager
+
+# XXX Temporary until we have a real storage plugin system.
+from commissaire.model import Model as BogusModelType
+from commissaire.store.etcdstoreplugin import EtcdStorePlugin
 
 
 class StorePlugin(plugins.SimplePlugin):
@@ -37,20 +41,11 @@ class StorePlugin(plugins.SimplePlugin):
         """
         plugins.SimplePlugin.__init__(self, bus)
         self.logger = logging.getLogger('store')
-        self.store_kwargs = store_kwargs
-        self.store = None
+        self.manager = StoreHandlerManager()
 
-    def _get_store(self):
-        """
-        Returns an instance of the store. If one has not been created this call
-        will also create the client using the self.store_kwargs.
-
-        :returns: The store.
-        :rtype: etcd.Client
-        """
-        if not self.store:
-            self.store = etcd.Client(**self.store_kwargs)
-        return self.store
+        # XXX Temporary until we have a real storage plugin system.
+        self.manager.register_store_handler(
+            EtcdStorePlugin, store_kwargs, BogusModelType)
 
     def start(self):
         """
@@ -86,9 +81,8 @@ class StorePlugin(plugins.SimplePlugin):
         :rtype: tuple(etcd.EtcdResult, Exception)
         """
         try:
-            store = self._get_store()
             self.logger.debug('> SAVE {0} : {1}'.format(key, json_entity))
-            response = store.write(key, json_entity, **kwargs)
+            response = self.manager.save(key, json_entity)
             self.logger.debug('< SAVE {0} : {1}'.format(key, response))
             return (response, None)
         except:
@@ -105,9 +99,8 @@ class StorePlugin(plugins.SimplePlugin):
         :rtype: tuple(etcd.EtcdResult, Exception)
         """
         try:
-            store = self._get_store()
             self.logger.debug('> GET {0}'.format(key))
-            response = store.get(key)
+            response = self.manager.get(key)
             self.logger.debug('< GET {0} : {1}'.format(key, response))
             return (response, None)
         except:
@@ -124,9 +117,8 @@ class StorePlugin(plugins.SimplePlugin):
         :rtype: tuple(etcd.EtcdResult, Exception)
         """
         try:
-            store = self._get_store()
             self.logger.debug('> DELETE {0}'.format(key))
-            response = store.delete(key)
+            response = self.manager.delete(key)
             self.logger.debug('< DELETE {0} : {1}'.format(key, response))
             return (response, None)
         except:
@@ -143,9 +135,8 @@ class StorePlugin(plugins.SimplePlugin):
         :rtype: tuple(etcd.EtcdResult, Exception)
         """
         try:
-            store = self._get_store()
             self.logger.debug('> LIST {0}'.format(key))
-            response = store.read(key, recursive=True)
+            response = self.manager.list(key)
             self.logger.debug('< LIST {0} : {1}'.format(key, response))
             return (response, None)
         except:

@@ -21,7 +21,7 @@ import json
 import cherrypy
 
 
-class Model:
+class Model(object):
     """
     Parent class for models.
     """
