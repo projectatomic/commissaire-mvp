@@ -115,9 +115,8 @@ class Model(object):
         :rtype: model
         """
         key = klass._key.format(*parts)
-        etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
-        if error:
-            raise Exception(error)
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        etcd_resp = store_manager.get(key)
         return klass(**json.loads(etcd_resp.value))
 
     def save(self, *parts):
@@ -129,10 +128,8 @@ class Model(object):
         :rtype: model
         """
         key = self._key.format(*parts)
-        etcd_resp, error = cherrypy.engine.publish(
-            'store-save', key, self.to_json())[0]
-        if error:
-            raise Exception(error)
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        store_manager.save(key, self.to_json())
         return self
 
     @classmethod
@@ -144,7 +141,6 @@ class Model(object):
         :returns: None
         """
         key = klass._key.format(*parts)
-        etcd_resp, error = cherrypy.engine.publish('store-delete', key)[0]
-        if error:
-            raise Exception(error)
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        store_manager.delete(key)
         return None

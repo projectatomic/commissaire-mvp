@@ -25,6 +25,7 @@ from falcon.testing.helpers import create_environ
 from commissaire.authentication import httpbasicauth
 from commissaire.authentication import httpauthclientcert
 from commissaire.ssl_adapter import SSL_CLIENT_VERIFY
+from commissaire.store.storehandlermanager import StoreHandlerManager
 
 class Test_HTTPBasicAuth(TestCase):
     """
@@ -152,7 +153,10 @@ class TestHTTPBasicAuthByEtcd(TestCase):
         Verify load raises when the key does not exist in etcd.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
-            _publish.return_value = [[[], etcd.EtcdKeyNotFound()]]
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
+            manager.get.side_effect = etcd.EtcdKeyNotFound
 
             self.assertRaises(
                 etcd.EtcdKeyNotFound,
@@ -163,7 +167,10 @@ class TestHTTPBasicAuthByEtcd(TestCase):
         Verify load raises when the data in Etcd is bad.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
-            _publish.return_value = [[[], ValueError()]]
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
+            manager.get.side_effect = ValueError
 
             self.assertRaises(
                 ValueError,
@@ -179,7 +186,10 @@ class TestHTTPBasicAuthByEtcd(TestCase):
             with open(self.user_config, 'r') as users_file:
                 return_value.value = users_file.read()
 
-            _publish.return_value = [[return_value, None]]
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
+            manager.get.return_value = return_value
 
             # Reload with the data from the mock'd Etcd
             http_basic_auth = httpbasicauth.HTTPBasicAuth()
@@ -201,7 +211,11 @@ class TestHTTPBasicAuthByEtcd(TestCase):
             return_value = mock.MagicMock(etcd.EtcdResult)
             with open(self.user_config, 'r') as users_file:
                 return_value.value = users_file.read()
-            _publish.return_value = [[return_value, None]]
+
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
+            manager.get.return_value = return_value
 
             # Reload with the data from the mock'd Etcd
             http_basic_auth = httpbasicauth.HTTPBasicAuth()
@@ -223,7 +237,11 @@ class TestHTTPBasicAuthByEtcd(TestCase):
             return_value = mock.MagicMock(etcd.EtcdResult)
             with open(self.user_config, 'r') as users_file:
                 return_value.value = users_file.read()
-            _publish.return_value = [[return_value, None]]
+
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
+            manager.get.return_value = return_value
 
             # Reload with the data from the mock'd Etcd
             http_basic_auth = httpbasicauth.HTTPBasicAuth()

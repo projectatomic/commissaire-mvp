@@ -20,6 +20,7 @@ import mock
 
 from . import TestCase
 from commissaire.cherrypy_plugins.store import Plugin
+from commissaire.store.storehandlermanager import StoreHandlerManager
 
 
 class Test_StorePlugin(TestCase):
@@ -28,19 +29,14 @@ class Test_StorePlugin(TestCase):
     """
 
     #: Topics that should be registered
-    topics = ('store-get',
-              'store-save',
-              'store-delete',
-              'store-list',
-              'store-manager-clone')
+    topics = ('get-store-manager',)
 
     def before(self):
         """
         Called before every test.
         """
         self.bus = mock.MagicMock()
-        self.store_kwargs = {}
-        self.plugin = Plugin(self.bus, self.store_kwargs)
+        self.plugin = Plugin(self.bus)
 
     def after(self):
         """
@@ -72,65 +68,9 @@ class Test_StorePlugin(TestCase):
         for topic in self.topics:
             self.bus.unsubscribe.assert_any_call(topic, mock.ANY)
 
-    def test_store_save(self):
+    def test_get_store_manager(self):
         """
-        Verify store_save handles data properly.
+        Verify get_store_manager returns a store manager.
         """
-        key = '/test'
-        data = "{}"
-        with mock.patch('etcd.Client') as _store:
-            store = _store()
-            expected_result = mock.MagicMock('etcd.EtcdResult')
-            expected_result.value = {}
-            store.write.return_value = expected_result
-            result = self.plugin.store_save(key, data)
-            # The store should be called to set the data
-            store.write.assert_called_once_with(key, data)
-            # The result should be a tuple
-            self.assertEquals((expected_result, None), result)
-
-    def test_store_save_error(self):
-        """
-        Verify store_save handles errors properly.
-        """
-        key = '/test'
-        data = "{}"
-        with mock.patch('etcd.Client') as _store:
-            store = _store()
-            expected_result = Exception()
-            store.write.side_effect = expected_result
-            result = self.plugin.store_save(key, data)
-            # The store should be called to set the data
-            store.write.assert_called_once_with(key, data)
-            # The result should be a tuple
-            self.assertEquals(([], expected_result), result)
-
-    def test_store_get(self):
-        """
-        Verify store_get returns data properly.
-        """
-        key = '/test'
-        with mock.patch('etcd.Client') as _store:
-            store = _store()
-            expected_result = mock.MagicMock('etcd.EtcdResult')
-            store.get.return_value = expected_result
-            result = self.plugin.store_get(key)
-            # The store should be called to get the data
-            store.get.assert_called_once_with(key)
-            # The result should be a tuple
-            self.assertEquals((expected_result, None), result)
-
-    def test_store_get_error(self):
-        """
-        Verify store_get returns errors properly.
-        """
-        key = '/test'
-        with mock.patch('etcd.Client') as _store:
-            store = _store()
-            expected_result = Exception()
-            store.get.side_effect = expected_result
-            result = self.plugin.store_get(key)
-            # The store should be called to get the data
-            store.get.assert_called_once_with(key)
-            # The result should be a tuple
-            self.assertEquals(([], expected_result), result)
+        manager = self.plugin.get_store_manager()
+        self.assertIsInstance(manager, StoreHandlerManager)

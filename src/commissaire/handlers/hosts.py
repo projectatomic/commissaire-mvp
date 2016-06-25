@@ -126,7 +126,6 @@ class HostResource(Resource):
         :param address: The address of the Host being requested.
         :type address: str
         """
-        # TODO: Move to bus.publish
         try:
             # Extract what we need from the input data.
             # Don't treat it as a skeletal host record.
@@ -208,7 +207,6 @@ class ImplicitHostResource(Resource):
         :param resp: Response instance that will be passed through.
         :type resp: falcon.Response
         """
-        # TODO: Move this to bus.publish
         try:
             address = req.env['REMOTE_ADDR']
         except KeyError:

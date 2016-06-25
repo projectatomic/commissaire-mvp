@@ -80,10 +80,9 @@ class ClusterResource(Resource):
         #      the host data in one etcd call and sort through
         #      them, or fetch the ones we need individually.
         #      For the MVP phase, fetch all is better.
-        # etcd_resp, error = cherrypy.engine.publish(
-        #     'store-get', '/commissaire/hosts')[0]
+        # store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        # etcd_resp = store_manager.get('/commissaire/hosts')
 
-        # if error:
         try:
             hosts = Hosts.retrieve()
         except:
@@ -117,8 +116,6 @@ class ClusterResource(Resource):
         """
         try:
             cluster = Cluster.retrieve(name)
-            # key = util.etcd_cluster_key(name)
-            # etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
         except:
             resp.status = falcon.HTTP_404
             return
@@ -429,8 +426,8 @@ class ClusterDeployResource(Resource):
         except:
             pass
 
-        store_manager = cherrypy.engine.publish('store-manager-clone')[0]
-        args = (store_manager, name, 'deploy', {'version': version})
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        args = (store_manager.clone(), name, 'deploy', {'version': version})
         p = Process(target=clusterexec, args=args)
         p.start()
         self.logger.debug(
@@ -523,8 +520,8 @@ class ClusterRestartResource(Resource):
             pass
 
         # TODO: Move to a poll?
-        store_manager = cherrypy.engine.publish('store-manager-clone')[0]
-        args = (store_manager, name, 'restart')
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        args = (store_manager.clone(), name, 'restart')
         p = Process(target=clusterexec, args=args)
         p.start()
 
@@ -619,8 +616,8 @@ class ClusterUpgradeResource(Resource):
             pass
 
         # TODO: Move to a poll?
-        store_manager = cherrypy.engine.publish('store-manager-clone')[0]
-        args = (store_manager, name, 'upgrade')
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        args = (store_manager.clone(), name, 'upgrade')
         p = Process(target=clusterexec, args=args)
         p.start()
 

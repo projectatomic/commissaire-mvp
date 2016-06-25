@@ -51,11 +51,13 @@ def etcd_cluster_exists(name):
     :type name: str
     """
     key = etcd_cluster_key(name)
+    store_manager = cherrypy.engine.publish('get-store-manager')[0]
 
-    etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
-    if not error:
-        return True
-    return False
+    try:
+        store_manager.get(key)
+    except:
+        return False
+    return True
 
 
 def etcd_cluster_has_host(name, address):
@@ -133,10 +135,8 @@ def etcd_cluster_remove_host(name, address):
 
     if address in cluster.hostset:
         cluster.hostset.remove(address)
-        cherrypy.engine.publish(
-            'store-save',
-            cluster.etcd.key,
-            cluster.to_json(secure=True))[0]
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        store_manager.save(cluster.etcd.key, cluster.to_json(secure=True))
 
 
 def get_cluster_model(name):
@@ -151,13 +151,15 @@ def get_cluster_model(name):
     :type name: str
     """
     key = etcd_cluster_key(name)
-    etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
+    store_manager = cherrypy.engine.publish('get-store-manager')[0]
 
-    if error:
-        return None
+    try:
+        etcd_resp = store_manager.get(key)
+        cluster = Cluster(**json.loads(etcd_resp.value))
+        cluster.etcd = etcd_resp
+    except:
+        cluster = None
 
-    cluster = Cluster(**json.loads(etcd_resp.value))
-    cluster.etcd = etcd_resp
     return cluster
 
 
@@ -183,9 +185,11 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
     :rtype: tuple
     """
     key = etcd_host_key(address)
-    etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
+    store_manager = cherrypy.engine.publish('get-store-manager')[0]
 
-    if not error:
+    try:
+        etcd_resp = store_manager.get(key)
+
         # Check if the request conflicts with the existing host.
         existing_host = Host(**json.loads(etcd_resp.value))
         if existing_host.ssh_priv_key != ssh_priv_key:
@@ -200,6 +204,8 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
         # we're done.  (Not using HTTP_201 since we didn't
         # actually create anything.)
         return (falcon.HTTP_200, existing_host)
+    except:
+        pass
 
     host_creation = {
         'address': address,
@@ -221,15 +227,14 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
 
     host = Host(**host_creation)
 
-    new_host, _ = cherrypy.engine.publish(
-        'store-save', key, host.to_json(secure=True))[0]
+    new_host = store_manager.save(key, host.to_json(secure=True))
 
     # Add host to the requested cluster.
     if cluster_name:
         etcd_cluster_add_host(cluster_name, address)
 
-    store_manager = cherrypy.engine.publish('store-manager-clone')[0]
-    job_request = (store_manager, host_creation, ssh_priv_key, remote_user)
+    manager_clone = store_manager.clone()
+    job_request = (manager_clone, host_creation, ssh_priv_key, remote_user)
     INVESTIGATE_QUEUE.put(job_request)
 
     return (falcon.HTTP_201, Host(**json.loads(new_host.value)))

@@ -54,10 +54,11 @@ class StatusResource(Resource):
         resp.status = falcon.HTTP_503
 
         # Check etcd connection
-        root_dir, error = cherrypy.engine.publish('store-get', '/')[0]
-        if not error:
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        try:
+            store_manager.get('/')
             kwargs['etcd']['status'] = 'OK'
-        else:
+        except:
             self.logger.debug('There is no root directory in etcd...')
             kwargs['etcd']['status'] = 'FAILED'
 

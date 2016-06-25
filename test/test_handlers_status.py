@@ -26,6 +26,7 @@ from . import TestCase
 from mock import MagicMock
 from commissaire.handlers import status
 from commissaire.middleware import JSONify
+from commissaire.store.storehandlermanager import StoreHandlerManager
 
 
 class Test_Status(TestCase):
@@ -67,10 +68,13 @@ class Test_StatusResource(TestCase):
         Verify retrieving Status.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             child = MagicMock(value='')
             self.return_value._children = [child]
             self.return_value.leaves = self.return_value._children
-            _publish.return_value = [[self.return_value, None]]
+            manager.get.return_value = self.return_value
 
             body = self.simulate_request('/api/v0/status')
             self.assertEqual(self.srmock.status, falcon.HTTP_200)

@@ -52,16 +52,18 @@ class HTTPBasicAuth(Authenticator):
         """
         Loads authentication information from etcd.
         """
-        d, error = cherrypy.engine.publish(
-            'store-get', '/commissaire/config/httpbasicauthbyuserlist')[0]
-
-        if error:
-            if type(error) == ValueError:
-                self.logger.warn(
-                    'User configuration in Etcd is not valid JSON. Raising...')
-            else:
-                self.logger.warn(
-                    'User configuration not found in Etcd. Raising...')
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        try:
+            key = '/commissaire/config/httpbasicauthbyuserlist'
+            d = store_manager.get(key)
+        except ValueError as error:
+            self.logger.warn(
+                'User configuration in Etcd is not valid JSON. Raising...')
+            self._data = {}
+            raise error
+        except Exception as error:
+            self.logger.warn(
+                'User configuration not found in Etcd. Raising...')
             self._data = {}
             raise error
 

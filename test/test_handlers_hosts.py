@@ -94,9 +94,12 @@ class Test_HostCredsResource(TestCase):
         Verify retrieving Host Credentials.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify if the host exists the data is returned
             self.return_value.value = self.etcd_host
-            _publish.return_value = [[self.return_value, None]]
+            manager.get.return_value = self.return_value
 
             body = self.simulate_request('/api/v0/host/10.2.0.2/creds')
             # datasource's get should have been called once
@@ -106,8 +109,8 @@ class Test_HostCredsResource(TestCase):
                 json.loads(body[0]))
 
             # Verify no host returns the proper result
-            _publish.reset_mock()
-            _publish.return_value = [[[], etcd.EtcdKeyNotFound()]]
+            manager.reset_mock()
+            manager.get.side_effect = etcd.EtcdKeyNotFound
 
             body = self.simulate_request('/api/v0/host/10.9.9.9/creds')
             self.assertEqual(self.srmock.status, falcon.HTTP_404)
@@ -141,9 +144,12 @@ class Test_HostsResource(TestCase):
         Verify listing Hosts.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             child = MagicMock(etcd.EtcdResult, value=self.etcd_host)
             self.return_value.children = [child]
-            _publish.return_value = [[self.return_value, None]]
+            manager.get.return_value = self.return_value
 
             body = self.simulate_request('/api/v0/hosts')
             # datasource's get should have been called once
@@ -239,9 +245,12 @@ class Test_HostResource(TestCase):
         Verify retrieving a Host.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify if the host exists the data is returned
             self.return_value.value = self.etcd_host
-            _publish.return_value = [[self.return_value, None]]
+            manager.get.return_value = self.return_value
 
             body = self.simulate_request('/api/v0/host/10.2.0.2')
             # datasource's get should have been called once
@@ -251,8 +260,8 @@ class Test_HostResource(TestCase):
                 json.loads(body[0]))
 
             # Verify no host returns the proper result
-            _publish.reset_mock()
-            _publish.return_value = [[[], etcd.EtcdKeyNotFound()]]
+            manager.reset_mock()
+            manager.get.side_effect = etcd.EtcdKeyNotFound
 
             body = self.simulate_request('/api/v0/host/10.9.9.9')
             self.assertEqual(self.srmock.status, falcon.HTTP_404)
@@ -263,24 +272,27 @@ class Test_HostResource(TestCase):
         Verify deleting a Host.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify if the host exists the data is returned
             self.return_value.value = self.etcd_host
-            _publish.return_value = [[self.return_value, None]]
+            manager.get.return_value = self.return_value
 
             # Verify deleting of an existing host works
             body = self.simulate_request(
                 '/api/v0/host/10.2.0.2', method='DELETE')
             # datasource's delete should have been called once
-            self.assertEquals(2, _publish.call_count)
+            self.assertEquals(1, manager.delete.call_count)
             self.assertEqual(self.srmock.status, falcon.HTTP_200)
             self.assertEqual({}, json.loads(body[0]))
 
             # Verify deleting of a non existing host returns the proper result
-            _publish.reset_mock()
-            _publish.return_value = [[None, etcd.EtcdKeyNotFound]]
+            manager.reset_mock()
+            manager.delete.side_effect = etcd.EtcdKeyNotFound
             body = self.simulate_request(
                 '/api/v0/host/10.9.9.9', method='DELETE')
-            self.assertEquals(2, _publish.call_count)
+            self.assertEquals(1, manager.delete.call_count)
             self.assertEqual(self.srmock.status, falcon.HTTP_404)
             self.assertEqual({}, json.loads(body[0]))
 
@@ -289,13 +301,16 @@ class Test_HostResource(TestCase):
         Verify creation of a Host.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
-            _publish.side_effect = (
-                [[[], etcd.EtcdKeyNotFound()]],
-                [[MagicMock(value=self.etcd_host), None]],
-                [[MagicMock(value=self.etcd_host), None]],
-                [[MagicMock(value=self.etcd_cluster), None]],
-                [[MagicMock(value=self.etcd_cluster), None]],
-                [MagicMock(StoreHandlerManager)])
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
+            manager.save.return_value = MagicMock(value=self.etcd_host)
+
+            manager.get.side_effect = (
+                etcd.EtcdKeyNotFound,
+                MagicMock(value=self.etcd_host),
+                MagicMock(value=self.etcd_cluster),
+                MagicMock(value=self.etcd_cluster))
             data = ('{"ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                     ' "cluster": "testing"}')
             body = self.simulate_request(
@@ -304,12 +319,7 @@ class Test_HostResource(TestCase):
             self.assertEqual(json.loads(self.ahost), json.loads(body[0]))
 
             # Make sure creation fails if the cluster doesn't exist
-            _publish.side_effect = (
-                [[[], etcd.EtcdKeyNotFound()]],
-                [[[], etcd.EtcdKeyNotFound()]],
-                [[[], etcd.EtcdKeyNotFound()]],
-                [[[], etcd.EtcdKeyNotFound()]],
-                [[[], etcd.EtcdKeyNotFound()]])
+            manager.get.side_effect = etcd.EtcdKeyNotFound
 
             body = self.simulate_request(
                 '/api/v0/host/10.2.0.2', method='PUT', body=data)
@@ -318,12 +328,9 @@ class Test_HostResource(TestCase):
 
             # Make sure creation is idempotent if the request parameters
             # agree with an existing host.
-            _publish.side_effect = (
-                [[MagicMock(value=self.etcd_host), None]],
-                [[MagicMock(value=self.etcd_cluster_with_host), None]],
-                [[MagicMock(value=self.etcd_cluster_with_host), None]],
-                [[MagicMock(value=self.etcd_cluster_with_host), None]],
-                [[MagicMock(value=self.etcd_cluster_with_host), None]])
+            manager.get.side_effect = (
+                MagicMock(value=self.etcd_host),
+                MagicMock(value=self.etcd_cluster_with_host))
 
             body = self.simulate_request(
                 '/api/v0/host/10.2.0.2', method='PUT', body=data)
@@ -333,12 +340,9 @@ class Test_HostResource(TestCase):
 
             # Make sure creation fails if the request parameters conflict
             # with an existing host.
-            _publish.side_effect = (
-                [[MagicMock(value=self.etcd_host), None]],
-                [[MagicMock(value=self.etcd_cluster_with_host), None]],
-                [[MagicMock(value=self.etcd_cluster_with_host), None]],
-                [[MagicMock(value=self.etcd_cluster_with_host), None]],
-                [[MagicMock(value=self.etcd_cluster_with_host), None]])
+            manager.get.side_effect = (
+                MagicMock(value=self.etcd_host),
+                MagicMock(value=self.etcd_cluster_with_host))
             bad_data = '{"ssh_priv_key": "boguskey"}'
             body = self.simulate_request(
                 '/api/v0/host/10.2.0.2', method='PUT', body=bad_data)
@@ -378,13 +382,16 @@ class Test_ImplicitHostResource(TestCase):
         Verify creation of a Host with an implied address.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
-            _publish.side_effect = (
-                [[[], etcd.EtcdKeyNotFound]],
-                [[MagicMock(value=self.etcd_host), None]],
-                [[MagicMock(value=self.etcd_host), None]],
-                [[MagicMock(value=self.etcd_cluster), None]],
-                [[MagicMock(value=self.etcd_host), None]],
-                [MagicMock(StoreHandlerManager)])
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
+            manager.save.return_value = MagicMock(value=self.etcd_host)
+
+            manager.get.side_effect = (
+                etcd.EtcdKeyNotFound,
+                MagicMock(value=self.etcd_host),
+                MagicMock(value=self.etcd_cluster),
+                MagicMock(value=self.etcd_host))
 
             data = ('{"ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                     ' "cluster": "testing"}')
@@ -394,9 +401,9 @@ class Test_ImplicitHostResource(TestCase):
             self.assertEqual(json.loads(self.ahost), json.loads(body[0]))
 
             # Make sure creation fails if the cluster doesn't exist
-            _publish.side_effect = (
-                [[MagicMock(value=self.etcd_host), None]],
-                [[[], etcd.EtcdKeyNotFound()]])
+            manager.get.side_effect = (
+                MagicMock(value=self.etcd_host),
+                etcd.EtcdKeyNotFound)
             body = self.simulate_request(
                 '/api/v0/host', method='PUT', body=data)
             self.assertEqual(self.srmock.status, falcon.HTTP_409)
@@ -404,10 +411,9 @@ class Test_ImplicitHostResource(TestCase):
 
             # Make sure creation is idempotent if the request parameters
             # agree with an existing host.
-            _publish.side_effect = (
-                [[MagicMock(value=self.etcd_host), None]],
-                [[MagicMock(value=self.etcd_cluster_with_host), None]],
-            )
+            manager.get.side_effect = (
+                MagicMock(value=self.etcd_host),
+                MagicMock(value=self.etcd_cluster_with_host))
 
             body = self.simulate_request(
                 '/api/v0/host', method='PUT', body=data)
@@ -416,10 +422,9 @@ class Test_ImplicitHostResource(TestCase):
 
             # Make sure creation fails if the request parameters conflict
             # with an existing host.
-            _publish.side_effect = (
-                [[MagicMock(value=self.etcd_host), None]],
-                [[MagicMock(value=self.etcd_host), None]],
-            )
+            manager.get.side_effect = (
+                MagicMock(value=self.etcd_host),
+                MagicMock(value=self.etcd_host))
             bad_data = '{"ssh_priv_key": "boguskey"}'
             body = self.simulate_request(
                 '/api/v0/host', method='PUT', body=bad_data)

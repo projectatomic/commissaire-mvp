@@ -59,10 +59,8 @@ class Cluster(Model):
         :rtype: model
         """
         key = self._key.format(*parts)
-        etcd_resp, error = cherrypy.engine.publish(
-            'store-save', key, self.to_json(secure=True))[0]
-        if error:
-            raise Exception(error)
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        store_manager.save(key, self.to_json(secure=True))
         return self
 
 
@@ -116,9 +114,8 @@ class Clusters(Model):
         :rtype: model
         """
         key = klass._key.format(*parts)
-        etcd_resp, error = cherrypy.engine.publish('store-list', key)[0]
-        if error:
-            raise Exception(error)
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        etcd_resp = store_manager.list(key)
         clusters = []
         for x in etcd_resp.children:
             if etcd_resp.key != x.key:
@@ -159,7 +156,8 @@ class Hosts(Model):
         """
         key = klass._key.format(*parts)
         hosts = []
-        etcd_resp, error = cherrypy.engine.publish('store-get', key)[0]
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        etcd_resp = store_manager.get(key)
 
         for host in etcd_resp.children:
             hosts.append(Host(**json.loads(host.value)))

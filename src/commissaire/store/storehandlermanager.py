@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 
 from copy import deepcopy
 
@@ -33,6 +34,10 @@ class StoreHandlerManager(object):
         self._registry = {}
         self._handlers = {}
 
+        # Logger objects can't be pickled, so fetch ours lazily so
+        # cloned StoreHandlerManagers can be passed to subprocesses.
+        self.__logger = None
+
         # XXX Temporary, until we're passing models instead of keys.
         self.bogus_model = BogusModelType()
 
@@ -44,6 +49,7 @@ class StoreHandlerManager(object):
         clone = StoreHandlerManager()
         clone._registry = deepcopy(self._registry)
         # clone._handlers should remain empty.
+        # clone.__loggers should remain None.
         return clone
 
     def register_store_handler(self, handler_type, config, *model_types):
@@ -74,6 +80,17 @@ class StoreHandlerManager(object):
             self._handlers.update({mt: handler for mt in model_types})
         return handler
 
+    def _get_logger(self):
+        """
+        Returns the 'store' logger for debug messages.
+
+        :returns: Logger
+        :rtype: logging.Logger
+        """
+        if self.__logger is None:
+            self.__logger = logging.getLogger('store')
+        return self.__logger
+
     def save(self, key, json_entity):
         """
         Saves data to a store and returns back a saved model.
@@ -89,8 +106,12 @@ class StoreHandlerManager(object):
         :returns: The saved model instance
         :rtype: commissaire.model.Model
         """
+        logger = self._get_logger()
         handler = self._get_handler(self.bogus_model)
-        return handler._save(key, json_entity)
+        logger.debug('> SAVE {0} : {1}'.format(key, json_entity))
+        response = handler._save(key, json_entity)
+        logger.debug('< SAVE {0} : {1}'.format(key, response))
+        return response
 
     def get(self, key):
         """
@@ -106,8 +127,12 @@ class StoreHandlerManager(object):
         :returns: The saved model instance
         :rtype: commissaire.model.Model
         """
+        logger = self._get_logger()
         handler = self._get_handler(self.bogus_model)
-        return handler._get(key)
+        logger.debug('> GET {0}'.format(key))
+        response = handler._get(key)
+        logger.debug('< GET {0} : {1}'.format(key, response))
+        return response
 
     def delete(self, key):
         """
@@ -121,8 +146,12 @@ class StoreHandlerManager(object):
         :param model_instance: Model instance to delete
         :type model_instance:
         """
+        logger = self._get_logger()
         handler = self._get_handler(self.bogus_model)
-        return handler._delete(key)
+        logger.debug('> DELETE {0}'.format(key))
+        response = handler._delete(key)
+        logger.debug('< DELETE {0} : {1}'.format(key, response))
+        return response
 
     def list(self, key):
         """
@@ -138,5 +167,9 @@ class StoreHandlerManager(object):
         :returns: A list of models
         :rtype: list
         """
+        logger = self._get_logger()
         handler = self._get_handler(self.bogus_model)
-        return handler._list(key)
+        logger.debug('> LIST {0}'.format(key))
+        response = handler._list(key)
+        logger.debug('< LIST {0} : {1}'.format(key, response))
+        return response

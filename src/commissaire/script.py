@@ -40,6 +40,10 @@ from commissaire.handlers.status import StatusResource
 from commissaire.middleware import JSONify
 from commissaire.ssl_adapter import ClientCertBuiltinSSLAdapter
 
+# XXX Temporary until we have a real storage plugin system.
+from commissaire.model import Model as BogusModelType
+from commissaire.store.etcdstoreplugin import EtcdStorePlugin
+
 
 def create_app(
         authentication_module_name,
@@ -405,8 +409,17 @@ def main():  # pragma: no cover
         cherrypy.engine.signal_handler.subscribe()
 
     # Add our plugins
-    StorePlugin(cherrypy.engine, store_kwargs).subscribe()
     InvestigatorPlugin(cherrypy.engine, config).subscribe()
+
+    # Configure the store plugin before starting it.
+    store_plugin = StorePlugin(cherrypy.engine)
+    store_manager = store_plugin.get_store_manager()
+
+    # XXX Temporary until we have a real storage plugin system.
+    store_manager.register_store_handler(
+        EtcdStorePlugin, store_kwargs, BogusModelType)
+
+    store_plugin.subscribe()
 
     # NOTE: Anything that requires etcd should start AFTER
     # the engine is started

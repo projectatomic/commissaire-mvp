@@ -79,12 +79,15 @@ class Test_ClustersResource(TestCase):
         Verify listing Clusters.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             child = MagicMock(key='/commissaire/clusters/' + self.cluster_name)
             return_value = MagicMock(etcd.EtcdResult)
             return_value.children = [child]
             return_value.leaves = return_value.children
             return_value.key = '/commissaire/clusters/'
-            _publish.return_value = [[return_value, None]]
+            manager.list.return_value = return_value
 
             body = self.simulate_request('/api/v0/clusters')
             self.assertEqual(falcon.HTTP_200, self.srmock.status)
@@ -98,10 +101,13 @@ class Test_ClustersResource(TestCase):
         Verify listing Clusters when no clusters exist.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             return_value = MagicMock(etcd.EtcdResult)
             return_value._children = []
             return_value.leaves = return_value._children
-            _publish.return_value = [[return_value, None]]
+            manager.get.return_value = return_value
 
             body = self.simulate_request('/api/v0/clusters')
             self.assertEqual(self.srmock.status, falcon.HTTP_200)
@@ -171,14 +177,17 @@ class Test_ClusterResource(TestCase):
         Verify retrieving a cluster.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify if the cluster exists the data is returned
             child = MagicMock(etcd.EtcdResult, value=self.etcd_host)
             hosts_return_value = MagicMock(
                 etcd.EtcdResult, value=child, children=[child])
 
-            _publish.side_effect = (
-                [[MagicMock(value=self.etcd_cluster), None]],
-                [[hosts_return_value, None]]
+            manager.get.side_effect = (
+                MagicMock(value=self.etcd_cluster),
+                hosts_return_value
             )
 
             body = self.simulate_request('/api/v0/cluster/development')
@@ -188,9 +197,8 @@ class Test_ClusterResource(TestCase):
                 json.loads(body[0]))
 
             # Verify no cluster returns the proper result
-            _publish.reset_mock()
-            _publish.side_effect = None
-            _publish.return_value = [[[], etcd.EtcdKeyNotFound()]]
+            manager.get.reset_mock()
+            manager.get.side_effect = etcd.EtcdKeyNotFound
 
             body = self.simulate_request('/api/v0/cluster/bogus')
             self.assertEqual(falcon.HTTP_404, self.srmock.status)
@@ -201,12 +209,15 @@ class Test_ClusterResource(TestCase):
         Verify creating a cluster.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify with creation
-            _publish.side_effect = (
-                [[[], etcd.EtcdKeyNotFound]],
-                [[MagicMock(value=self.etcd_cluster), None]],
-                [[MagicMock(value=self.etcd_cluster), None]],
-                [[MagicMock(value=self.etcd_cluster), None]],
+            manager.get.side_effect = (
+                etcd.EtcdKeyNotFound,
+                MagicMock(value=self.etcd_cluster),
+                MagicMock(value=self.etcd_cluster),
+                MagicMock(value=self.etcd_cluster)
             )
 
             body = self.simulate_request(
@@ -215,7 +226,7 @@ class Test_ClusterResource(TestCase):
             self.assertEquals('{}', body[0])
 
             # Verify with existing cluster
-            _publish.return_value = MagicMock(
+            manager.get.return_value = MagicMock(
                 value=self.etcd_cluster)
             body = self.simulate_request(
                 '/api/v0/cluster/development', method='PUT')
@@ -227,8 +238,11 @@ class Test_ClusterResource(TestCase):
         Verify deleting a cluster.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify with proper deletion
-            _publish.return_value = [[MagicMock(), None]]
+            manager.get.return_value = MagicMock()
             body = self.simulate_request(
                 '/api/v0/cluster/development', method='DELETE')
             # Get is called to verify cluster exists
@@ -236,10 +250,9 @@ class Test_ClusterResource(TestCase):
             self.assertEquals('{}', body[0])
 
             # Verify when key doesn't exist
-            _publish.return_value = [[[], etcd.EtcdKeyNotFound()]]
+            manager.delete.side_effect = etcd.EtcdKeyNotFound
             body = self.simulate_request(
                 '/api/v0/cluster/development', method='DELETE')
-            # Get is called to verify cluster exists
             self.assertEquals(falcon.HTTP_404, self.srmock.status)
             self.assertEquals('{}', body[0])
 
@@ -286,16 +299,19 @@ class Test_ClusterRestartResource(TestCase):
         Verify retrieving a cluster restart.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify if the cluster restart exists the data is returned
-            _publish.return_value = [[MagicMock(value=self.arestart), None]]
+            manager.get.return_value = MagicMock(value=self.arestart)
             body = self.simulate_request('/api/v0/cluster/development/restart')
             self.assertEqual(falcon.HTTP_200, self.srmock.status)
             self.assertEqual(json.loads(self.arestart), json.loads(body[0]))
 
             # Verify no cluster restart returns the proper result
-            _publish.side_effect = (
-                [[MagicMock(value=self.arestart), None]],
-                [[[], etcd.EtcdKeyNotFound()]])
+            manager.get.side_effect = (
+                MagicMock(value=self.arestart),
+                etcd.EtcdKeyNotFound)
             body = self.simulate_request('/api/v0/cluster/development/restart')
             self.assertEqual(falcon.HTTP_204, self.srmock.status)
             self.assertEqual([], body)  # Empty data
@@ -311,11 +327,14 @@ class Test_ClusterRestartResource(TestCase):
              mock.patch('etcd.Client'), \
              mock.patch('commissaire.handlers.clusters.Process'):
 
-            _publish.side_effect = (
-                [[MagicMock(value=self.etcd_cluster), None]],
-                [[[], etcd.EtcdKeyNotFound]],
-                [MagicMock(StoreHandlerManager)],
-                [[MagicMock(etcd.EtcdResult, value=self.arestart), None]])
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
+            manager.get.side_effect = (
+                MagicMock(value=self.etcd_cluster),
+                etcd.EtcdKeyNotFound,
+                MagicMock(StoreHandlerManager),
+                MagicMock(etcd.EtcdResult, value=self.arestart))
 
             body = self.simulate_request(
                 '/api/v0/cluster/development/restart',
@@ -346,9 +365,11 @@ class Test_ClusterHostsResource(TestCase):
         Verify retrieving a cluster host list.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify if the cluster exists the host list is returned
-            _publish.return_value = [[
-                MagicMock(value=self.etcd_cluster), None]]
+            manager.get.return_value = MagicMock(value=self.etcd_cluster)
             body = self.simulate_request('/api/v0/cluster/development/hosts')
             self.assertEqual(falcon.HTTP_200, self.srmock.status)
             self.assertEqual(
@@ -356,8 +377,7 @@ class Test_ClusterHostsResource(TestCase):
                 json.loads(body[0]))
 
             # Verify bad cluster name returns the proper result
-            _publish.return_value = [[
-                [], etcd.EtcdKeyNotFound]]
+            manager.get.side_effect = etcd.EtcdKeyNotFound
             body = self.simulate_request('/api/v0/cluster/bogus/hosts')
             self.assertEqual(falcon.HTTP_404, self.srmock.status)
             self.assertEqual({}, json.loads(body[0]))
@@ -367,9 +387,11 @@ class Test_ClusterHostsResource(TestCase):
         Verify overwriting a cluster host list.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify setting host list works with a proper request
-            _publish.return_value = [[MagicMock(
-                value=self.etcd_cluster), None]]
+            manager.get.return_value = MagicMock(value=self.etcd_cluster)
             body = self.simulate_request(
                 '/api/v0/cluster/development/hosts', method='PUT',
                 body='{"old": ["10.2.0.2"], "new": ["10.2.0.2", "10.2.0.3"]}')
@@ -377,7 +399,7 @@ class Test_ClusterHostsResource(TestCase):
             self.assertEqual({}, json.loads(body[0]))
 
             # Verify bad request (KeyError) returns the proper result
-            _publish.return_value = [[[], KeyError()]]
+            manager.get.side_effect = KeyError
             body = self.simulate_request(
                 '/api/v0/cluster/development/hosts', method='PUT',
                 body='{"new": ["10.2.0.2", "10.2.0.3"]}')
@@ -385,7 +407,7 @@ class Test_ClusterHostsResource(TestCase):
             self.assertEqual({}, json.loads(body[0]))
 
             # Verify bad request (TypeError) returns the proper result
-            _publish.return_value = [[[], TypeError()]]
+            manager.get.side_effect = TypeError
             body = self.simulate_request(
                 '/api/v0/cluster/development/hosts', method='PUT',
                 body='["10.2.0.2", "10.2.0.3"]')
@@ -393,7 +415,7 @@ class Test_ClusterHostsResource(TestCase):
             self.assertEqual({}, json.loads(body[0]))
 
             # Verify bad cluster name returns the proper result
-            _publish.return_value = [[[], etcd.EtcdKeyNotFound()]]
+            manager.get.side_effect = etcd.EtcdKeyNotFound
             body = self.simulate_request(
                 '/api/v0/cluster/bogus/hosts', method='PUT',
                 body='{"old": ["10.2.0.2"], "new": ["10.2.0.2", "10.2.0.3"]}')
@@ -401,8 +423,8 @@ class Test_ClusterHostsResource(TestCase):
             self.assertEqual({}, json.loads(body[0]))
 
             # Verify host list conflict returns the proper result
-            _publish.return_value = [[
-                MagicMock(value=self.etcd_cluster), None]]
+            manager.get.side_effect = None
+            manager.get.return_value = MagicMock(value=self.etcd_cluster)
             body = self.simulate_request(
                 '/api/v0/cluster/development/hosts', method='PUT',
                 body='{"old": [], "new": ["10.2.0.2", "10.2.0.3"]}')
@@ -430,25 +452,25 @@ class Test_ClusterSingleHostResource(TestCase):
         Verify host membership in a cluster.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify member host returns the proper result
-            _publish.return_value = [[
-                MagicMock(value=self.etcd_cluster), None]]
+            manager.get.return_value = MagicMock(value=self.etcd_cluster)
             body = self.simulate_request(
                 '/api/v0/cluster/development/hosts/10.2.0.2')
             self.assertEqual(falcon.HTTP_200, self.srmock.status)
             self.assertEqual({}, json.loads(body[0]))
 
             # Verify non-member host returns the proper result
-            _publish.return_value = [[
-                MagicMock(value=self.etcd_cluster), None]]
+            manager.get.return_value = MagicMock(value=self.etcd_cluster)
             body = self.simulate_request(
                 '/api/v0/cluster/development/hosts/10.9.9.9')
             self.assertEqual(falcon.HTTP_404, self.srmock.status)
             self.assertEqual({}, json.loads(body[0]))
 
             # Verify bad cluster name returns the proper result
-            _publish.return_value = [[
-                [], etcd.EtcdKeyNotFound()]]
+            manager.get.side_effect = etcd.EtcdKeyNotFound
             body = self.simulate_request(
                 '/api/v0/cluster/bogus/hosts/10.2.0.2')
             self.assertEqual(falcon.HTTP_404, self.srmock.status)
@@ -459,16 +481,18 @@ class Test_ClusterSingleHostResource(TestCase):
         Verify insertion of host in a cluster.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify inserting host returns the proper result
-            _publish.return_value = [[
-                MagicMock(value=self.etcd_cluster), None]]
+            manager.get.return_value = MagicMock(value=self.etcd_cluster)
             body = self.simulate_request(
                 '/api/v0/cluster/developent/hosts/10.2.0.3', method='PUT')
             self.assertEqual(falcon.HTTP_200, self.srmock.status)
             self.assertEqual({}, json.loads(body[0]))
 
             # Verify bad cluster name returns the proper result
-            _publish.return_value = [[[], etcd.EtcdKeyNotFound()]]
+            manager.get.side_effect = etcd.EtcdKeyNotFound
             body = self.simulate_request(
                 '/api/v0/cluster/bogus/hosts/10.2.0.3', method='PUT')
             self.assertEqual(falcon.HTTP_404, self.srmock.status)
@@ -479,16 +503,18 @@ class Test_ClusterSingleHostResource(TestCase):
         Verify deletion of host in a cluster.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify deleting host returns the proper result
-            _publish.return_value = [[
-                MagicMock(value=self.etcd_cluster), None]]
+            manager.get.return_value = MagicMock(value=self.etcd_cluster)
             body = self.simulate_request(
                 '/api/v0/cluster/development/hosts/10.2.0.2', method='DELETE')
             self.assertEqual(falcon.HTTP_200, self.srmock.status)
             self.assertEqual({}, json.loads(body[0]))
 
             # Verify bad cluster name returns the proper result
-            _publish.return_value = [[[], etcd.EtcdKeyNotFound()]]
+            manager.get.side_effect = etcd.EtcdKeyNotFound
             body = self.simulate_request(
                 '/api/v0/cluster/bogus/hosts/10.2.0.2', method='DELETE')
             self.assertEqual(falcon.HTTP_404, self.srmock.status)
@@ -538,18 +564,20 @@ class Test_ClusterUpgradeResource(TestCase):
         Verify retrieving a cluster upgrade.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
             # Verify if the cluster upgrade exists the data is returned
-            _publish.return_value = [[MagicMock(value=self.aupgrade), None]]
+            manager.get.return_value = MagicMock(value=self.aupgrade)
             body = self.simulate_request('/api/v0/cluster/development/upgrade')
             self.assertEqual(falcon.HTTP_200, self.srmock.status)
             self.assertEqual(json.loads(self.aupgrade), json.loads(body[0]))
 
             # Verify no cluster upgrade returns the proper result
-            _publish.reset_mock()
-            _publish.side_effect = (
-                [[MagicMock(
-                    'etcd.EtcdResult', value=self.etcd_cluster), None]],
-                [[[], etcd.EtcdKeyNotFound()]])
+            manager.reset_mock()
+            manager.get.side_effect = (
+                MagicMock('etcd.EtcdResult', value=self.etcd_cluster),
+                etcd.EtcdKeyNotFound())
 
             body = self.simulate_request('/api/v0/cluster/development/upgrade')
             self.assertEqual(falcon.HTTP_204, self.srmock.status)
@@ -566,11 +594,14 @@ class Test_ClusterUpgradeResource(TestCase):
              mock.patch('etcd.Client'), \
              mock.patch('commissaire.handlers.clusters.Process'):
 
-            _publish.side_effect = (
-                [[MagicMock(value=self.etcd_cluster), None]],
-                [[[], etcd.EtcdKeyNotFound]],
-                [MagicMock(StoreHandlerManager)],
-                [[MagicMock(etcd.EtcdResult, value=self.aupgrade), None]])
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
+            manager.get.side_effect = (
+                MagicMock(value=self.etcd_cluster),
+                etcd.EtcdKeyNotFound,
+                MagicMock(StoreHandlerManager),
+                MagicMock(etcd.EtcdResult, value=self.aupgrade))
 
             # Verify with creation
             body = self.simulate_request(
