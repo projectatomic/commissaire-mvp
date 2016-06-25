@@ -12,21 +12,23 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+"""
+Etcd based StoreHandler.
+"""
 
 import etcd
 
 from commissaire.store import StoreHandlerBase
 
 
-class EtcdStorePlugin(StoreHandlerBase):
+class EtcdStoreHandler(StoreHandlerBase):
     """
     Handler for data storage on etcd.
     """
 
     def __init__(self, config):
         """
-        Creates a new instance of EtcdStorePlugin.
+        Creates a new instance of EtcdStoreHandler.
 
         :param config: Configuration details
         :type config: dict
@@ -97,4 +99,4 @@ class EtcdStorePlugin(StoreHandlerBase):
         return self._store.read(key, recursive=True)
 
 
-StoreHandler = EtcdStorePlugin
+StoreHandler = EtcdStoreHandler

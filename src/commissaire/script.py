@@ -42,7 +42,7 @@ from commissaire.ssl_adapter import ClientCertBuiltinSSLAdapter
 
 # XXX Temporary until we have a real storage plugin system.
 from commissaire.model import Model as BogusModelType
-from commissaire.store.etcdstoreplugin import EtcdStorePlugin
+from commissaire.store.etcdstorehandler import EtcdStoreHandler
 
 
 def create_app(
@@ -417,7 +417,7 @@ def main():  # pragma: no cover
 
     # XXX Temporary until we have a real storage plugin system.
     store_manager.register_store_handler(
-        EtcdStorePlugin, store_kwargs, BogusModelType)
+        EtcdStoreHandler, store_kwargs, BogusModelType)
 
     store_plugin.subscribe()
 
