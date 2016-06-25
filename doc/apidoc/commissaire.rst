@@ -7,11 +7,13 @@ Subpackages
 .. toctree::
 
     commissaire.authentication
+    commissaire.cherrypy_plugins
     commissaire.compat
     commissaire.containermgr
     commissaire.handlers
     commissaire.jobs
     commissaire.oscmd
+    commissaire.store
     commissaire.transport
 
 Submodules
@@ -19,7 +21,6 @@ Submodules
 
 .. toctree::
 
-   commissaire.cherrypy_plugins
    commissaire.config
    commissaire.middleware
    commissaire.model
