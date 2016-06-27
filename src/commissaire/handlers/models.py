@@ -31,6 +31,7 @@ class Cluster(Model):
     _attributes = ('status', 'hostset')
     _hidden_attributes = ('hostset',)
     _key = '/commissaire/clusters/{0}'
+    _primary_key = 'name'
 
     def __init__(self, **kwargs):
         Model.__init__(self, **kwargs)
@@ -73,6 +74,7 @@ class ClusterDeploy(Model):
         'status', 'version', 'deployed', 'in_process',
         'started_at', 'finished_at')
     _key = '/commissaire/cluster/{0}/deploy'
+    _primary_key = 'name'
 
 
 class ClusterRestart(Model):
@@ -84,6 +86,7 @@ class ClusterRestart(Model):
         'status', 'restarted', 'in_process',
         'started_at', 'finished_at')
     _key = '/commissaire/cluster/{0}/restart'
+    _primary_key = 'name'
 
 
 class ClusterUpgrade(Model):
@@ -94,6 +97,7 @@ class ClusterUpgrade(Model):
     _attributes = (
         'status', 'upgraded', 'in_process', 'started_at', 'finished_at')
     _key = '/commissaire/cluster/{0}/upgrade'
+    _primary_key = 'name'
 
 
 class Clusters(Model):
@@ -135,6 +139,7 @@ class Host(Model):
         'space', 'last_check', 'ssh_priv_key', 'remote_user')
     _hidden_attributes = ('ssh_priv_key', 'remote_user')
     _key = '/commissaire/hosts/{0}'
+    _primary_key = 'address'
 
 
 class Hosts(Model):

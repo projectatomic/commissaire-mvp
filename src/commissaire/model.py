@@ -30,6 +30,8 @@ class Model(object):
     _attributes = ()
     _hidden_attributes = ()
     _key = ''
+    #: The primary way of looking up an instance
+    _primary_key = None
 
     def __init__(self, **kwargs):
         """
