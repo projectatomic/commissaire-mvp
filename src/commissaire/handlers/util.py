@@ -184,19 +184,30 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
     :return: (status, host)
     :rtype: tuple
     """
-    key = etcd_host_key(address)
     store_manager = cherrypy.engine.publish('get-store-manager')[0]
 
     try:
-        etcd_resp = store_manager.get(key)
-
         # Check if the request conflicts with the existing host.
-        existing_host = Host(**json.loads(etcd_resp.value))
+        # TODO: use some kind of global default for Hosts
+        existing_host = store_manager.get(
+            Host(
+                address=address,
+                status='',
+                os='',
+                cpus=0,
+                memory=0,
+                space=0,
+                last_check='',
+                ssh_priv_key='',
+                remote_user=''))
+
         if existing_host.ssh_priv_key != ssh_priv_key:
             return (falcon.HTTP_409, None)
         if cluster_name:
             try:
-                assert etcd_cluster_has_host(cluster_name, address)
+                # TODO: reenable once cluster work is done
+                # assert etcd_cluster_has_host(cluster_name, address)
+                pass
             except (AssertionError, KeyError):
                 return (falcon.HTTP_409, None)
 
@@ -227,14 +238,15 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
 
     host = Host(**host_creation)
 
-    new_host = store_manager.save(key, host.to_json(secure=True))
+    new_host = store_manager.save(host)
 
     # Add host to the requested cluster.
-    if cluster_name:
-        etcd_cluster_add_host(cluster_name, address)
+    # TODO: reenable once cluster work is done
+    # if cluster_name:
+    #    etcd_cluster_add_host(cluster_name, address)
 
     manager_clone = store_manager.clone()
     job_request = (manager_clone, host_creation, ssh_priv_key, remote_user)
     INVESTIGATE_QUEUE.put(job_request)
 
-    return (falcon.HTTP_201, Host(**json.loads(new_host.value)))
+    return (falcon.HTTP_201, new_host)

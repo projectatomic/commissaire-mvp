@@ -41,6 +41,13 @@ class _Test_StoreHandler(TestCase):
         """
         self.instance = self.cls({})
 
+    def test_expected_methods_exist(self):
+        """
+        Verify all StoreHandler expected methods are implemented.
+        """
+        for meth in self.expected_methods:
+            self.assertTrue(getattr(self.instance, meth[0]))
+
 
 class Test_StoreHandlerBaseClass(_Test_StoreHandler):
     """

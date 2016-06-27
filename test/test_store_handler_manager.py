@@ -86,8 +86,9 @@ class Test_StoreHandlerManager(TestCase):
         manager.register_store_handler(StoreHandlerBase, {}, BogusModelType)
         key = '/test'
         value = {'test': 'data'}
-        manager.save(key, value)
-        StoreHandlerBase()._save.assert_called_once_with(key, value)
+        model_instance = BogusModelType()
+        manager.save(model_instance)
+        StoreHandlerBase()._save.assert_called_once_with(model_instance)
 
     def test_storehandlermanager_list(self):
         """

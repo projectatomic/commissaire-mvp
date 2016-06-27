@@ -15,9 +15,8 @@
 """
 The investigator job.
 """
-
-import datetime
 import json
+import datetime
 import logging
 import os
 import sys
@@ -27,6 +26,7 @@ from time import sleep
 
 from commissaire.compat.b64 import base64
 from commissaire.containermgr.kubernetes import KubeContainerManager
+from commissaire.handlers.models import Host
 from commissaire.oscmd import get_oscmd
 from commissaire.transport import ansibleapi
 
@@ -83,8 +83,17 @@ def investigator(queue, config, run_once=False):
         f.close()
 
         try:
-            key = '/commissaire/hosts/{0}'.format(address)
-            etcd_resp = store_manager.get(key)
+            host = store_manager.get(
+                Host(
+                    address=address,
+                    status='',
+                    os='',
+                    cpus=0,
+                    memory=0,
+                    space=0,
+                    last_check='',
+                    ssh_priv_key='',
+                    remote_user=''))
         except Exception as error:
             logger.warn(
                 'Unable to continue for {0} due to '
@@ -92,45 +101,46 @@ def investigator(queue, config, run_once=False):
             clean_up_key(key_file)
             continue
 
-        data = json.loads(etcd_resp.value)
-
         try:
             result, facts = transport.get_info(address, key_file)
+            # recreate the host instance with new data
+            data = json.loads(host.to_json(secure=True))
             data.update(facts)
-            data['last_check'] = datetime.datetime.utcnow().isoformat()
-            data['status'] = 'bootstrapping'
+            host = Host(**data)
+            host.last_check = datetime.datetime.utcnow().isoformat()
+            host.status = 'bootstrapping'
             logger.info('Facts for {0} retrieved'.format(address))
-            logger.debug('Data: {0}'.format(data))
+            logger.debug('Data: {0}'.format(host.to_json()))
         except:
             exc_type, exc_msg, tb = sys.exc_info()
             logger.warn('Getting info failed for {0}: {1}'.format(
                 address, exc_msg))
-            data['status'] = 'failed'
-            store_manager.save(key, json.dumps(data))
+            host.status = 'failed'
+            store_manager.save(host)
             clean_up_key(key_file)
             if run_once:
                 break
             continue
 
-        store_manager.save(key, json.dumps(data))
+        store_manager.save(host)
         logger.info(
             'Finished and stored investigation data for {0}'.format(address))
         logger.debug('Finished investigation update for {0}: {1}'.format(
-            address, data))
+            address, host.to_json()))
 
         logger.info('{0} is now in bootstrapping'.format(address))
-        oscmd = get_oscmd(data['os'])
+        oscmd = get_oscmd(host.os)
         try:
             result, facts = transport.bootstrap(
                 address, key_file, config, oscmd)
-            data['status'] = 'inactive'
-            store_manager.save(key, json.dumps(data))
+            host.status = 'inactive'
+            store_manager.save(host)
         except:
             exc_type, exc_msg, tb = sys.exc_info()
             logger.warn('Unable to start bootstraping for {0}: {1}'.format(
                 address, exc_msg))
-            data['status'] = 'disassociated'
-            store_manager.save(key, json.dumps(data))
+            host.status = 'disassociated'
+            store_manager.save(host)
             clean_up_key(key_file)
             if run_once:
                 break
@@ -144,7 +154,7 @@ def investigator(queue, config, run_once=False):
                 if container_mgr.node_registered(address):
                     logger.info(
                         '{0} has been registered with the container manager.')
-                    data['status'] = 'active'
+                    host.status = 'active'
                     break
                 if cnt == 3:
                     msg = 'Could not register with the container manager'
@@ -159,13 +169,13 @@ def investigator(queue, config, run_once=False):
             logger.warn(
                 'Unable to finish bootstrap for {0} while associating with '
                 'the container manager: {1}'.format(address, exc_msg))
-            data['status'] = 'inactive'
+            host.status = 'inactive'
 
-        store_manager.save(key, json.dumps(data))
+        store_manager.save(host)
         logger.info(
             'Finished bootstrapping for {0}'.format(address))
         logging.debug('Finished bootstrapping for {0}: {1}'.format(
-            address, data))
+            address, host.to_json()))
 
         clean_up_key(key_file)
         if run_once:

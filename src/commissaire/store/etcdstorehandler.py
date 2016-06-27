@@ -16,9 +16,23 @@
 Etcd based StoreHandler.
 """
 
+import json
+
 import etcd
 
 from commissaire.store import StoreHandlerBase
+
+#: Maps ModelClassName to a key pattern
+_etcd_mapper = {
+    'Cluster': '/clusters/{0}',
+    'ClusterDeploy': '/cluster/{0}/deploy',
+    'ClusterRestart': '/cluster/{0}/restart',
+    'ClusterUpgrade': '/cluster/{0}/upgrade',
+    'Clusters': '/clusters/',
+    'Host': '/hosts/{0}',
+    'Hosts': '/hosts',
+    'Status': '/status',
+}
 
 
 class EtcdStoreHandler(StoreHandlerBase):
@@ -34,69 +48,91 @@ class EtcdStoreHandler(StoreHandlerBase):
         :type config: dict
         """
         self._store = etcd.Client(**config)
+        self._etcd_namespace = '/commissaire'
 
-    def _save(self, key, json_entity):
+    def _format_key(self, model_instance):
+        """
+        Takes a model instance and figures out its key.
+
+        :param model_instance: Model instance to save
+        :type model_instance: commissaire.model.Model
+        :returns: The etcd key
+        :rtype: str
+        """
+        subkey = _etcd_mapper[model_instance.__class__.__name__]
+        if model_instance._primary_key:
+            subkey = subkey.format(
+                getattr(model_instance, model_instance._primary_key))
+        return self._etcd_namespace + subkey
+
+    def _save(self, model_instance):
         """
         Saves data to etcd and returns back a saved model.
-
-        .. note::
-
-           Eventually this method will take a model instance containing
-           identifying information and data to save.  But for now this
-           takes an etcd path and JSON string.
 
         :param model_instance: Model instance to save
         :type model_instance: commissaire.model.Model
         :returns: The saved model instance
         :rtype: commissaire.model.Model
         """
-        return self._store.write(key, json_entity)
+        key = self._format_key(model_instance)
+        self._store.write(key, model_instance.to_json(secure=True))
+        # TODO: Check if we need to update the data in the instance
+        return model_instance
 
-    def _get(self, key):
+    def _get(self, model_instance):
         """
         Returns data from a store and returns back a model.
 
-        .. note::
-
-           Eventually this method will take a model instance containing
-           identifying information.  But for now this takes an etcd path.
-
-        :param model_instance: Model instance to search and get
+        :param model_instance: Model instance to search and return
         :type model_instance: commissaire.model.Model
-        :returns: The saved model instance
+        :returns: The model instance
         :rtype: commissaire.model.Model
         """
-        return self._store.get(key)
+        key = self._format_key(model_instance)
+        etcd_resp = self._store.get(key)
+        return model_instance.__class__(
+            **json.loads(etcd_resp.value))
 
-    def _delete(self, key):
+    def _delete(self, model_instance):
         """
         Deletes data from a store.
 
-        .. note::
-
-           Eventually this method will take a model instance containing
-           identifying information.  But for now this takes an etcd path.
-
         :param model_instance: Model instance to delete
-        :type model_instance:
+        :type model_instance: commissaire.model.Model
         """
+        key = self._format_key(model_instance)
         return self._store.delete(key)
 
-    def _list(self, key):
+    def _list(self, model_instance):
         """
         Lists data at a location in a store and returns back model instances.
-
-        .. note::
-
-           Eventually this method will take a model instance containing
-           identifying information.  But for now this takes an etcd path.
 
         :param model_instance: Model instance to search for and list
         :type model_instance: commissaire.model.Model
         :returns: A list of models
         :rtype: list
         """
-        return self._store.read(key, recursive=True)
+        key = self._format_key(model_instance)
+        # The default class used is the same as the model_instance
+        model_cls = model_instance.__class__
+        results = []
+
+        # If this is a list then snag the configured class for use
+        if model_instance._json_type is list:
+            model_cls = model_instance._list_class
+
+        # populate the results
+        for item in self._store.read(key, recursive=True).children:
+            results.append(model_cls(**json.loads(item.value)))
+
+        # If this is a list then fill the list container with the results
+        # and return the model
+        if model_instance._json_type is list:
+            setattr(
+                model_instance,
+                model_instance._list_attr,
+                results)
+        return model_instance
 
 
 StoreHandler = EtcdStoreHandler

@@ -91,15 +91,9 @@ class StoreHandlerManager(object):
             self.__logger = logging.getLogger('store')
         return self.__logger
 
-    def save(self, key, json_entity):
+    def save(self, model_instance):
         """
         Saves data to a store and returns back a saved model.
-
-        .. note::
-
-           Eventually this method will take a model instance containing
-           identifying information and data to save.  But for now this
-           takes an etcd path and JSON string.
 
         :param model_instance: Model instance to save
         :type model_instance: commissaire.model.Model
@@ -108,19 +102,14 @@ class StoreHandlerManager(object):
         """
         logger = self._get_logger()
         handler = self._get_handler(self.bogus_model)
-        logger.debug('> SAVE {0} : {1}'.format(key, json_entity))
-        response = handler._save(key, json_entity)
-        logger.debug('< SAVE {0} : {1}'.format(key, response))
-        return response
+        logger.debug('> SAVE {0}'.format(model_instance))
+        model_instance = handler._save(model_instance)
+        logger.debug('< SAVE {0}'.format(model_instance))
+        return model_instance
 
-    def get(self, key):
+    def get(self, model_instance):
         """
         Returns data from a store and returns back a model.
-
-        .. note::
-
-           Eventually this method will take a model instance containing
-           identifying information.  But for now this takes an etcd path.
 
         :param model_instance: Model instance to search and get
         :type model_instance: commissaire.model.Model
@@ -129,38 +118,28 @@ class StoreHandlerManager(object):
         """
         logger = self._get_logger()
         handler = self._get_handler(self.bogus_model)
-        logger.debug('> GET {0}'.format(key))
-        response = handler._get(key)
-        logger.debug('< GET {0} : {1}'.format(key, response))
-        return response
+        logger.debug('> GET {0}'.format(model_instance))
+        model_instance = handler._get(model_instance)
+        logger.debug('< GET {0}'.format(model_instance))
+        return model_instance
 
-    def delete(self, key):
+    def delete(self, model_instance):
         """
         Deletes data from a store.
-
-        .. note::
-
-           Eventually this method will take a model instance containing
-           identifying information.  But for now this takes an etcd path.
 
         :param model_instance: Model instance to delete
         :type model_instance:
         """
         logger = self._get_logger()
         handler = self._get_handler(self.bogus_model)
-        logger.debug('> DELETE {0}'.format(key))
-        response = handler._delete(key)
-        logger.debug('< DELETE {0} : {1}'.format(key, response))
-        return response
+        logger.debug('> DELETE {0}'.format(model_instance))
+        model_instance = handler._delete(model_instance)
+        logger.debug('< DELETE {0}'.format(model_instance))
+        return model_instance
 
-    def list(self, key):
+    def list(self, model_instance):
         """
         Lists data at a location in a store and returns back model instances.
-
-        .. note::
-
-           Eventually this method will take a model instance containing
-           identifying information.  But for now this takes an etcd path.
 
         :param model_instance: Model instance to search for and list
         :type model_instance: commissaire.model.Model
@@ -169,7 +148,7 @@ class StoreHandlerManager(object):
         """
         logger = self._get_logger()
         handler = self._get_handler(self.bogus_model)
-        logger.debug('> LIST {0}'.format(key))
-        response = handler._list(key)
-        logger.debug('< LIST {0} : {1}'.format(key, response))
-        return response
+        logger.debug('> LIST {0}'.format(model_instance))
+        model_instance = handler._list(model_instance)
+        logger.debug('< LIST {0}'.format(model_instance))
+        return model_instance

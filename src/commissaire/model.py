@@ -32,6 +32,10 @@ class Model(object):
     _key = ''
     #: The primary way of looking up an instance
     _primary_key = None
+    #: The attribute name which stores items if this is a list type
+    _list_attr = None
+    #: The class for items which will be stored in the list attribute
+    _list_class = None
 
     def __init__(self, **kwargs):
         """

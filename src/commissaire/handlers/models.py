@@ -106,27 +106,9 @@ class Clusters(Model):
     """
     _json_type = list
     _attributes = ('clusters',)
-    _key = '/commissaire/clusters/'
-
-    @classmethod
-    def retrieve(klass, *parts):
-        """
-        Gets a list of hosts from the store.
-
-        :raises: Exception if unable to save
-        :returns: Itself
-        :rtype: model
-        """
-        key = klass._key.format(*parts)
-        store_manager = cherrypy.engine.publish('get-store-manager')[0]
-        etcd_resp = store_manager.list(key)
-        clusters = []
-        for x in etcd_resp.children:
-            if etcd_resp.key != x.key:
-                name = x.key.split('/')[-1]
-                if name:
-                    clusters.append(name)
-        return klass(clusters=clusters)
+    _attribute_defaults = {'clusters': []}
+    _list_attr = 'clusters'
+    _list_class = Cluster
 
 
 class Host(Model):
@@ -148,7 +130,9 @@ class Hosts(Model):
     """
     _json_type = list
     _attributes = ('hosts', )
-    _key = '/commissaire/hosts/'
+    _attribute_defaults = {'hosts': []}
+    _list_attr = 'hosts'
+    _list_class = Host
 
     @classmethod
     def retrieve(klass, *parts):

@@ -19,6 +19,7 @@ Host(s) handlers.
 
 import json
 
+import cherrypy
 import falcon
 
 from commissaire.resource import Resource
@@ -42,7 +43,8 @@ class HostsResource(Resource):
         """
 
         try:
-            hosts = Hosts.retrieve()
+            store_manager = cherrypy.engine.publish('get-store-manager')[0]
+            hosts = store_manager.list(Hosts(hosts=[]))
             if len(hosts.hosts) == 0:
                 raise Exception()
             resp.status = falcon.HTTP_200
@@ -78,7 +80,19 @@ class HostCredsResource(Resource):
         #       stay a subset off of Host and bypass the req.context
         #       middleware system.
         try:
-            host = Host.retrieve(address)
+            store_manager = cherrypy.engine.publish('get-store-manager')[0]
+            # TODO: use some kind of global default for Hosts
+            host = store_manager.get(
+                Host(
+                    address=address,
+                    status='',
+                    os='',
+                    cpus=0,
+                    memory=0,
+                    space=0,
+                    last_check='',
+                    ssh_priv_key='',
+                    remote_user=''))
             resp.status = falcon.HTTP_200
             body = {
                 'ssh_priv_key': host.ssh_priv_key,
@@ -108,7 +122,19 @@ class HostResource(Resource):
         """
         # TODO: Verify input
         try:
-            host = Host.retrieve(address)
+            store_manager = cherrypy.engine.publish('get-store-manager')[0]
+            # TODO: use some kind of global default for Hosts
+            host = store_manager.get(
+                Host(
+                    address=address,
+                    status='',
+                    os='',
+                    cpus=0,
+                    memory=0,
+                    space=0,
+                    last_check='',
+                    ssh_priv_key='',
+                    remote_user=''))
             resp.status = falcon.HTTP_200
             req.context['model'] = host
         except:
@@ -161,7 +187,19 @@ class HostResource(Resource):
         """
         resp.body = '{}'
         try:
-            Host.delete(address)
+            store_manager = cherrypy.engine.publish('get-store-manager')[0]
+            # TODO: use some kind of global default for Hosts
+            store_manager.delete(
+                Host(
+                    address=address,
+                    status='',
+                    os='',
+                    cpus=0,
+                    memory=0,
+                    space=0,
+                    last_check='',
+                    ssh_priv_key='',
+                    remote_user=''))
             resp.status = falcon.HTTP_200
         except:
             resp.status = falcon.HTTP_404
