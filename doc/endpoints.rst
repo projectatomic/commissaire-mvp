@@ -205,6 +205,7 @@ No body.
 
 Example Response
 ~~~~~~~~~~~~~~~~
+.. code-block:: javascript
 
    {
        "status": "in_process",
@@ -323,7 +324,7 @@ DELETE
 Deletes a host record.
 
 HostCreds
-----
+---------
 
 **Endpoint**: /api/v0/host/{IP}/creds
 
@@ -342,12 +343,12 @@ Retrieve a specific hosts credentials.
 Hosts
 -----
 
-**Endpoint**: /api/v0/clusters
+**Endpoint**: /api/v0/hosts
 
 
 GET
 ```
-Retrieve a list of clusters.
+Retrieve a list of hosts
 
 .. code-block:: javascript
 
@@ -362,8 +363,8 @@ Example
 .. code-block:: javascript
 
    [
-       "development",
-       "production"
+       "192.168.122.50",
+       "192.168.122.51"
    ]
 
 
