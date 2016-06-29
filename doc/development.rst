@@ -48,7 +48,7 @@ Commissaire Proposal Document
 A Commissaire Proposal Document (CPD) must be submitted and approved before
 significantly changing the current implementation. This applies to
 changes which  break backward compatibility, replace a subsystem, change the
-user experience, etc.. For information on the CPD process see 
+user experience, etc.. For information on the CPD process see
 `CPD-1: CPD Process <https://github.com/projectatomic/commissaire/wiki/cpd-1>`_ and the `CPD Template <https://github.com/projectatomic/commissaire/wiki/cpd_template>`_.
 
 Ansible Templates
@@ -130,3 +130,32 @@ end to end/BDD tests.
 To run e2e/bdd tests locally and see where your code stands:
 
 .. include:: examples/run_e2e_bdd_example.rst
+
+There are a number of tags within the tests. Using these tags can target
+specific parts of the codebase without running the full suite. Use ``-t`` to
+specify tags. ``-k`` is also helpful as it will suppress showing the tests
+that did not run. Using a ``~`` before the tag will disable all test with that tag.
+See behave ``--tags-help`` for more details
+
+============= =====================================================
+Tag           Description
+============= =====================================================
+anonymous     Tests without authentication
+clientcert    Tests that use a client certificate
+cluster       Tests that are specific to cluster functionality
+clusterexec   Tests that use the clusterexec code
+create        Tests that create a resource
+delete        Tests that delete a resource
+deploy        Tests which use the deploy functionality
+hosts         Tests that are specific to the hosts functionality
+list          Tests that list a resource
+recreate      Tests that recreate a resource
+restart       Tests which use the restart functionality
+retrieve      Tests the get a resource
+slow          Tests that are known to run slow
+ssh           Tests which use the ssh related functionality
+status        Tests that are specific to the status functionality
+upgrade       Tests which use the upgrade functionality
+============= =====================================================
+
+.. include:: examples/run_e2e_bdd_with_tags_example.rst

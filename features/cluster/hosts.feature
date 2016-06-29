@@ -219,7 +219,7 @@ Feature: Manipulating Hosts In A Cluster
       then commissaire will allow access
        and commissaire will note it's not found
 
-   @create
+   @create @slow
    Scenario: Creating a new host with an invalid cluster name
       Given we have a valid username and password
         and we set the cluster name to headache
@@ -227,7 +227,7 @@ Feature: Manipulating Hosts In A Cluster
        then commissaire will allow access
         and commissaire will note a conflict
 
-   @create
+   @slow @create
    Scenario: Creating a new host with a valid cluster name (1)
       Given we have a valid username and password
         and we have a cluster named honeynut
@@ -239,7 +239,7 @@ Feature: Manipulating Hosts In A Cluster
         and commissaire will provide a dict
         and the provided cluster total hosts is 1
 
-   @create
+   @slow @create
    Scenario: Creating a new host with a valid cluster name (2)
       Given we have a valid username and password
         and we have a cluster named honeynut
@@ -251,7 +251,7 @@ Feature: Manipulating Hosts In A Cluster
         and commissaire will provide a list
         and the provided data is ['10.2.0.2']
 
-   @create
+   @slow @create
    Scenario: Creating a new host with a valid cluster name (3)
       Given we have a valid username and password
         and we have a cluster named honeynut

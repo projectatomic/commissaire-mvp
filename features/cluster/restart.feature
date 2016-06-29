@@ -15,6 +15,7 @@
 
 @restart
 @cluster
+@clusterexec
 Feature: Restarting Clusters
 
   @anonymous

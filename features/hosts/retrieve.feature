@@ -44,6 +44,7 @@ Feature: Retrieving Hosts
       and a host already exists at 10.2.0.2
      when we get host credentials for 10.2.0.2
      then commissaire will deny access
+
   @ssh
   Scenario: Retrieve existing host with authentication
     Given we have a valid username and password

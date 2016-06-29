@@ -15,6 +15,7 @@
 
 @deploy
 @cluster
+@clusterexec
 Feature: Deploying Tree Image Across Clusters
 
   @anonymous

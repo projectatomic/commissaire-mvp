@@ -15,6 +15,7 @@
 
 @upgrade
 @cluster
+@clusterexec
 Feature: Upgrading Clusters
 
   @anonymous

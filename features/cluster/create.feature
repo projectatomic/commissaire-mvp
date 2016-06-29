@@ -29,6 +29,7 @@ Feature: Creating A Cluster
       then commissaire will allow access
        and commissaire will note creation
 
+  @recreate
   Scenario: Recreating a compatible cluster with authentication
      Given we have a valid username and password
       when we create the cluster honeynut
