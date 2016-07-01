@@ -18,8 +18,6 @@ Basic Model structure for commissaire.
 
 import json
 
-import cherrypy
-
 
 class Model(object):
     """
@@ -29,7 +27,6 @@ class Model(object):
     _json_type = None
     _attributes = ()
     _hidden_attributes = ()
-    _key = ''
     #: The primary way of looking up an instance
     _primary_key = None
     #: The attribute name which stores items if this is a list type
@@ -110,43 +107,3 @@ class Model(object):
         return json.dumps(
             self._struct_for_json(secure=secure),
             default=lambda o: o._struct_for_json(secure=secure))
-
-    @classmethod
-    def retrieve(klass, *parts):
-        """
-        Gets the model from the object store.
-
-        :raises: Exception if unable to save
-        :returns: Itself
-        :rtype: model
-        """
-        key = klass._key.format(*parts)
-        store_manager = cherrypy.engine.publish('get-store-manager')[0]
-        etcd_resp = store_manager.get(key)
-        return klass(**json.loads(etcd_resp.value))
-
-    def save(self, *parts):
-        """
-        Saves the model to the object store.
-
-        :raises: Exception if unable to save
-        :returns: Itself
-        :rtype: model
-        """
-        key = self._key.format(*parts)
-        store_manager = cherrypy.engine.publish('get-store-manager')[0]
-        store_manager.save(key, self.to_json())
-        return self
-
-    @classmethod
-    def delete(klass, *parts):
-        """
-        Deletes the model from the object store.
-
-        :raises: Exception if unable to delete
-        :returns: None
-        """
-        key = klass._key.format(*parts)
-        store_manager = cherrypy.engine.publish('get-store-manager')[0]
-        store_manager.delete(key)
-        return None
