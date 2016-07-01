@@ -16,6 +16,7 @@
 Basic Model structure for commissaire.
 """
 
+import copy
 import json
 
 
@@ -29,6 +30,8 @@ class Model(object):
     _hidden_attributes = ()
     #: The primary way of looking up an instance
     _primary_key = None
+    #: Defaults to use for attributes when calling new()
+    _attribute_defaults = {}
     #: The attribute name which stores items if this is a list type
     _list_attr = None
     #: The class for items which will be stored in the list attribute
@@ -50,6 +53,20 @@ class Model(object):
                     'keyword arguments: {0}'.format(
                         ', '.join(self._attributes)))
             setattr(self, key, kwargs[key])
+
+    @classmethod
+    def new(cls, **kwargs):
+        """
+        Returns an instance with default values.
+
+        :param kwargs: Any arguments explicitly set.
+        :type kwargs: dict
+        """
+        instance = cls.__new__(cls)
+        init_args = copy.deepcopy(cls._attribute_defaults)
+        init_args.update(kwargs)
+        instance.__init__(**init_args)
+        return instance
 
     def _struct_for_json(self, secure=False):
         """

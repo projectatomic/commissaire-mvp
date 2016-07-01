@@ -49,8 +49,7 @@ class ClustersResource(Resource):
         req.context['model'] = None
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for Clusters
-            clusters = store_manager.list(Clusters(clusters=[]))
+            clusters = store_manager.list(Clusters.new())
         except:
             self.logger.warn(
                 'Store does not have any clusters. Returning [] and 404.')
@@ -58,8 +57,7 @@ class ClustersResource(Resource):
             return
 
         if clusters.clusters == []:
-            self.logger.debug(
-                'Store has a clusters directory but no content.')
+            self.logger.debug('Store returned an empty cluster list.')
             resp.status = falcon.HTTP_200
             return
 
@@ -89,7 +87,7 @@ class ClusterResource(Resource):
             hosts = store_manager.list(Hosts(hosts=[]))
         except:
             self.logger.warn(
-                'Etcd does not have any hosts. '
+                'Store does not have any hosts. '
                 'Cannot determine cluster stats.')
             return
 
@@ -120,9 +118,7 @@ class ClusterResource(Resource):
         """
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for Cluster
-            cluster = store_manager.get(
-                Cluster(name=name, status='', hostset=[]))
+            cluster = store_manager.get(Cluster.new(name=name))
         except:
             resp.status = falcon.HTTP_404
             return
@@ -152,9 +148,7 @@ class ClusterResource(Resource):
         # succeed, even if we didn't actually do anything.
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for Cluster
-            cluster = store_manager.get(
-                Cluster(name=name, status='', hostset=[]))
+            cluster = store_manager.get(Cluster.new(name=name))
             self.logger.info(
                 'Creation of already exisiting cluster {0} requested.'.format(
                     name))
@@ -182,9 +176,7 @@ class ClusterResource(Resource):
 
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for Cluster
-            store_manager.delete(
-                Cluster(name=name, status='', hostset=[]))
+            store_manager.delete(Cluster.new(name=name))
             resp.status = falcon.HTTP_200
             self.logger.info(
                 'Deleted cluster {0} per request.'.format(name))
@@ -213,10 +205,7 @@ class ClusterHostsResource(Resource):
         """
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for Cluster
-            cluster = store_manager.get(
-                Cluster(name=name, status='', hostset=[]))
-
+            cluster = store_manager.get(Cluster.new(name=name))
         except:
             resp.status = falcon.HTTP_404
             return
@@ -249,9 +238,7 @@ class ClusterHostsResource(Resource):
 
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for Cluster
-            cluster = store_manager.get(
-                Cluster(name=name, status='', hostset=[]))
+            cluster = store_manager.get(Cluster.new(name=name))
         except:
             resp.status = falcon.HTTP_404
             return
@@ -300,9 +287,7 @@ class ClusterSingleHostResource(ClusterHostsResource):
         """
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for Cluster
-            cluster = store_manager.get(
-                Cluster(name=name, status='', hostset=[]))
+            cluster = store_manager.get(Cluster.new(name=name))
         except:
             resp.status = falcon.HTTP_404
             return
@@ -380,11 +365,7 @@ class ClusterDeployResource(Resource):
 
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for ClusterDeploy
-            cluster_deploy = store_manager.get(
-                ClusterDeploy(
-                    name=name, status='', version='', deployed='',
-                    in_process='', started_at='', finished_at=''))
+            cluster_deploy = store_manager.get(ClusterDeploy.new(name=name))
             self.logger.debug('Found ClusterDeploy for {0}'.format(name))
         except:
             # Return "204 No Content" if we have no status,
@@ -435,11 +416,7 @@ class ClusterDeployResource(Resource):
         # If the requested version conflicts with the operation in progress,
         # return the current status with response code 409 Conflict.
         try:
-            # TODO: use some kind of global default for ClusterDeploy
-            cluster_deploy = store_manager.get(
-                ClusterDeploy(
-                    name=name, status='', version='', deployed='',
-                    in_process='', started_at='', finished_at=''))
+            cluster_deploy = store_manager.get(ClusterDeploy.new(name=name))
             self.logger.debug('Found ClusterDeploy for {0}'.format(name))
             if not cluster_deploy.finished_at:
                 if cluster_deploy.version == version:
@@ -464,16 +441,12 @@ class ClusterDeployResource(Resource):
         self.logger.debug(
             'Started deployment to {0} in clusterexecpool for {1}'.format(
                 version, name))
-        cluster_deploy_default = {
-            'name': name,
-            'status': 'in_process',
-            'version': version,
-            'deployed': [],
-            'in_process': [],
-            'started_at': datetime.datetime.utcnow().isoformat(),
-            'finished_at': None
-        }
-        cluster_deploy = ClusterDeploy(**cluster_deploy_default)
+        cluster_deploy = ClusterDeploy.new(
+            name=name,
+            status='in_process',
+            started_at=datetime.datetime.utcnow().isoformat()
+        )
+
         store_manager.save(cluster_deploy)
         resp.status = falcon.HTTP_201
         req.context['model'] = cluster_deploy
@@ -504,11 +477,7 @@ class ClusterRestartResource(Resource):
 
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for ClusterRestart
-            cluster_restart = store_manager.get(
-                ClusterRestart(
-                    name=name, status='', restarted='',
-                    in_process='', started_at='', finished_at=''))
+            cluster_restart = store_manager.get(ClusterRestart.new(name=name))
         except:
             # Return "204 No Content" if we have no status,
             # meaning no restart is in progress.  The client
@@ -545,11 +514,7 @@ class ClusterRestartResource(Resource):
         # status with response code 200 OK.
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for ClusterRestart
-            cluster_restart = store_manager.get(
-                ClusterRestart(
-                    name=name, status='', restarted='',
-                    in_process='', started_at='', finished_at=''))
+            cluster_restart = store_manager.get(ClusterRestart.new(name=name))
             self.logger.debug('Found a ClusterRestart for {0}'.format(name))
             if not cluster_restart.finished_at:
                 self.logger.debug(
@@ -569,15 +534,12 @@ class ClusterRestartResource(Resource):
 
         self.logger.debug('Started restart in clusterexecpool for {0}'.format(
             name))
-        cluster_restart_default = {
-            'name': name,
-            'status': 'in_process',
-            'restarted': [],
-            'in_process': [],
-            'started_at': datetime.datetime.utcnow().isoformat(),
-            'finished_at': None
-        }
-        cluster_restart = ClusterRestart(**cluster_restart_default)
+
+        cluster_restart = ClusterRestart.new(
+            name=name,
+            status='in_process',
+            started_at=datetime.datetime.utcnow().isoformat()
+        )
         store_manager = cherrypy.engine.publish('get-store-manager')[0]
         store_manager.save(cluster_restart)
         resp.status = falcon.HTTP_201
@@ -609,11 +571,7 @@ class ClusterUpgradeResource(Resource):
 
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for ClusterUpgrade
-            cluster_upgrade = store_manager.get(
-                ClusterUpgrade(
-                    name=name, status='', upgraded='',
-                    in_process='', started_at='', finished_at=''))
+            cluster_upgrade = store_manager.get(ClusterUpgrade.new(name=name))
             self.logger.debug('Found ClusterUpgrade for {0}'.format(name))
         except:
             # Return "204 No Content" if we have no status,
@@ -653,11 +611,7 @@ class ClusterUpgradeResource(Resource):
         # status with response code 200 OK.
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
-            # TODO: use some kind of global default for ClusterUpgrade
-            cluster_upgrade = store_manager.get(
-                ClusterUpgrade(
-                    name=name, status='', upgraded='',
-                    in_process='', started_at='', finished_at=''))
+            cluster_upgrade = store_manager.get(ClusterUpgrade.new(name=name))
             self.logger.debug('Found ClusterUpgrade for {0}'.format(name))
             if not cluster_upgrade.finished_at:
                 self.logger.debug(
@@ -677,15 +631,12 @@ class ClusterUpgradeResource(Resource):
 
         self.logger.debug('Started upgrade in clusterexecpool for {0}'.format(
             name))
-        cluster_upgrade_default = {
-            'name': name,
-            'status': 'in_process',
-            'upgraded': [],
-            'in_process': [],
-            'started_at': datetime.datetime.utcnow().isoformat(),
-            'finished_at': None
-        }
-        cluster_upgrade = ClusterUpgrade(**cluster_upgrade_default)
+        cluster_upgrade = ClusterUpgrade.new(
+            name=name,
+            status='in_process',
+            started_at=datetime.datetime.utcnow().isoformat()
+        )
+
         store_manager = cherrypy.engine.publish('get-store-manager')[0]
         store_manager.save(cluster_upgrade)
         resp.status = falcon.HTTP_201

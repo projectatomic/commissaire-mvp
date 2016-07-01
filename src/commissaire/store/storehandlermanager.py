@@ -133,9 +133,7 @@ class StoreHandlerManager(object):
         logger = self._get_logger()
         handler = self._get_handler(self.bogus_model)
         logger.debug('> DELETE {0}'.format(model_instance))
-        model_instance = handler._delete(model_instance)
-        logger.debug('< DELETE {0}'.format(model_instance))
-        return model_instance
+        handler._delete(model_instance)
 
     def list(self, model_instance):
         """

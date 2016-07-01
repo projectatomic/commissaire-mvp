@@ -51,7 +51,7 @@ def etcd_cluster_exists(name):
     """
     store_manager = cherrypy.engine.publish('get-store-manager')[0]
     try:
-        store_manager.get(Cluster(name=name, status='', hostset=[]))
+        store_manager.get(Cluster.new(name=name))
     except:
         return False
     return True
@@ -69,8 +69,7 @@ def etcd_cluster_has_host(name, address):
     """
     try:
         store_manager = cherrypy.engine.publish('get-store-manager')[0]
-        cluster = store_manager.get(Cluster(
-            name=name, status='', hostset=[]))
+        cluster = store_manager.get(Cluster.new(name=name))
     except:
         raise KeyError
 
@@ -92,8 +91,7 @@ def etcd_cluster_add_host(name, address):
     """
     try:
         store_manager = cherrypy.engine.publish('get-store-manager')[0]
-        cluster = store_manager.get(Cluster(
-            name=name, status='', hostset=[]))
+        cluster = store_manager.get(Cluster.new(name=name))
     except:
         raise KeyError
 
@@ -153,7 +151,7 @@ def get_cluster_model(name):
     """
     store_manager = cherrypy.engine.publish('get-store-manager')[0]
     try:
-        cluster = store_manager.get(Cluster(name=name, status='', hostset=[]))
+        cluster = store_manager.get(Cluster.new(name=name))
     except:
         cluster = None
 
@@ -185,19 +183,7 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
 
     try:
         # Check if the request conflicts with the existing host.
-        # TODO: use some kind of global default for Hosts
-        existing_host = store_manager.get(
-            Host(
-                address=address,
-                status='',
-                os='',
-                cpus=0,
-                memory=0,
-                space=0,
-                last_check='',
-                ssh_priv_key='',
-                remote_user=''))
-
+        existing_host = store_manager.get(Host.new(address=address))
         if existing_host.ssh_priv_key != ssh_priv_key:
             return (falcon.HTTP_409, None)
         if cluster_name:
@@ -213,17 +199,12 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
     except:
         pass
 
-    host_creation = {
-        'address': address,
-        'ssh_priv_key': ssh_priv_key,
-        'os': '',
-        'status': 'investigating',
-        'cpus': -1,
-        'memory': -1,
-        'space': -1,
-        'last_check': None,
-        'remote_user': remote_user,
-    }
+    host_creation = Host.new(
+        address=address,
+        ssh_priv_key=ssh_priv_key,
+        status='investigating',
+        remote_user=remote_user
+    ).__dict__
 
     # Verify the cluster exists, if given.  Do it now
     # so we can fail before writing anything to etcd.

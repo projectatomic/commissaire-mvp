@@ -46,37 +46,37 @@ def clusterexec(store_manager, cluster_name, command, kwargs={}):
     command_args = ()
     if command == 'upgrade':
         finished_hosts_key = 'upgraded'
-        model_instance = ClusterUpgrade(**{
-            "name": cluster_name,
-            "status": 'in_process',
-            "upgraded": [],
-            "in_process": [],
-            "started_at": datetime.datetime.utcnow().isoformat(),
-            "finished_at": None,
-        })
+        model_instance = ClusterUpgrade(
+            name=cluster_name,
+            status='in_process',
+            upgraded=[],
+            in_process=[],
+            started_at=datetime.datetime.utcnow().isoformat(),
+            finished_at=None
+        )
     elif command == 'restart':
         finished_hosts_key = 'restarted'
-        model_instance = ClusterRestart(**{
-            "name": cluster_name,
-            "status": 'in_process',
-            "restarted": [],
-            "in_process": [],
-            "started_at": datetime.datetime.utcnow().isoformat(),
-            "finished_at": None
-        })
+        model_instance = ClusterRestart(
+            name=cluster_name,
+            status='in_process',
+            restarted=[],
+            in_process=[],
+            started_at=datetime.datetime.utcnow().isoformat(),
+            finished_at=None
+        )
     elif command == 'deploy':
         finished_hosts_key = 'deployed'
         version = kwargs.get('version')
         command_args = (version,)
-        model_instance = ClusterDeploy(**{
-            "name": "cluster_name",
-            "status": 'in_process',
-            "version": version,
-            "deployed": [],
-            "in_process": [],
-            "started_at": datetime.datetime.utcnow().isoformat(),
-            "finished_at": None
-        })
+        model_instance = ClusterDeploy(
+            name=cluster_name,
+            status='in_process',
+            version=version,
+            deployed=[],
+            in_process=[],
+            started_at=datetime.datetime.utcnow().isoformat(),
+            finished_at=None
+        )
 
     end_status = 'finished'
 

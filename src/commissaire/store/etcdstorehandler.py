@@ -101,7 +101,7 @@ class EtcdStoreHandler(StoreHandlerBase):
         :type model_instance: commissaire.model.Model
         """
         key = self._format_key(model_instance)
-        return self._store.delete(key)
+        self._store.delete(key)
 
     def _list(self, model_instance):
         """
