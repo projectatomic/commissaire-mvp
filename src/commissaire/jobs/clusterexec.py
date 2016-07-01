@@ -155,9 +155,11 @@ def clusterexec(store_manager, cluster_name, command, kwargs={}):
             result, facts = exe(
                 host.address, key_file, oscmd, kwargs)
         # XXX: ansibleapi explicitly raises Exception()
-        except Exception:
+        except Exception as ex:
             # If there was a failure set the end_status and break out
             end_status = 'failed'
+            logger.error('Clusterexec {0} for {1} failed: {2}: {3}'.format(
+                command, host.address, type(ex), ex))
             break
         finally:
             try:

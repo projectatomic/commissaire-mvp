@@ -56,7 +56,7 @@ class OSCmd(OSCmdBase):
         :return: The command to execute as a list
         :rtype: list
         """
-        return ['systemctl', 'reboot']
+        return ['sleep', '2', '&&' 'systemctl', 'reboot']
 
     @classmethod
     def upgrade(cls):

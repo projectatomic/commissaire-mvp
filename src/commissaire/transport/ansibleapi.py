@@ -121,7 +121,7 @@ class Transport:
         self.remote_user = remote_user
 
     def _run(self, ips, key_file, play_file,
-             expected_results=[0], play_vars={}):
+             expected_results=[0], play_vars={}, disable_reconnect=False):
         """
         Common code used for each run.
 
@@ -133,6 +133,8 @@ class Transport:
         :type play_file: str
         :param expected_results: List of expected return codes. Default: [0]
         :type expected_results: list
+        :param disable_reconnect: Disables connection loop.
+        :type disable_reconnect:  bool
         :returns: Ansible exit code
         :type: int
         """
@@ -205,7 +207,11 @@ class Transport:
 
                 # Deal with unreachable hosts (result == 3) by retrying
                 # up to 3 times, sleeping 5 seconds after each attempt.
-                if result == 3 and cnt < 2:
+                if disable_reconnect:
+                    self.logger.warn(
+                        'Not attempting to reconnect to {0}'.format(ips))
+                    break
+                elif result == 3 and cnt < 2:
                     self.logger.warn(
                         'One or more hosts in {0} is unreachable, '
                         'retrying in 5 seconds...'.format(ips))
@@ -287,7 +293,8 @@ class Transport:
         restart_command = " ".join(oscmd.restart())
         return self._run(
             ips, key_file, play_file, [0, 2],
-            {'commissaire_restart_command': restart_command})
+            {'commissaire_restart_command': restart_command},
+            disable_reconnect=True)
 
     def get_info(self, ip, key_file):
         """
