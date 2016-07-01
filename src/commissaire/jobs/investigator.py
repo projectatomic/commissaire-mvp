@@ -153,7 +153,8 @@ def investigator(queue, config, run_once=False):
             for cnt in range(0, 3):
                 if container_mgr.node_registered(address):
                     logger.info(
-                        '{0} has been registered with the container manager.')
+                        '{0} has been registered with the '
+                        'container manager.'.format(address))
                     host.status = 'active'
                     break
                 if cnt == 3:
