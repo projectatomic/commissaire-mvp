@@ -23,7 +23,7 @@ import cherrypy
 import falcon
 
 from commissaire.resource import Resource
-from commissaire.handlers.models import Host, Hosts, Cluster, Clusters
+from commissaire.handlers.models import Host, Hosts, Clusters
 import commissaire.handlers.util as util
 
 
@@ -186,8 +186,8 @@ class HostResource(Resource):
         :type address: str
         """
         resp.body = '{}'
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
         try:
-            store_manager = cherrypy.engine.publish('get-store-manager')[0]
             # TODO: use some kind of global default for Hosts
             store_manager.delete(
                 Host(
@@ -209,25 +209,24 @@ class HostResource(Resource):
         #       so if an error occurs from here just log it and
         #       return.
         try:
-            clusters = Clusters.retrieve()
+            clusters = store_manager.list(Clusters(clusters=[]))
         except:
             self.logger.warn('Etcd does not have any clusters')
             return
         try:
-            for cluster_name in clusters.clusters:
-                self.logger.debug('Checking cluster {0}'.format(cluster_name))
-                cluster = Cluster.retrieve(cluster_name)
+            for cluster in clusters.clusters:
+                self.logger.debug('Checking cluster {0}'.format(cluster.name))
                 if address in cluster.hostset:
                     self.logger.info('Removing {0} from cluster {1}'.format(
-                                     address, cluster_name))
+                                     address, cluster.name))
                     cluster.hostset.remove(address)
-                    cluster.save(cluster_name)
+                    store_manager.save(cluster)
                     self.logger.info(
                         '{0} has been removed from cluster {1}'.format(
-                            address, cluster_name))
+                            address, cluster.name))
         except:
             self.logger.warn('Failed to remove {0} from cluster {1}'.format(
-                address, cluster_name))
+                address, cluster.name))
 
 
 class ImplicitHostResource(Resource):

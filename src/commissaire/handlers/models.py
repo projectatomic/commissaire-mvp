@@ -28,7 +28,7 @@ class Cluster(Model):
     Representation of a Cluster.
     """
     _json_type = dict
-    _attributes = ('status', 'hostset')
+    _attributes = ('name', 'status', 'hostset')
     _hidden_attributes = ('hostset',)
     _key = '/commissaire/clusters/{0}'
     _primary_key = 'name'
@@ -71,7 +71,7 @@ class ClusterDeploy(Model):
     """
     _json_type = dict
     _attributes = (
-        'status', 'version', 'deployed', 'in_process',
+        'name', 'status', 'version', 'deployed', 'in_process',
         'started_at', 'finished_at')
     _key = '/commissaire/cluster/{0}/deploy'
     _primary_key = 'name'
@@ -83,7 +83,7 @@ class ClusterRestart(Model):
     """
     _json_type = dict
     _attributes = (
-        'status', 'restarted', 'in_process',
+        'name', 'status', 'restarted', 'in_process',
         'started_at', 'finished_at')
     _key = '/commissaire/cluster/{0}/restart'
     _primary_key = 'name'
@@ -95,7 +95,8 @@ class ClusterUpgrade(Model):
     """
     _json_type = dict
     _attributes = (
-        'status', 'upgraded', 'in_process', 'started_at', 'finished_at')
+        'name', 'status', 'upgraded',
+        'in_process', 'started_at', 'finished_at')
     _key = '/commissaire/cluster/{0}/upgrade'
     _primary_key = 'name'
 

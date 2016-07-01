@@ -16,14 +16,12 @@
 Test cases for the commissaire.handlers.hosts module.
 """
 
-import json
 import mock
 
-import etcd
 import falcon
 
 from . import TestCase
-from mock import MagicMock
+from .constants import *
 from commissaire.handlers import hosts
 from commissaire.handlers.models import Hosts, Host, Cluster
 from commissaire.middleware import JSONify
@@ -52,17 +50,7 @@ class Test_Hosts(TestCase):
             hosts_model.to_json())
 
         # Make sure a Host is accepted as expected
-        hosts_model = hosts.Hosts(
-            hosts=[hosts.Host(
-                ssh_priv_key='dGVzdAo=',
-                remote_user='root',
-                address='127.0.0.1',
-                status='status',
-                os='atomic',
-                cpus=4,
-                memory=12345,
-                space=67890,
-                last_check='2016-01-07T15:09:29.944101')])
+        hosts_model = make_new(HOSTS)
         self.assertEquals(1, len(hosts_model.hosts))
         self.assertEquals(type(str()), type(hosts_model.to_json()))
 
@@ -74,19 +62,9 @@ class Test_HostCredsResource(TestCase):
     """
     Tests for the HostCreds Resource.
     """
-    # TODO: This test could use some work
-
-    ahost = '{"ssh_priv_key": "dGVzdAo=", "remote_user": "root"}'
-
-    etcd_host = ('{"address": "10.2.0.2",'
-                 ' "ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
-                 ' "status": "available", "os": "atomic",'
-                 ' "cpus": 2, "memory": 11989228, "space": 487652,'
-                 ' "last_check": "2015-12-17T15:48:18.710454"}')
 
     def before(self):
         self.api = falcon.API(middleware = [JSONify()])
-        self.return_value = MagicMock(etcd.EtcdResult)
         self.resource = hosts.HostCredsResource()
         self.api.add_route('/api/v0/host/{address}/creds', self.resource)
 
@@ -99,13 +77,13 @@ class Test_HostCredsResource(TestCase):
             _publish.return_value = [manager]
 
             # Verify if the host exists the data is returned
-            manager.get.return_value = Host(**json.loads(self.etcd_host))
+            manager.get.return_value = make_new(HOST)
 
             body = self.simulate_request('/api/v0/host/10.2.0.2/creds')
             # datasource's get should have been called once
             self.assertEqual(self.srmock.status, falcon.HTTP_200)
             self.assertEqual(
-                json.loads(self.ahost),
+                json.loads(HOST_CREDS_JSON),
                 json.loads(body[0]))
 
             # Verify no host returns the proper result
@@ -120,22 +98,9 @@ class Test_HostsResource(TestCase):
     """
     Tests for the Hosts Resource.
     """
-    # TODO: This test could use some work
-
-    ahost = ('{"address": "10.2.0.2",'
-             ' "status": "available", "os": "atomic",'
-             ' "cpus": 2, "memory": 11989228, "space": 487652,'
-             ' "last_check": "2015-12-17T15:48:18.710454"}')
-
-    etcd_host = ('{"address": "10.2.0.2",'
-                 ' "ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
-                 ' "status": "available", "os": "atomic",'
-                 ' "cpus": 2, "memory": 11989228, "space": 487652,'
-                 ' "last_check": "2015-12-17T15:48:18.710454"}')
 
     def before(self):
         self.api = falcon.API(middleware = [JSONify()])
-        self.return_value = MagicMock(etcd.EtcdResult)
         self.resource = hosts.HostsResource()
         self.api.add_route('/api/v0/hosts', self.resource)
 
@@ -146,14 +111,13 @@ class Test_HostsResource(TestCase):
         with mock.patch('cherrypy.engine.publish') as _publish:
             manager = mock.MagicMock(StoreHandlerManager)
             _publish.return_value = [manager]
-            manager.list.return_value = Hosts(
-                hosts=[Host(**json.loads(self.etcd_host))])
+            manager.list.return_value = make_new(HOSTS)
 
             body = self.simulate_request('/api/v0/hosts')
             # datasource's get should have been called once
             self.assertEqual(self.srmock.status, falcon.HTTP_200)
             self.assertEqual(
-                [json.loads(self.ahost)],
+                [json.loads(HOST_JSON)],
                 json.loads(body[0]))
 
     def test_hosts_listing_with_no_hosts(self):
@@ -195,16 +159,7 @@ class Test_Host(TestCase):
         )
 
         # Make sure a Host creates expected results
-        host_model = hosts.Host(
-            ssh_priv_key='dGVzdAo=',
-            remote_user='root',
-            address='127.0.0.1',
-            status='status',
-            os='atomic',
-            cpus=4,
-            memory=12345,
-            space=67890,
-            last_check='2016-01-07T15:09:29.944101')
+        host_model = make_new(HOST)
         self.assertEquals(type(str()), type(host_model.to_json()))
 
 
@@ -214,24 +169,8 @@ class Test_HostResource(TestCase):
     """
     # TODO: This test could use some work
 
-    ahost = ('{"address": "10.2.0.2",'
-             ' "status": "available", "os": "atomic",'
-             ' "cpus": 2, "memory": 11989228, "space": 487652,'
-             ' "last_check": "2015-12-17T15:48:18.710454"}')
-
-    etcd_host = ('{"address": "10.2.0.2",'
-                 ' "ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
-                 ' "status": "available", "os": "atomic",'
-                 ' "cpus": 2, "memory": 11989228, "space": 487652,'
-                 ' "last_check": "2015-12-17T15:48:18.710454"}')
-
-    etcd_cluster = '{"status": "ok", "hostset": []}'
-
-    etcd_cluster_with_host = '{"status": "ok", "hostset": ["10.2.0.2"]}'
-
     def before(self):
         self.api = falcon.API(middleware = [JSONify()])
-        self.return_value = MagicMock(etcd.EtcdResult)
         self.resource = hosts.HostResource()
         self.api.add_route('/api/v0/host/{address}', self.resource)
 
@@ -244,14 +183,13 @@ class Test_HostResource(TestCase):
             _publish.return_value = [manager]
 
             # Verify if the host exists the data is returned
-            self.return_value = Host(**json.loads(self.etcd_host))
-            manager.get.return_value = self.return_value
+            manager.get.return_value = make_new(HOST)
 
             body = self.simulate_request('/api/v0/host/10.2.0.2')
             # datasource's get should have been called once
             self.assertEqual(self.srmock.status, falcon.HTTP_200)
             self.assertEqual(
-                json.loads(self.ahost),
+                json.loads(HOST_JSON),
                 json.loads(body[0]))
 
             # Verify no host returns the proper result
@@ -271,8 +209,7 @@ class Test_HostResource(TestCase):
             _publish.return_value = [manager]
 
             # Verify if the host exists the data is returned
-            self.return_value = Host(**json.loads(self.etcd_host))
-            manager.get.return_value = self.return_value
+            manager.get.return_value = make_new(HOST)
 
             # Verify deleting of an existing host works
             body = self.simulate_request(
@@ -299,53 +236,51 @@ class Test_HostResource(TestCase):
             manager = mock.MagicMock(StoreHandlerManager)
             _publish.return_value = [manager]
 
-            manager.save.return_value = Host(**json.loads(self.etcd_host))
-
+            manager.save.return_value = make_new(HOST)
+            test_cluster = make_new(CLUSTER)
             manager.get.side_effect = (
                 Exception,
-                Host(**json.loads(self.etcd_host)),
-                MagicMock(value=self.etcd_cluster),
-                MagicMock(value=self.etcd_cluster))
+                make_new(HOST),
+                test_cluster,
+                test_cluster)
 
             data = ('{"ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
-                    ' "cluster": "testing"}')
+                    ' "cluster": "cluster"}')
             body = self.simulate_request(
-                '/api/v0/host/10.2.0.2', method='PUT', body=data)
+                '/api/v0/host/10.2.0.1', method='PUT', body=data)
             self.assertEqual(self.srmock.status, falcon.HTTP_201)
-            print body[0]
-            self.assertEqual(json.loads(self.ahost), json.loads(body[0]))
+            self.assertEqual(json.loads(HOST_JSON), json.loads(body[0]))
 
             # Make sure creation fails if the cluster doesn't exist
-            manager.get.side_effect = etcd.EtcdKeyNotFound
+            manager.get.side_effect = Exception
 
             body = self.simulate_request(
                 '/api/v0/host/10.2.0.2', method='PUT', body=data)
             self.assertEqual(self.srmock.status, falcon.HTTP_409)
             self.assertEqual({}, json.loads(body[0]))
-
             # Make sure creation is idempotent if the request parameters
             # agree with an existing host.
             manager.get.side_effect = (
-                Host(**json.loads(self.etcd_host)),
-                Cluster(**json.loads(self.etcd_cluster_with_host)))
+                make_new(HOST),
+                test_cluster)
 
             body = self.simulate_request(
-                '/api/v0/host/10.2.0.2', method='PUT', body=data)
+                '/api/v0/host/10.2.0.1', method='PUT', body=data)
             # datasource's set should not have been called
             self.assertEqual(self.srmock.status, falcon.HTTP_200)
-            self.assertEqual(json.loads(self.ahost), json.loads(body[0]))
+            self.assertEqual(json.loads(HOST_JSON), json.loads(body[0]))
 
             # Make sure creation fails if the request parameters conflict
             # with an existing host.
             manager.get.side_effect = (
-                Host(**json.loads(self.etcd_host)),
-                Cluster(**json.loads(self.etcd_cluster_with_host)))
+                make_new(HOST),
+                make_new(CLUSTER_WITH_HOST))
             bad_data = '{"ssh_priv_key": "boguskey"}'
             body = self.simulate_request(
                 '/api/v0/host/10.2.0.2', method='PUT', body=bad_data)
             # datasource's set should not have been called once
-            self.assertEqual(self.srmock.status, falcon.HTTP_409)
             self.assertEqual({}, json.loads(body[0]))
+            self.assertEqual(self.srmock.status, falcon.HTTP_409)
 
 
 class Test_ImplicitHostResource(TestCase):
@@ -353,24 +288,8 @@ class Test_ImplicitHostResource(TestCase):
     Tests for the ImplicitHost Resource.
     """
 
-    ahost = ('{"address": "127.0.0.1",'
-             ' "status": "available", "os": "atomic",'
-             ' "cpus": 2, "memory": 11989228, "space": 487652,'
-             ' "last_check": "2015-12-17T15:48:18.710454"}')
-
-    etcd_host = ('{"address": "127.0.0.1",'
-                 ' "ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
-                 ' "status": "available", "os": "atomic",'
-                 ' "cpus": 2, "memory": 11989228, "space": 487652,'
-                 ' "last_check": "2015-12-17T15:48:18.710454"}')
-
-    etcd_cluster = '{"status": "ok", "hostset": []}'
-
-    etcd_cluster_with_host = '{"status": "ok", "hostset": ["127.0.0.1"]}'
-
     def before(self):
         self.api = falcon.API(middleware = [JSONify()])
-        self.return_value = MagicMock(etcd.EtcdResult)
         self.resource = hosts.ImplicitHostResource()
         self.api.add_route('/api/v0/host', self.resource)
 
@@ -382,48 +301,48 @@ class Test_ImplicitHostResource(TestCase):
             manager = mock.MagicMock(StoreHandlerManager)
             _publish.return_value = [manager]
 
-            manager.save.return_value = Host(**json.loads(self.etcd_host))
+            manager.save.return_value = make_new(HOST)
 
             manager.get.side_effect = (
                 Exception,
-                Host(**json.loads(self.etcd_host)),
-                Cluster(**json.loads(self.etcd_cluster)),
-                Host(**json.loads(self.etcd_host)))
-
+                make_new(HOST),
+                make_new(CLUSTER),
+                make_new(HOST))
             data = ('{"ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
-                    ' "cluster": "testing"}')
+                    ' "cluster": "cluster"}')
             body = self.simulate_request(
                 '/api/v0/host', method='PUT', body=data)
             self.assertEqual(self.srmock.status, falcon.HTTP_201)
-            self.assertEqual(json.loads(self.ahost), json.loads(body[0]))
+            self.assertEqual(json.loads(HOST_JSON), json.loads(body[0]))
 
-            # TODO: add back after cluster work
-            '''
             # Make sure creation fails if the cluster doesn't exist
             manager.get.side_effect = (
-                Host(**json.loads(self.etcd_host)),
+                make_new(HOST),
                 Exception)
             body = self.simulate_request(
                 '/api/v0/host', method='PUT', body=data)
             self.assertEqual(self.srmock.status, falcon.HTTP_409)
             self.assertEqual({}, json.loads(body[0]))
-            '''
+
             # Make sure creation is idempotent if the request parameters
             # agree with an existing host.
             manager.get.side_effect = (
-                Host(**json.loads(self.etcd_host)),
-                Cluster(**json.loads(self.etcd_cluster_with_host)))
+                make_new(HOST),
+                Cluster(
+                    name='cluster',
+                    status='ok',
+                    hostset=["127.0.0.1"]))
 
             body = self.simulate_request(
                 '/api/v0/host', method='PUT', body=data)
             self.assertEqual(self.srmock.status, falcon.HTTP_200)
-            self.assertEqual(json.loads(self.ahost), json.loads(body[0]))
+            self.assertEqual(json.loads(HOST_JSON), json.loads(body[0]))
 
             # Make sure creation fails if the request parameters conflict
             # with an existing host.
             manager.get.side_effect = (
-                Host(**json.loads(self.etcd_host)),
-                Host(**json.loads(self.etcd_host)))
+                make_new(HOST),
+                make_new(HOST))
             bad_data = '{"ssh_priv_key": "boguskey"}'
             body = self.simulate_request(
                 '/api/v0/host', method='PUT', body=bad_data)

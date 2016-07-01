@@ -164,13 +164,13 @@ def impl(context, host, cluster):
 def impl(context, async_operation):
     json = context.request.json()
     if async_operation == 'upgrade':
-        expected_keys = set(('status', 'upgraded',
+        expected_keys = set(('name', 'status', 'upgraded',
                              'in_process', 'started_at', 'finished_at'))
     elif async_operation == 'restart':
-        expected_keys = set(('status', 'restarted', 'in_process',
+        expected_keys = set(('name', 'status', 'restarted', 'in_process',
                              'started_at', 'finished_at'))
     elif async_operation == 'deployment':
-        expected_keys = set(('status', 'version', 'deployed',
+        expected_keys = set(('name', 'status', 'version', 'deployed',
                              'in_process', 'started_at', 'finished_at'))
     actual_keys = set(json.keys())
     assert actual_keys == expected_keys, \

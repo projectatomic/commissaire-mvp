@@ -17,7 +17,6 @@ Resource utilities.
 """
 import cherrypy
 import falcon
-import json
 
 from commissaire.queues import INVESTIGATE_QUEUE
 from commissaire.handlers.models import Cluster, Host
@@ -50,11 +49,9 @@ def etcd_cluster_exists(name):
     :param name: Name of a cluster
     :type name: str
     """
-    key = etcd_cluster_key(name)
     store_manager = cherrypy.engine.publish('get-store-manager')[0]
-
     try:
-        store_manager.get(key)
+        store_manager.get(Cluster(name=name, status='', hostset=[]))
     except:
         return False
     return True
@@ -71,7 +68,9 @@ def etcd_cluster_has_host(name, address):
     :type address: str
     """
     try:
-        cluster = Cluster.retrieve(name)
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        cluster = store_manager.get(Cluster(
+            name=name, status='', hostset=[]))
     except:
         raise KeyError
 
@@ -92,7 +91,9 @@ def etcd_cluster_add_host(name, address):
     :type address: str
     """
     try:
-        cluster = Cluster.retrieve(name)
+        store_manager = cherrypy.engine.publish('get-store-manager')[0]
+        cluster = store_manager.get(Cluster(
+            name=name, status='', hostset=[]))
     except:
         raise KeyError
 
@@ -107,7 +108,7 @@ def etcd_cluster_add_host(name, address):
 
     if address not in cluster.hostset:
         cluster.hostset.append(address)
-        cluster.save(name)
+        cluster = store_manager.save(cluster)
 
 
 def etcd_cluster_remove_host(name, address):
@@ -136,7 +137,7 @@ def etcd_cluster_remove_host(name, address):
     if address in cluster.hostset:
         cluster.hostset.remove(address)
         store_manager = cherrypy.engine.publish('get-store-manager')[0]
-        store_manager.save(cluster.etcd.key, cluster.to_json(secure=True))
+        store_manager.save(cluster)
 
 
 def get_cluster_model(name):
@@ -150,13 +151,9 @@ def get_cluster_model(name):
     :param name: Name of a cluster
     :type name: str
     """
-    key = etcd_cluster_key(name)
     store_manager = cherrypy.engine.publish('get-store-manager')[0]
-
     try:
-        etcd_resp = store_manager.get(key)
-        cluster = Cluster(**json.loads(etcd_resp.value))
-        cluster.etcd = etcd_resp
+        cluster = store_manager.get(Cluster(name=name, status='', hostset=[]))
     except:
         cluster = None
 
@@ -205,9 +202,7 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
             return (falcon.HTTP_409, None)
         if cluster_name:
             try:
-                # TODO: reenable once cluster work is done
-                # assert etcd_cluster_has_host(cluster_name, address)
-                pass
+                assert etcd_cluster_has_host(cluster_name, address)
             except (AssertionError, KeyError):
                 return (falcon.HTTP_409, None)
 
@@ -241,9 +236,8 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
     new_host = store_manager.save(host)
 
     # Add host to the requested cluster.
-    # TODO: reenable once cluster work is done
-    # if cluster_name:
-    #    etcd_cluster_add_host(cluster_name, address)
+    if cluster_name:
+        etcd_cluster_add_host(cluster_name, address)
 
     manager_clone = store_manager.clone()
     job_request = (manager_clone, host_creation, ssh_priv_key, remote_user)
