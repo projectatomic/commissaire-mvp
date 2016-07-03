@@ -4,9 +4,8 @@
 
    Also, this example shows placing hashed user passwords in a separate `users.json` file, presumably with more restrictive access permissions.
 
-.. code-block:: shell
+.. code-block:: javascript
 
-   (virtualenv)$ cat /etc/commissaire/commissaire.conf
    {
        "tls-keyfile": "/path/to/server.key",
        "tls-certificate": "/path/to/server.crt",

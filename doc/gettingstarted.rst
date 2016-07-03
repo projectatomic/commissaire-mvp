@@ -101,7 +101,8 @@ as those given below:
 
 **Not So Secure Mode**
 
-.. include:: examples/simple_config.rst
+.. literalinclude:: ../conf/commissaire.conf
+   :language: javascript
 
 **More Secure Mode**
 
