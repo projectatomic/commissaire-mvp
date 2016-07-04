@@ -20,13 +20,13 @@ Feature: Deleting Hosts
   @anonymous
   Scenario: Deleting a host without authentication
      Given we are anonymous
-       and a host already exists at 10.2.0.2
-      when we delete the host 10.2.0.2
+       and a host already exists at 192.168.152.110
+      when we delete the host 192.168.152.110
       then commissaire will deny access
 
   Scenario: Deleting a host with authentication
      Given we have a valid username and password
-       and a host already exists at 10.2.0.2
-      when we delete the host 10.2.0.2
+       and a host already exists at 192.168.152.110
+      when we delete the host 192.168.152.110
       then commissaire will allow access
        and commissaire will note success
