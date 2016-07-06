@@ -31,6 +31,15 @@ virtualization system as well as vagrant installed and execute ``vagrant up``.
 
    The initial run updates the systems and can take some time. To provision faster try ``vagrant up --parallel etcd fedora-cloud fedora-atomic && vagrant up commissaire``.
 
+============== =============== ================ =========
+Server         IP              OS               AutoStart
+============== =============== ================ =========
+Etcd           192.168.152.101 Fedora Cloud 24  Yes
+Fedora Node    192.168.152.110 Fedora Cloud 24  Yes
+Fedora Atomic  192.168.152.111 Fedora Atomic 23 Yes
+Commissaire    192.168.152.100 Fedora Cloud 24  Yes
+Kubernetes     192.168.152.102 Fedora Cloud 24  No
+============== =============== ================ =========
 
 For more information see the `Vagrant site <https://www.vagrantup.com>`_.
 
