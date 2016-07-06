@@ -22,6 +22,9 @@ Vagrant.configure(2) do |config|
         echo "===> Starting etcd"
         sudo systemctl enable etcd
         sudo systemctl start etcd
+        echo "===> Set flannel network"
+        sudo etcdctl --endpoint=http://192.168.152.101:2379 set '/atomic01/network/config' '{"Network": "172.16.0.0/12", "SubnetLen": 24, "Backend": {"Type": "vxlan"}}'
+
       SHELL
     # End etcd
     end
@@ -58,6 +61,8 @@ Vagrant.configure(2) do |config|
         sudo hostnamectl set-hostname fedora-cloud
         echo "===> Updating the system"
         sudo dnf update --setopt=tsflags=nodocs -y
+        echo "===> Installing OS dependencies"
+        sudo dnf install -y python
       SHELL
     # End etcd
     end
