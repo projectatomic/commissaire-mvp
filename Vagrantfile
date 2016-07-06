@@ -26,6 +26,29 @@ Vagrant.configure(2) do |config|
     # End etcd
     end
 
+    # Development Kubernetes server.
+    # NOTE: This must start after etcd.
+    config.vm.define "kubernetes", autostart: false do |kubernetes|
+      kubernetes.vm.box = "fedora/24-cloud-base"
+      kubernetes.vm.network "private_network", ip: "192.168.152.102"
+      kubernetes.vm.provision "shell", inline: <<-SHELL
+        echo "==> Setting hostname"
+        sudo hostnamectl set-hostname kubernetes
+        echo "===> Updating the system"
+        #sudo dnf update --setopt=tsflags=nodocs -y
+        echo "===> Installing kubernetes"
+        sudo dnf install -y kubernetes-master.x86_64
+        echo "===> Configuring kubernetes"
+        sudo sed -i "s|insecure-bind-address=127.0.0.1|insecure-bind-address=192.168.152.102|g" /etc/kubernetes/apiserver
+        sudo sed -i "s|etcd-servers=http://127.0.0.1:2379|etcd-servers=http://192.168.152.101:2379|g" /etc/kubernetes/apiserver
+        echo "===> Starting kubernetes"
+        sudo systemctl enable kube-apiserver kube-scheduler kube-controller-manager
+        sudo systemctl start kube-apiserver kube-scheduler kube-controller-manager
+      SHELL
+    # End etcd
+    end
+
+
     # Development Node 1
     config.vm.define "fedora-cloud" do |node|
       node.vm.box = "fedora/24-cloud-base"
@@ -54,6 +77,7 @@ Vagrant.configure(2) do |config|
     end
 
   # Development commissaire server
+  # NOTE: This must start after etcd.
   config.vm.define "commissaire", primary: true do |commissaire|
     commissaire.vm.box = "fedora/24-cloud-base"
     commissaire.vm.network "private_network", ip: "192.168.152.100"
