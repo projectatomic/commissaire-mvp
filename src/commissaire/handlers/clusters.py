@@ -24,6 +24,7 @@ import falcon
 
 from multiprocessing import Process
 
+from commissaire import constants as C
 from commissaire.resource import Resource
 from commissaire.jobs.clusterexec import clusterexec
 from commissaire.handlers.models import (
@@ -155,7 +156,22 @@ class ClusterResource(Resource):
         except:
             pass
 
-        cluster = Cluster.new(name=name, status='ok', hostset=[])
+        # Honor cluster type if it is passed in
+        cluster_type = C.CLUSTER_TYPE_DEFAULT
+        try:
+            data = req.stream.read().decode()
+            args = json.loads(data)
+            cluster_type = args['type']
+        except KeyError:
+            # Data was provided but no type was listed. Use default.
+            pass
+        except ValueError:
+            # Cluster type was not provided. Use default.
+            pass
+
+        cluster = Cluster.new(
+            name=name, cluster=cluster_type, status='ok', hostset=[])
+
         store_manager.save(cluster)
         self.logger.info(
             'Created cluster {0} per request.'.format(name))

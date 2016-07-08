@@ -25,6 +25,7 @@ import falcon
 from . import TestCase
 from .constants import *
 from mock import MagicMock
+from commissaire import constants as C
 from commissaire.handlers import clusters
 from commissaire.handlers.models import Host
 from commissaire.middleware import JSONify
@@ -140,12 +141,15 @@ class Test_Cluster(TestCase):
 
         # Make sure a Cluster creates expected results
         cluster_model = clusters.Cluster.new(
-            name='cluster', status='OK', hostset=[])
+            name='cluster', status='ok', hostset=[])
         self.assertEquals(type(str()), type(cluster_model.to_json()))
         self.assertIn('total', cluster_model.hosts)
         self.assertIn('available', cluster_model.hosts)
         self.assertIn('unavailable', cluster_model.hosts)
-
+        self.assertEquals('cluster', cluster_model.name)
+        self.assertEquals('ok', cluster_model.status)
+        self.assertEquals([], cluster_model.hostset)
+        self.assertEquals(C.CLUSTER_TYPE_DEFAULT, cluster_model.type)
 
 class Test_ClusterResource(TestCase):
     """

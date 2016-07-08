@@ -18,6 +18,8 @@ import requests
 
 from behave import *
 
+from commissaire import constants as C
+
 from steps import (
     assert_status_code,
     VALID_USERNAME, VALID_PASSWORD)
@@ -27,7 +29,8 @@ from steps import (
 def impl(context, cluster):
     request = requests.put(
         context.SERVER + '/api/v0/cluster/{0}'.format(cluster),
-        auth=(VALID_USERNAME, VALID_PASSWORD))
+        auth=(VALID_USERNAME, VALID_PASSWORD),
+        data=json.dumps({'type': C.CLUSTER_TYPE_HOST}))
     assert_status_code(request.status_code, 201)
 
 
@@ -80,6 +83,14 @@ def impl(context, cluster, json):
         auth=context.auth)
 
 
+@when('we create a cluster without type named {cluster}')
+def impl(context, cluster):
+    context.request = requests.put(
+        context.SERVER + '/api/v0/cluster/{0}'.format(cluster),
+        auth=(VALID_USERNAME, VALID_PASSWORD))
+    assert_status_code(context.request.status_code, 201)
+
+
 @when('we {operation} the cluster {cluster}')
 def impl(context, operation, cluster):
     context.cluster = cluster
@@ -90,7 +101,8 @@ def impl(context, operation, cluster):
     elif operation == 'create':
         context.request = requests.put(
             context.SERVER + '/api/v0/cluster/{0}'.format(cluster),
-            auth=context.auth)
+            auth=context.auth,
+            data=json.dumps({'type': C.CLUSTER_TYPE_HOST}))
     elif operation == 'delete':
         context.request = requests.delete(
             context.SERVER + '/api/v0/cluster/{0}'.format(cluster),
@@ -158,6 +170,16 @@ def impl(context, host, cluster):
         context.SERVER + '/api/v0/cluster/{0}/hosts/{1}'.format(cluster, host),
         auth=(VALID_USERNAME, VALID_PASSWORD))
     assert_status_code(request.status_code, 404)
+
+
+@then('the cluster {cluster} will have the default type')
+def impl(context, cluster):
+    context.request = requests.get(
+        context.SERVER + '/api/v0/cluster/{0}'.format(cluster),
+        auth=(VALID_USERNAME, VALID_PASSWORD))
+    cluster_type = context.request.json()['type']
+    assert cluster_type == C.CLUSTER_TYPE_DEFAULT, \
+        'Expected {0}, got {1}'.format(C.CLUSTER_TYPE_DEFAULT, cluster_type)
 
 
 @then('commissaire will provide {async_operation} status')
