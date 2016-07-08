@@ -40,7 +40,31 @@ PUT
 ```
 Creates a new cluster.
 
-No body.
+.. note::
+
+    To retain backwards compatibilty this endpoint will also continue accepting
+    no payload until version ``0.1.0``. Until then the type of ``kubernetes``
+    will be used.
+
+.. code-block:: javascript
+
+    {
+        "type": enum(string), // The cluster type
+    }
+
+.. note::
+
+   See :ref:`cluster_types` for a list and description of cluster types.
+
+
+Example
+~~~~~~~
+
+.. code-block:: javascript
+
+   {
+       "type": "kubernetes"
+   }
 
 
 Cluster Members

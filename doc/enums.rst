@@ -45,3 +45,11 @@ Status Statuses
 
 * **OK**: The status check is currently working.
 * **FAILED**: The status check is currently failing.
+
+.. _cluster_types:
+
+Cluster Types
+~~~~~~~~~~~~~
+
+* **kubernetes**: A cluster with a Kubernetes compatible API.
+* **host_only**: A cluster for only managing hosts.

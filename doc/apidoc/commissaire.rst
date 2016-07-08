@@ -22,6 +22,7 @@ Submodules
 .. toctree::
 
    commissaire.config
+   commissaire.constants
    commissaire.middleware
    commissaire.model
    commissaire.queues
