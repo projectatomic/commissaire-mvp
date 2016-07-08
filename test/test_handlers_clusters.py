@@ -55,7 +55,8 @@ class Test_Clusters(TestCase):
 
         # Make sure a Cluster is accepted as expected
         clusters_model = clusters.Clusters(
-            clusters=[clusters.Cluster(name='cluster', status='ok', hostset=[])])
+            clusters=[clusters.Cluster.new(
+                name='cluster', status='ok', hostset=[])])
         self.assertEquals(1, len(clusters_model.clusters))
         self.assertEquals(type(str()), type(clusters_model.to_json()))
 
@@ -85,7 +86,7 @@ class Test_ClustersResource(TestCase):
             _publish.return_value = [manager]
 
             return_value = clusters.Clusters(
-                clusters=[clusters.Cluster(
+                clusters=[clusters.Cluster.new(
                     name=self.cluster_name, status='', hostset=[])])
             manager.list.return_value = return_value
 
@@ -138,7 +139,8 @@ class Test_Cluster(TestCase):
             clusters.Cluster)
 
         # Make sure a Cluster creates expected results
-        cluster_model = clusters.Cluster(name='cluster', status='OK', hostset=[])
+        cluster_model = clusters.Cluster.new(
+            name='cluster', status='OK', hostset=[])
         self.assertEquals(type(str()), type(cluster_model.to_json()))
         self.assertIn('total', cluster_model.hosts)
         self.assertIn('available', cluster_model.hosts)

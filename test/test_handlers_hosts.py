@@ -328,7 +328,7 @@ class Test_ImplicitHostResource(TestCase):
             # agree with an existing host.
             manager.get.side_effect = (
                 make_new(HOST),
-                Cluster(
+                Cluster.new(
                     name='cluster',
                     status='ok',
                     hostset=["127.0.0.1"]))

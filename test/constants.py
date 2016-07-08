@@ -48,19 +48,19 @@ HOSTS = Hosts(
     hosts=[HOST]
 )
 #: Cluster model for most tests
-CLUSTER = Cluster(
+CLUSTER = Cluster.new(
     name='cluster',
     status='ok',
     hostset=[],
 )
 #: Cluster model with HOST for most tests
-CLUSTER_WITH_HOST = Cluster(
+CLUSTER_WITH_HOST = Cluster.new(
     name='cluster',
     status='ok',
     hostset=[HOST],
 )
 #: Cluster model with flattened HOST for tests
-CLUSTER_WITH_FLAT_HOST = Cluster(
+CLUSTER_WITH_FLAT_HOST = Cluster.new(
     name='cluster',
     status='ok',
     hostset=[HOST.address],

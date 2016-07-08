@@ -93,7 +93,7 @@ def clusterexec(store_manager, cluster_name, command, kwargs={}):
 
     # Collect all host addresses in the cluster
     try:
-        cluster = store_manager.get(Cluster(
+        cluster = store_manager.get(Cluster.new(
             name=cluster_name, status='', hostset=[]))
     except Exception as error:
         logger.warn(

@@ -18,6 +18,7 @@ Models for handlers.
 
 import json
 
+from commissaire import constants as C
 from commissaire.model import Model
 
 
@@ -26,9 +27,11 @@ class Cluster(Model):
     Representation of a Cluster.
     """
     _json_type = dict
-    _attributes = ('name', 'status', 'hostset')
+    _attributes = ('name', 'status', 'type', 'hostset')
     _hidden_attributes = ('hostset',)
-    _attribute_defaults = {'name': '', 'status': '', 'hostset': []}
+    _attribute_defaults = {
+        'name': '', 'type': C.CLUSTER_TYPE_DEFAULT,
+        'status': '', 'hostset': []}
     _primary_key = 'name'
 
     def __init__(self, **kwargs):

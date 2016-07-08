@@ -155,7 +155,7 @@ class ClusterResource(Resource):
         except:
             pass
 
-        cluster = Cluster(name=name, status='ok', hostset=[])
+        cluster = Cluster.new(name=name, status='ok', hostset=[])
         store_manager.save(cluster)
         self.logger.info(
             'Created cluster {0} per request.'.format(name))
