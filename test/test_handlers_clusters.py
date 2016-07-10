@@ -64,6 +64,15 @@ class Test_Clusters(TestCase):
         # Make sure other instances are not accepted
         clusters_model = clusters.Clusters(clusters=[object()])
 
+    def test_clusters_defaults_values(self):
+        """
+        Verify Clusters model fills default values when missing.
+        """
+        model_instance = clusters.Clusters.new()
+        self.assertEquals(
+            clusters.Clusters._attribute_defaults['clusters'],
+            model_instance.clusters)
+
 
 class Test_ClustersResource(TestCase):
     """
@@ -150,6 +159,40 @@ class Test_Cluster(TestCase):
         self.assertEquals('ok', cluster_model.status)
         self.assertEquals([], cluster_model.hostset)
         self.assertEquals(C.CLUSTER_TYPE_DEFAULT, cluster_model.type)
+
+    def test_cluster_defaults_values(self):
+        """
+        Verify Cluster model fills default values when missing.
+        """
+        model_instance = clusters.Cluster.new()
+        self.assertEquals(
+            clusters.Cluster._attribute_defaults['name'],
+            model_instance.name)
+        self.assertEquals(
+            clusters.Cluster._attribute_defaults['status'],
+            model_instance.status)
+        self.assertEquals(
+            clusters.Cluster._attribute_defaults['hostset'],
+            model_instance.hostset)
+
+        # Set subsets of values.
+        for kwargs in (
+                {'name': 'test'},
+                {'name': 'test', 'status': 'ok'},
+                {'name': 'test', 'hostset': ['192.168.152.110']},
+                {'status': 'ok'},
+                {'status': 'ok', 'hostset': ['192.168.152.110']},
+                {'hostset': ['192.168.152.110']}):
+            model_instance = clusters.Cluster.new(**kwargs)
+            not_done = list(clusters.Cluster._attributes)
+            for k, v in kwargs.items():
+                self.assertEquals(v, getattr(model_instance, k))
+                not_done.remove(k)
+            for k in not_done:
+                self.assertEquals(
+                clusters.Cluster._attribute_defaults[k],
+                getattr(model_instance, k))
+
 
 class Test_ClusterResource(TestCase):
     """
@@ -271,6 +314,41 @@ class Test_ClusterRestart(TestCase):
             clusters.ClusterRestart)
 
         self.assertEquals(type(str()), type(CLUSTER_RESTART.to_json()))
+
+    def test_cluster_restart_defaults_values(self):
+        """
+        Verify ClusterRestart model fills default values when missing.
+        """
+        model_instance = clusters.ClusterRestart.new()
+        for k in model_instance._attributes:
+            self.assertEquals(
+                clusters.ClusterRestart._attribute_defaults[k],
+                getattr(model_instance, k))
+
+        # Set subsets of values. Not all inputs are provided but it should
+        # be enough to catch issues.
+        for kwargs in (
+                {'name': 'test'},
+                {'name': 'test', 'status': 'ok'},
+                {'name': 'test', 'restarted': ['192.168.152.110']},
+                {'name': 'test', 'in_process': ['192.168.152.110']},
+                {'name': 'test', 'started_at': 'test'},
+                {'name': 'test', 'finished_at': 'test'},
+                {'status': 'ok'},
+                {'status': 'test', 'restarted': ['192.168.152.110']},
+                {'status': 'ok', 'started_at': 'test'},
+                {'status': 'ok', 'finished_at': 'test'},
+                {'restarted': ['192.168.152.110']},
+                {'in_process': ['192.168.152.110']}):
+            model_instance = clusters.ClusterRestart.new(**kwargs)
+            not_done = list(clusters.ClusterRestart._attributes)
+            for k, v in kwargs.items():
+                self.assertEquals(v, getattr(model_instance, k))
+                not_done.remove(k)
+            for k in not_done:
+                self.assertEquals(
+                clusters.ClusterRestart._attribute_defaults[k],
+                getattr(model_instance, k))
 
 
 class Test_ClusterRestartResource(TestCase):
@@ -526,6 +604,41 @@ class Test_ClusterUpgrade(TestCase):
 
         self.assertEquals(type(str()), type(cluster_upgrade_model.to_json()))
 
+    def test_cluster_upgrade_defaults_values(self):
+        """
+        Verify ClusterUpgrade model fills default values when missing.
+        """
+        model_instance = clusters.ClusterUpgrade.new()
+        for k in model_instance._attributes:
+            self.assertEquals(
+                clusters.ClusterUpgrade._attribute_defaults[k],
+                getattr(model_instance, k))
+
+        # Set subsets of values. Not all inputs are provided but it should
+        # be enough to catch issues.
+        for kwargs in (
+                {'name': 'test'},
+                {'name': 'test', 'status': 'ok'},
+                {'name': 'test', 'upgraded': ['192.168.152.110']},
+                {'name': 'test', 'in_process': ['192.168.152.110']},
+                {'name': 'test', 'started_at': 'test'},
+                {'name': 'test', 'finished_at': 'test'},
+                {'status': 'ok'},
+                {'status': 'test', 'upgraded': ['192.168.152.110']},
+                {'status': 'ok', 'started_at': 'test'},
+                {'status': 'ok', 'finished_at': 'test'},
+                {'upgraded': ['192.168.152.110']},
+                {'in_process': ['192.168.152.110']}):
+            model_instance = clusters.ClusterUpgrade.new(**kwargs)
+            not_done = list(clusters.ClusterUpgrade._attributes)
+            for k, v in kwargs.items():
+                self.assertEquals(v, getattr(model_instance, k))
+                not_done.remove(k)
+            for k in not_done:
+                self.assertEquals(
+                clusters.ClusterUpgrade._attribute_defaults[k],
+                getattr(model_instance, k))
+
 
 class Test_ClusterUpgradeResource(TestCase):
     """
@@ -609,6 +722,42 @@ class Test_ClusterDeploy(TestCase):
 
         self.assertEquals(type(str()), type(cluster_deploy_model.to_json()))
 
+    def test_cluster_deploy_defaults_values(self):
+        """
+        Verify ClusterDeploy model fills default values when missing.
+        """
+        model_instance = clusters.ClusterDeploy.new()
+        for k in model_instance._attributes:
+            self.assertEquals(
+                clusters.ClusterDeploy._attribute_defaults[k],
+                getattr(model_instance, k))
+
+        # Set subsets of values. Not all inputs are provided but it should
+        # be enough to catch issues.
+        for kwargs in (
+                {'name': 'test'},
+                {'name': 'test', 'status': 'ok'},
+                {'name': 'test', 'status': 'ok', 'version': '1.0'},
+                {'name': 'test', 'deployed': ['192.168.152.110']},
+                {'name': 'test', 'in_process': ['192.168.152.110']},
+                {'name': 'test', 'started_at': 'test'},
+                {'name': 'test', 'finished_at': 'test'},
+                {'status': 'ok'},
+                {'status': 'test', 'deployed': ['192.168.152.110'], 'version': '1.0'},
+                {'status': 'ok', 'started_at': 'test'},
+                {'status': 'ok', 'finished_at': 'test'},
+                {'deployed': ['192.168.152.110']},
+                {'in_process': ['192.168.152.110']},
+                {'version': '1.0'}):
+            model_instance = clusters.ClusterDeploy.new(**kwargs)
+            not_done = list(clusters.ClusterDeploy._attributes)
+            for k, v in kwargs.items():
+                self.assertEquals(v, getattr(model_instance, k))
+                not_done.remove(k)
+            for k in not_done:
+                self.assertEquals(
+                clusters.ClusterDeploy._attribute_defaults[k],
+                getattr(model_instance, k))
 
 class Test_ClusterDeployResource(TestCase):
     """

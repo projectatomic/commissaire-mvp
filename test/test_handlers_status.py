@@ -49,6 +49,34 @@ class Test_Status(TestCase):
             etcd={}, investigator={})
         self.assertEquals(type(str()), type(status_model.to_json()))
 
+    def test_status_defaults_values(self):
+        """
+        Verify Status model fills default values when missing.
+        """
+        model_instance = status.Status.new()
+        self.assertEquals(
+            status.Status._attribute_defaults['investigator'],
+            model_instance.investigator)
+        self.assertEquals(
+            status.Status._attribute_defaults['etcd'],
+            model_instance.etcd)
+
+        # Only set investigator
+        investigator_value = {'test': 'value'}
+        model_instance = status.Status.new(investigator=investigator_value)
+        self.assertEquals(investigator_value, model_instance.investigator)
+        self.assertEquals(
+            status.Status._attribute_defaults['etcd'],
+            model_instance.etcd)
+
+        # Only set etcd
+        etcd_value = {'test': 'value'}
+        model_instance = status.Status.new(etcd=etcd_value)
+        self.assertEquals(
+            status.Status._attribute_defaults['investigator'],
+            model_instance.investigator)
+        self.assertEquals(etcd_value, model_instance.etcd)
+
 
 class Test_StatusResource(TestCase):
     """

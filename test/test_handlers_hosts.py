@@ -57,6 +57,12 @@ class Test_Hosts(TestCase):
         # Make sure other instances are not accepted
         hosts_model = hosts.Hosts(hosts=[object()])
 
+    def test_hosts_defaults_values(self):
+        """
+        Verify Hosts model fills default values when missing.
+        """
+        hosts = Hosts.new()
+        self.assertEquals(Hosts._attribute_defaults['hosts'], hosts.hosts)
 
 class Test_HostCredsResource(TestCase):
     """
