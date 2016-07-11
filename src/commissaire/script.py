@@ -229,11 +229,13 @@ def parse_args(parser):
     parser.add_argument(
         '--authentication-plugin', type=str,
         default='commissaire.authentication.httpbasicauth',
+        metavar='MODULE_NAME',
         help=('Authentication Plugin module. '
               'EX: commissaire.authentication.httpbasicauth'))
     parser.add_argument(
         '--authentication-plugin-kwargs', type=str, default={},
-        help='Authentication Plugin configuration (key=value)')
+        metavar='KEYWORD_ARGS',
+        help='Authentication Plugin configuration (key=value,...)')
 
     # We have to parse the command-line arguments twice.  Once to extract
     # the --config-file option, and again with the config file content as
