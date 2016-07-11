@@ -24,8 +24,10 @@ import tempfile
 
 from time import sleep
 
+from commissaire import constants as C
 from commissaire.compat.b64 import base64
 from commissaire.containermgr.kubernetes import KubeContainerManager
+from commissaire.handlers import util
 from commissaire.handlers.models import Host
 from commissaire.oscmd import get_oscmd
 from commissaire.transport import ansibleapi
@@ -132,7 +134,7 @@ def investigator(queue, config, run_once=False):
         oscmd = get_oscmd(host.os)
         try:
             result, facts = transport.bootstrap(
-                address, key_file, config, oscmd)
+                address, key_file, config, oscmd, store_manager)
             host.status = 'inactive'
             store_manager.save(host)
         except:
@@ -146,31 +148,42 @@ def investigator(queue, config, run_once=False):
                 break
             continue
 
-        # Verify association with the container manager
+        host.status = cluster_type = C.CLUSTER_TYPE_HOST
         try:
-            container_mgr = KubeContainerManager(config)
-            # Try 3 times waiting 5 seconds each time before giving up
-            for cnt in range(0, 3):
-                if container_mgr.node_registered(address):
-                    logger.info(
-                        '{0} has been registered with the '
-                        'container manager.'.format(address))
-                    host.status = 'active'
-                    break
-                if cnt == 3:
-                    msg = 'Could not register with the container manager'
-                    logger.warn(msg)
-                    raise Exception(msg)
-                logger.debug(
-                    '{0} has not been registered with the container manager. '
-                    'Checking again in 5 seconds...'.format(address))
-                sleep(5)
-        except:
-            _, exc_msg, _ = sys.exc_info()
-            logger.warn(
-                'Unable to finish bootstrap for {0} while associating with '
-                'the container manager: {1}'.format(address, exc_msg))
-            host.status = 'inactive'
+            cluster = util.cluster_for_host(address, store_manager)
+            cluster_type = cluster.type
+        except KeyError:
+            # Not part of a cluster
+            pass
+
+        # Verify association with the container manager
+        if cluster_type == C.CLUSTER_TYPE_KUBERNETES:
+            try:
+                container_mgr = KubeContainerManager(config)
+                # Try 3 times waiting 5 seconds each time before giving up
+                for cnt in range(0, 3):
+                    if container_mgr.node_registered(address):
+                        logger.info(
+                            '{0} has been registered with the '
+                            'container manager.'.format(address))
+                        host.status = 'active'
+                        break
+                    if cnt == 3:
+                        msg = 'Could not register with the container manager'
+                        logger.warn(msg)
+                        raise Exception(msg)
+                    logger.debug(
+                        '{0} has not been registered with the container '
+                        ' manager. Checking again in 5 seconds...'.format(
+                            address))
+                    sleep(5)
+            except:
+                _, exc_msg, _ = sys.exc_info()
+                logger.warn(
+                    'Unable to finish bootstrap for {0} while associating '
+                    'with the container manager: {1}'.format(
+                        address, exc_msg))
+                host.status = 'inactive'
 
         store_manager.save(host)
         logger.info(

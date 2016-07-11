@@ -19,7 +19,7 @@ import cherrypy
 import falcon
 
 from commissaire.queues import INVESTIGATE_QUEUE
-from commissaire.handlers.models import Cluster, Host
+from commissaire.handlers.models import Cluster, Clusters, Host
 
 
 def etcd_host_key(address):
@@ -55,6 +55,26 @@ def etcd_cluster_exists(name):
     except:
         return False
     return True
+
+
+def cluster_for_host(address, store_manager):
+    """
+    Checks to see if the the host is part of a cluster. KeyError is raised
+    if the host is not part of a cluster.
+
+    :param name: Name of a cluster
+    :type name: str
+    :param store_manager: Remote object for remote stores
+    :type store_manager: commissaire.store.StoreHandlerManager
+    :returns: A cluster instance that has the host
+    :rtype: commissaire.model.Model
+    :rasies: KeyError
+    """
+    for cluster in store_manager.list(Clusters.new()).clusters:
+        if address in cluster.hostset:
+            return cluster
+
+    raise KeyError
 
 
 def etcd_cluster_has_host(name, address):

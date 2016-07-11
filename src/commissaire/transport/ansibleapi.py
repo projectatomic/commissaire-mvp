@@ -30,6 +30,9 @@ from ansible.executor.task_queue_manager import TaskQueueManager
 from ansible.plugins.callback import default
 from ansible.utils.display import Display
 
+from commissaire import constants as C
+from commissaire.handlers import util
+
 
 class LogForward(default.CallbackModule):
     """
@@ -341,7 +344,7 @@ class Transport:
 
         return (result, facts)
 
-    def bootstrap(self, ip, key_file, config, oscmd):
+    def bootstrap(self, ip, key_file, config, oscmd, store_manager):
         """
         Bootstraps a host via ansible.
 
@@ -352,13 +355,23 @@ class Transport:
         :param config: Configuration information.
         :type config: commissaire.config.Config
         :param oscmd: OSCmd class to use
+        :param store_manager: Remote object for remote stores
+        :type store_manager: commissaire.store.StoreHandlerManager
         :type oscmd: commissaire.oscmd.OSCmdBase
         :returns: tuple -- (exitcode(int), facts(dict)).
         """
         self.logger.debug('Using {0} as the oscmd class for {1}'.format(
             oscmd.os_type, ip))
 
+        cluster_type = C.CLUSTER_TYPE_HOST
+        try:
+            cluster_type = util.cluster_for_host(ip, store_manager).type
+        except KeyError:
+            # Not part of a cluster
+            pass
+
         play_vars = {
+            'commissaire_cluster_type': cluster_type,
             'commissaire_bootstrap_ip': ip,
             'commissaire_kubernetes_api_server_scheme': config.kubernetes.get(
                 'uri').scheme,

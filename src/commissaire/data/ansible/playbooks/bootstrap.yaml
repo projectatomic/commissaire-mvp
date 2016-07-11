@@ -52,32 +52,36 @@
         force: yes
     - name: Install Kubernetes Node
       command: "{{ commissaire_install_kube }}"
+      when: "commissaire_cluster_type == 'kubernetes'"
     - name: Configure Kubernetes Node
       template:
         dest: "{{ commissaire_kubernetes_config }}"
         src: "{{ commissaire_kubernetes_config_local }}"
         force: yes
+      when: "commissaire_cluster_type == 'kubernetes'"
     - name: Add Kubernetes Client Side Certificate
       copy:
         dest: "{{ commissaire_kubernetes_client_cert_path }}"
         src: "{{ commissaire_kubernetes_client_cert_path_local }}"
-      when: "commissaire_kubernetes_client_cert_path is defined"
+      when: "commissaire_kubernetes_client_cert_path is defined and commissaire_cluster_type == 'kubernetes'"
     - name: Add Kubernetes Client Side Key
       copy:
         dest: "{{ commissaire_kubernetes_client_key_path }}"
         src: "{{ commissaire_kubernetes_client_key_path_local }}"
-      when: "commissaire_kubernetes_client_key_path is defined"
+      when: "commissaire_kubernetes_client_key_path is defined and commissaire_cluster_type == 'kubernetes'"
     - name: Add Kubernetes kubeconfig
       template:
         dest: "{{ commissaire_kubeconfig_config }}"
         src: "{{ commissaire_kubeconfig_config_local }}"
         force: yes
+      when: "commissaire_cluster_type == 'kubernetes'"
     - name: Configure Kubernetes kubelet
       template:
         dest: "{{ commissaire_kubelet_config }}"
         src: "{{ commissaire_kubelet_config_local }}"
         force: yes
-    - name: Enable and Start Services
+      when: "commissaire_cluster_type == 'kubernetes'"
+    - name: Enable and Start Base Services
       service:
         name: "{{ item }}"
         enabled: yes
@@ -85,5 +89,12 @@
       with_items:
         - "{{ commissaire_flannel_service }}"
         - "{{ commissaire_docker_service }}"
+    - name: Enable and Start Kubernetes Services
+      service:
+        name: "{{ item }}"
+        enabled: yes
+        state: restarted
+      with_items:
         - "{{ commissaire_kubelet_service }}"
         - "{{ commissaire_kubeproxy_service }}"
+      when: "commissaire_cluster_type == 'kubernetes'"
