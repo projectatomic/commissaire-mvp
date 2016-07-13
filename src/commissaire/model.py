@@ -68,6 +68,13 @@ class Model(object):
         instance.__init__(**init_args)
         return instance
 
+    @property
+    def primary_key(self):  # pragma: no cover
+        """
+        Shortcut property to get the value of the primary key.
+        """
+        return getattr(self, self._primary_key)
+
     def _struct_for_json(self, secure=False):
         """
         Returns the proper structure for a model to be used in JSON.
