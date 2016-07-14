@@ -49,7 +49,7 @@ class HostsResource(Resource):
                 raise Exception()
             resp.status = falcon.HTTP_200
             req.context['model'] = hosts
-        except:
+        except Exception:
             # This was originally a "no content" but I think a 404 makes
             # more sense if there are no hosts
             self.logger.warn(
@@ -182,20 +182,23 @@ class HostResource(Resource):
         except:
             self.logger.warn('Store does not have any clusters')
             return
-        try:
-            for cluster in clusters.clusters:
-                self.logger.debug('Checking cluster {0}'.format(cluster.name))
+        for cluster in clusters.clusters:
+            try:
+                self.logger.debug(
+                    'Checking cluster {0}'.format(cluster.name))
                 if address in cluster.hostset:
-                    self.logger.info('Removing {0} from cluster {1}'.format(
-                                     address, cluster.name))
+                    self.logger.info(
+                        'Removing {0} from cluster {1}'.format(
+                            address, cluster.name))
                     cluster.hostset.remove(address)
                     store_manager.save(cluster)
                     self.logger.info(
                         '{0} has been removed from cluster {1}'.format(
                             address, cluster.name))
-        except:
-            self.logger.warn('Failed to remove {0} from cluster {1}'.format(
-                address, cluster.name))
+            except:
+                self.logger.warn(
+                    'Failed to remove {0} from cluster {1}'.format(
+                        address, cluster.name))
 
 
 class ImplicitHostResource(Resource):
