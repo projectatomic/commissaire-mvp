@@ -22,6 +22,7 @@ from commissaire.compat import __python_version__
 
 
 if __python_version__ == '2':
+    _patched_b64.encodebytes = _patched_b64.encodestring
     _patched_b64.decodebytes = _patched_b64.decodestring
 
 
