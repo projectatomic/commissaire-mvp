@@ -46,36 +46,33 @@ def clusterexec(store_manager, cluster_name, command, kwargs={}):
     command_args = ()
     if command == 'upgrade':
         finished_hosts_key = 'upgraded'
-        model_instance = ClusterUpgrade(
+        model_instance = ClusterUpgrade.new(
             name=cluster_name,
             status='in_process',
+            started_at=datetime.datetime.utcnow().isoformat(),
             upgraded=[],
             in_process=[],
-            started_at=datetime.datetime.utcnow().isoformat(),
-            finished_at=None
         )
     elif command == 'restart':
         finished_hosts_key = 'restarted'
-        model_instance = ClusterRestart(
+        model_instance = ClusterRestart.new(
             name=cluster_name,
             status='in_process',
+            started_at=datetime.datetime.utcnow().isoformat(),
             restarted=[],
             in_process=[],
-            started_at=datetime.datetime.utcnow().isoformat(),
-            finished_at=None
         )
     elif command == 'deploy':
         finished_hosts_key = 'deployed'
-        version = kwargs.get('version')
+        version = kwargs.get('version', '')
         command_args = (version,)
-        model_instance = ClusterDeploy(
+        model_instance = ClusterDeploy.new(
             name=cluster_name,
             status='in_process',
+            started_at=datetime.datetime.utcnow().isoformat(),
             version=version,
             deployed=[],
             in_process=[],
-            started_at=datetime.datetime.utcnow().isoformat(),
-            finished_at=None
         )
 
     end_status = 'finished'
@@ -145,9 +142,10 @@ def clusterexec(store_manager, cluster_name, command, kwargs={}):
         logger.debug(
             'Using {0} as the temporary key location for {1}'.format(
                 key_file, host.address))
+
         f.write(base64.decodestring(host.ssh_priv_key))
-        logger.debug('Wrote key for {0}'.format(host.address))
         f.close()
+        logger.debug('Wrote key for {0}'.format(host.address))
 
         try:
             transport = ansibleapi.Transport(host.remote_user)
