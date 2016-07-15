@@ -51,15 +51,14 @@ class ClustersResource(Resource):
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
             clusters = store_manager.list(Clusters.new())
+            if clusters.clusters == []:
+                self.logger.debug('Store returned an empty cluster list.')
+                resp.status = falcon.HTTP_200
+                return
         except:
             self.logger.warn(
                 'Store does not have any clusters. Returning [] and 404.')
             resp.status = falcon.HTTP_404
-            return
-
-        if clusters.clusters == []:
-            self.logger.debug('Store returned an empty cluster list.')
-            resp.status = falcon.HTTP_200
             return
 
         # HACK: Should use model instead
