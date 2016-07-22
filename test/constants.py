@@ -39,12 +39,12 @@ HOST_JSON = (
 #: Credential JSON for tests
 HOST_CREDS_JSON = '{"remote_user": "root", "ssh_priv_key": "dGVzdAo="}'
 #: Host model for most tests
-HOST = Host(
+HOST = Host.new(
     ssh_priv_key='dGVzdAo=',
     remote_user='root',
     **json.loads(HOST_JSON))
 #: Hosts model for most tests
-HOSTS = Hosts(
+HOSTS = Hosts.new(
     hosts=[HOST]
 )
 #: Cluster model for most tests
@@ -66,7 +66,7 @@ CLUSTER_WITH_FLAT_HOST = Cluster.new(
     hostset=[HOST.address],
 )
 #: ClusterRestart model for most tests
-CLUSTER_RESTART = ClusterRestart(
+CLUSTER_RESTART = ClusterRestart.new(
     name='cluster',
     status='ok',
     restarted=[],
@@ -75,7 +75,7 @@ CLUSTER_RESTART = ClusterRestart(
     finished_at= ''
 )
 #: ClusterUpgrade model for most tests
-CLUSTER_UPGRADE = ClusterUpgrade(
+CLUSTER_UPGRADE = ClusterUpgrade.new(
     name='cluster',
     status='ok',
     upgraded=[],
@@ -84,7 +84,7 @@ CLUSTER_UPGRADE = ClusterUpgrade(
     finished_at= ''
 )
 #: ClusterDeploy model for most tests
-CLUSTER_DEPLOY = ClusterDeploy(
+CLUSTER_DEPLOY = ClusterDeploy.new(
     name='cluster',
     status='ok',
     version='1.0',

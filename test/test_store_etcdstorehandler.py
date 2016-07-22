@@ -45,7 +45,7 @@ class Test_StoreHandlerBaseClass(_Test_StoreHandler):
         self.assertEquals(
             '/commissaire/hosts/10.0.0.1',
             self.instance._format_key(
-                Host(
-                    address='10.0.0.1', status='', os='', cpus='',
-                    memory='', space='', last_check='',
+                Host.new(
+                    address='10.0.0.1', status='', os='', cpus=2,
+                    memory=1024, space=1000, last_check='',
                     ssh_priv_key='', remote_user='')))
