@@ -19,6 +19,7 @@ from copy import deepcopy
 
 # XXX Temporary until we have a real storage plugin system.
 from commissaire.model import Model as BogusModelType
+from commissaire.model import ValidationError
 
 
 class StoreHandlerManager(object):
@@ -102,6 +103,12 @@ class StoreHandlerManager(object):
         """
         logger = self._get_logger()
         handler = self._get_handler(self.bogus_model)
+        # Validate before saving
+        try:
+            model_instance._validate()
+        except ValidationError as ve:
+            logger.error(ve.args[0], ve.args[1])
+            raise ve
         logger.debug('> SAVE {0}'.format(model_instance))
         model_instance = handler._save(model_instance)
         logger.debug('< SAVE {0}'.format(model_instance))
@@ -120,6 +127,12 @@ class StoreHandlerManager(object):
         handler = self._get_handler(self.bogus_model)
         logger.debug('> GET {0}'.format(model_instance))
         model_instance = handler._get(model_instance)
+        # Validate after getting
+        try:
+            model_instance._validate()
+        except ValidationError as ve:
+            logger.error(ve.args[0], ve.args[1])
+            raise ve
         logger.debug('< GET {0}'.format(model_instance))
         return model_instance
 
