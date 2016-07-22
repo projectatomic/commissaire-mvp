@@ -160,6 +160,21 @@ class Test_Cluster(TestCase):
         self.assertEquals([], cluster_model.hostset)
         self.assertEquals(C.CLUSTER_TYPE_DEFAULT, cluster_model.type)
 
+        # Make sure coercion works
+        for attr, spec in cluster_model._attribute_map.items():
+            value = getattr(cluster_model, attr)
+
+            # Creating simple wrong values
+            caster = str
+            if spec['type'] is basestring:
+                caster = lambda s: 1
+            setattr(cluster_model, attr, caster(value))
+
+        cluster_model._coerce()
+
+        # Validate should be happy with the result
+        self.assertIsNone(cluster_model._validate())
+
     def test_cluster_defaults_values(self):
         """
         Verify Cluster model fills default values when missing.
@@ -184,7 +199,7 @@ class Test_Cluster(TestCase):
                 {'status': 'ok', 'hostset': ['192.168.152.110']},
                 {'hostset': ['192.168.152.110']}):
             model_instance = clusters.Cluster.new(**kwargs)
-            not_done = list(clusters.Cluster._attributes)
+            not_done = list(clusters.Cluster._attribute_map.keys())
             for k, v in kwargs.items():
                 self.assertEquals(v, getattr(model_instance, k))
                 not_done.remove(k)
@@ -315,12 +330,28 @@ class Test_ClusterRestart(TestCase):
 
         self.assertEquals(type(str()), type(CLUSTER_RESTART.to_json()))
 
+        # Make sure coercion works
+        model_instance = ClusterRestart.new()
+        for attr, spec in model_instance._attribute_map.items():
+            value = getattr(model_instance, attr)
+
+            # Creating simple wrong values
+            caster = str
+            if spec['type'] is basestring:
+                caster = lambda s: 1
+            setattr(model_instance, attr, caster(value))
+
+        model_instance._coerce()
+
+        # Validate should be happy with the result
+        self.assertIsNone(model_instance._validate())
+
     def test_cluster_restart_defaults_values(self):
         """
         Verify ClusterRestart model fills default values when missing.
         """
         model_instance = clusters.ClusterRestart.new()
-        for k in model_instance._attributes:
+        for k in model_instance._attribute_map.keys():
             self.assertEquals(
                 clusters.ClusterRestart._attribute_defaults[k],
                 getattr(model_instance, k))
@@ -341,7 +372,7 @@ class Test_ClusterRestart(TestCase):
                 {'restarted': ['192.168.152.110']},
                 {'in_process': ['192.168.152.110']}):
             model_instance = clusters.ClusterRestart.new(**kwargs)
-            not_done = list(clusters.ClusterRestart._attributes)
+            not_done = list(clusters.ClusterRestart._attribute_map.keys())
             for k, v in kwargs.items():
                 self.assertEquals(v, getattr(model_instance, k))
                 not_done.remove(k)
@@ -604,12 +635,29 @@ class Test_ClusterUpgrade(TestCase):
 
         self.assertEquals(type(str()), type(cluster_upgrade_model.to_json()))
 
+        # Make sure coercion works
+        model_instance = ClusterUpgrade.new()
+        for attr, spec in model_instance._attribute_map.items():
+            value = getattr(model_instance, attr)
+
+            # Creating simple wrong values
+            caster = str
+            if spec['type'] is basestring:
+                caster = lambda s: 1
+            setattr(model_instance, attr, caster(value))
+
+        model_instance._coerce()
+
+        # Validate should be happy with the result
+        self.assertIsNone(model_instance._validate())
+
+
     def test_cluster_upgrade_defaults_values(self):
         """
         Verify ClusterUpgrade model fills default values when missing.
         """
         model_instance = clusters.ClusterUpgrade.new()
-        for k in model_instance._attributes:
+        for k in model_instance._attribute_map.keys():
             self.assertEquals(
                 clusters.ClusterUpgrade._attribute_defaults[k],
                 getattr(model_instance, k))
@@ -630,7 +678,7 @@ class Test_ClusterUpgrade(TestCase):
                 {'upgraded': ['192.168.152.110']},
                 {'in_process': ['192.168.152.110']}):
             model_instance = clusters.ClusterUpgrade.new(**kwargs)
-            not_done = list(clusters.ClusterUpgrade._attributes)
+            not_done = list(clusters.ClusterUpgrade._attribute_map.keys())
             for k, v in kwargs.items():
                 self.assertEquals(v, getattr(model_instance, k))
                 not_done.remove(k)
@@ -722,12 +770,28 @@ class Test_ClusterDeploy(TestCase):
 
         self.assertEquals(type(str()), type(cluster_deploy_model.to_json()))
 
+        # Make sure coercion works
+        model_instance = ClusterDeploy.new()
+        for attr, spec in model_instance._attribute_map.items():
+            value = getattr(model_instance, attr)
+
+            # Creating simple wrong values
+            caster = str
+            if spec['type'] is basestring:
+                caster = lambda s: 1
+            setattr(model_instance, attr, caster(value))
+
+        model_instance._coerce()
+
+        # Validate should be happy with the result
+        self.assertIsNone(model_instance._validate())
+
     def test_cluster_deploy_defaults_values(self):
         """
         Verify ClusterDeploy model fills default values when missing.
         """
         model_instance = clusters.ClusterDeploy.new()
-        for k in model_instance._attributes:
+        for k in model_instance._attribute_map.keys():
             self.assertEquals(
                 clusters.ClusterDeploy._attribute_defaults[k],
                 getattr(model_instance, k))
@@ -750,7 +814,7 @@ class Test_ClusterDeploy(TestCase):
                 {'in_process': ['192.168.152.110']},
                 {'version': '1.0'}):
             model_instance = clusters.ClusterDeploy.new(**kwargs)
-            not_done = list(clusters.ClusterDeploy._attributes)
+            not_done = list(clusters.ClusterDeploy._attribute_map.keys())
             for k, v in kwargs.items():
                 self.assertEquals(v, getattr(model_instance, k))
                 not_done.remove(k)

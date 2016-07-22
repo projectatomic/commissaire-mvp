@@ -168,6 +168,21 @@ class Test_Host(TestCase):
         host_model = make_new(HOST)
         self.assertEquals(type(str()), type(host_model.to_json()))
 
+        # Make sure coercion works
+        for attr, spec in host_model._attribute_map.items():
+            value = getattr(host_model, attr)
+
+            # Creating simple wrong values
+            caster = str
+            if spec['type'] is basestring:
+                caster = lambda s: 1
+            setattr(host_model, attr, caster(value))
+
+        host_model._coerce()
+
+        # Validate should be happy with the result
+        self.assertIsNone(host_model._validate())
+
 
 class Test_HostResource(TestCase):
     """

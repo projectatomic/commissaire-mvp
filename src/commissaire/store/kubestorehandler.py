@@ -102,7 +102,7 @@ class KubernetesStoreHandler(StoreHandlerBase):
                 if v.startswith('json:'):
                     v = json.loads(v[5:])
 
-                if model_kwarg in model_instance._attributes:
+                if model_kwarg in model_instance._attribute_map.keys():
                     kwargs[model_kwarg] = v
             except ValueError:
                 # This means it is not a commissaire model annotaiton.
@@ -140,6 +140,9 @@ class KubernetesStoreHandler(StoreHandlerBase):
 
         try:
             model = model_instance.__class__.new(**kwargs)
+            # We must coerce types since annotations are
+            # flaky with non strings
+            model._coerce()
             return model
         except TypeError as te:
             raise KeyError(
@@ -250,7 +253,7 @@ class KubernetesStoreHandler(StoreHandlerBase):
         patch_path = '/metadata/annotations'
         secrets = {}
         class_name = model_instance.__class__.__name__.lower()
-        for x in model_instance._attributes:
+        for x in model_instance._attribute_map.keys():
             annotation_key = 'commissaire-{0}-{1}-{2}'.format(
                 class_name, model_instance.primary_key, x)
             annotation_value = getattr(model_instance, x)
@@ -319,7 +322,7 @@ class KubernetesStoreHandler(StoreHandlerBase):
         response = None
         # NOTE: Kubernetes does not allow underscores in keys. To get past
         #       this we substitute _'s with -'s
-        for x in model_instance._attributes:
+        for x in model_instance._attribute_map.keys():
             annotation_key = 'commissaire-{0}-{1}-{2}'.format(
                 class_name, model_instance.primary_key, x.replace('_', '-'))
             annotation_value = getattr(model_instance, x)
@@ -405,7 +408,7 @@ class KubernetesStoreHandler(StoreHandlerBase):
         """
         full_patch = []
         secrets = {}
-        for x in model_instance._attributes:
+        for x in model_instance._attribute_map.keys():
             patch_path = (
                 '/metadata/annotations/commissaire-host-{0}-{1}'.format(
                     model_instance.primary_key, x))
@@ -451,7 +454,7 @@ class KubernetesStoreHandler(StoreHandlerBase):
         """
         full_patch = []
         class_name = model_instance.__class__.__name__.lower()
-        for x in model_instance._attributes:
+        for x in model_instance._attribute_map.keys():
             patch_path = (
                 '/metadata/annotations/commissaire-{0}-{1}-{2}'.format(
                     class_name, model_instance.primary_key, x))

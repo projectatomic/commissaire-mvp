@@ -27,7 +27,12 @@ class Cluster(Model):
     Representation of a Cluster.
     """
     _json_type = dict
-    _attributes = ('name', 'status', 'type', 'hostset')
+    _attribute_map = {
+        'name': {'type': basestring},
+        'status': {'type': basestring},
+        'type': {'type': basestring},
+        'hostset': {'type': list},
+    }
     _hidden_attributes = ('hostset',)
     _attribute_defaults = {
         'name': '', 'type': C.CLUSTER_TYPE_DEFAULT,
@@ -44,7 +49,7 @@ class Cluster(Model):
     # FIXME Generalize and move to Model?
     def to_json_with_hosts(self, secure=False):
         data = {}
-        for key in self._attributes:
+        for key in self._attribute_map.keys():
             if secure:
                 data[key] = getattr(self, key)
             elif key not in self._hidden_attributes:
@@ -58,9 +63,15 @@ class ClusterDeploy(Model):
     Representation of a Cluster deploy operation.
     """
     _json_type = dict
-    _attributes = (
-        'name', 'status', 'version', 'deployed', 'in_process',
-        'started_at', 'finished_at')
+    _attribute_map = {
+        'name': {'type': basestring},
+        'status': {'type': basestring},
+        'version': {'type': basestring},
+        'deployed': {'type': list},
+        'in_process': {'type': list},
+        'started_at': {'type': basestring},
+        'finished_at': {'type': basestring},
+    }
     _attribute_defaults = {
         'name': '', 'status': '', 'version': '',
         'deployed': [], 'in_process': [], 'started_at': '', 'finished_at': ''}
@@ -72,9 +83,15 @@ class ClusterRestart(Model):
     Representation of a Cluster restart operation.
     """
     _json_type = dict
-    _attributes = (
-        'name', 'status', 'restarted', 'in_process',
-        'started_at', 'finished_at')
+    _attribute_map = {
+        'name': {'type': basestring},
+        'status': {'type': basestring},
+        'restarted': {'type': list},
+        'in_process': {'type': list},
+        'started_at': {'type': basestring},
+        'finished_at': {'type': basestring},
+    }
+
     _attribute_defaults = {
         'name': '', 'status': '', 'restarted': [],
         'in_process': [], 'started_at': '', 'finished_at': ''}
@@ -86,9 +103,15 @@ class ClusterUpgrade(Model):
     Representation of a Cluster upgrade operation.
     """
     _json_type = dict
-    _attributes = (
-        'name', 'status', 'upgraded',
-        'in_process', 'started_at', 'finished_at')
+    _attribute_map = {
+        'name': {'type': basestring},
+        'status': {'type': basestring},
+        'upgraded': {'type': list},
+        'in_process': {'type': list},
+        'started_at': {'type': basestring},
+        'finished_at': {'type': basestring},
+    }
+
     _attribute_defaults = {
         'name': '', 'status': '', 'upgraded': [],
         'in_process': [], 'started_at': '', 'finished_at': ''}
@@ -100,7 +123,9 @@ class Clusters(Model):
     Representation of a group of one or more Clusters.
     """
     _json_type = list
-    _attributes = ('clusters',)
+    _attribute_map = {
+        'clusters': {'type': list},
+    }
     _attribute_defaults = {'clusters': []}
     _list_attr = 'clusters'
     _list_class = Cluster
@@ -111,9 +136,17 @@ class Host(Model):
     Representation of a Host.
     """
     _json_type = dict
-    _attributes = (
-        'address', 'status', 'os', 'cpus', 'memory',
-        'space', 'last_check', 'ssh_priv_key', 'remote_user')
+    _attribute_map = {
+        'address': {'type': basestring},
+        'status': {'type': basestring},
+        'os': {'type': basestring},
+        'cpus': {'type': int},
+        'memory': {'type': int},
+        'space': {'type': int},
+        'last_check': {'type': basestring},
+        'ssh_priv_key': {'type': basestring},
+        'remote_user': {'type': basestring},
+    }
     _attribute_defaults = {
         'address': '', 'status': '', 'os': '', 'cpus': 0,
         'memory': 0, 'space': 0, 'last_check': '', 'ssh_priv_key': '',
@@ -127,7 +160,9 @@ class Hosts(Model):
     Representation of a group of one or more Hosts.
     """
     _json_type = list
-    _attributes = ('hosts', )
+    _attribute_map = {
+        'hosts': {'type': list},
+    }
     _attribute_defaults = {'hosts': []}
     _list_attr = 'hosts'
     _list_class = Host
@@ -138,6 +173,8 @@ class Status(Model):
     Representation of a Host.
     """
     _json_type = dict
-    _attributes = (
-        'etcd', 'investigator')
+    _attribute_map = {
+        'etcd': {'type': dict},
+        'investigator': {'type': dict},
+    }
     _attribute_defaults = {'etcd': {}, 'investigator': {}}

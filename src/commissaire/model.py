@@ -17,7 +17,29 @@ Basic Model structure for commissaire.
 """
 
 import copy
+import re
 import json
+
+
+class ModelError(Exception):
+    """
+    Base exception class for Model errors.
+    """
+    pass
+
+
+class ValidationError(ModelError):
+    """
+    Exception class for validation errors.
+    """
+    pass
+
+
+class CoercionError(ModelError):
+    """
+    Exception class for coercion errors.
+    """
+    pass
 
 
 class Model(object):
@@ -26,7 +48,9 @@ class Model(object):
     """
 
     _json_type = None
-    _attributes = ()
+    #: Dict of attribute_name->{type, regex}. Regex is optional.
+    _attribute_map = {}
+    #: Attributes which should only be shown if the render is 'secure'
     _hidden_attributes = ()
     #: The primary way of looking up an instance
     _primary_key = None
@@ -46,12 +70,13 @@ class Model(object):
         :returns: The Model instance.
         :rtype: commissaire.model.Model
         """
-        for key in self._attributes:
+        # self._attributes = self._attribute_map.keys()
+        for key in self._attribute_map.keys():
             if key not in kwargs:
                 raise TypeError(
                     '__init__() missing 1 or more required '
                     'keyword arguments: {0}'.format(
-                        ', '.join(self._attributes)))
+                        ', '.join(self._attribute_map.keys())))
             setattr(self, key, kwargs[key])
 
     @classmethod
@@ -98,8 +123,8 @@ class Model(object):
         :returns: A list of the data.
         :rtype: list
         """
-        if len(self._attributes) == 1:
-            data = getattr(self, self._attributes[0])
+        if len(self._attribute_map.keys()) == 1:
+            data = getattr(self, self._attribute_map.keys()[0])
         return data
 
     def _dict_for_json(self, secure):
@@ -112,7 +137,7 @@ class Model(object):
         :rtype: dict
         """
         data = {}
-        for key in self._attributes:
+        for key in self._attribute_map.keys():
             if secure:
                 data[key] = getattr(self, key)
             elif key not in self._hidden_attributes:
@@ -131,3 +156,61 @@ class Model(object):
         return json.dumps(
             self._struct_for_json(secure=secure),
             default=lambda o: o._struct_for_json(secure=secure))
+
+    def _validate(self):
+        """
+        Validates the attribute data of the current instance.
+
+        :raises: ValidationError
+        """
+        errors = []
+        for attr, spec in self._attribute_map.items():
+            value = getattr(self, attr)
+            if not isinstance(value, spec['type']):
+                errors.append(
+                    '{0}.{1}: Expected type {2}. Got {3}'.format(
+                        self.__class__.__name__, attr,
+                        spec['type'], type(value)))
+
+            try:
+                if spec.get('regex') and not re.match(spec['regex'], value):
+                    errors.append(
+                        '{0}.{1}: Value did validate against the '
+                        'provided regular expression "{2}"'.format(
+                            self.__class__.__name__, attr, spec['regex']))
+            except TypeError:
+                errors.append(
+                    '{0}.{1}: Value can not be validated by a '
+                    'regular expression'.format(self.__class__.__name__, attr))
+
+        if errors:
+            raise ValidationError(
+                '{0} instance is invalid due to {1} errors.'.format(
+                    self.__class__.__name__, len(errors)), errors)
+
+    def _coerce(self):
+        """
+        Attempts to force the typing set forth in _attribute_map.
+
+        :raises: commissaire.model.CoercionError
+        """
+        errors = []
+        for attr, spec in self._attribute_map.items():
+            value = getattr(self, attr)
+            if not isinstance(value, spec['type']):
+                try:
+                    caster = spec['type']
+                    if spec['type'] is basestring:
+                        caster = str
+
+                    setattr(self, attr, caster(value))
+                except Exception as ex:
+                    errors.append(
+                        '{0}.{1} can not be coerced from {2} to {3} '
+                        'due to {4}: {5}'.format(
+                            self.__class__.__name__, attr,
+                            type(value), spec['type'], type(ex), ex))
+        if errors:
+            raise CoercionError(
+                '{0} instance failed coercion due to {1} errors.'.format(
+                    len(errors), errors))
