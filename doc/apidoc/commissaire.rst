@@ -15,6 +15,7 @@ Subpackages
     commissaire.oscmd
     commissaire.store
     commissaire.transport
+    commissaire.util
 
 Submodules
 ----------

@@ -23,27 +23,11 @@ import os
 from . import TestCase
 from commissaire.compat.urlparser import urlparse
 
-from commissaire.jobs.investigator import clean_up_key, investigator
+from commissaire.jobs.investigator import investigator
 from commissaire.handlers.models import Host
 from commissaire.store.storehandlermanager import StoreHandlerManager
 from Queue import Queue
 from mock import MagicMock
-
-
-class Test_CleanUpKey(TestCase):
-    """
-    Tests for clean_up_key function.
-    """
-
-    def test_clean_up_key(self):
-        """
-        Verify clean_up_key removes a given file.
-        """
-        f = open('clean_up_key_test_file', 'w')
-        f.close()
-        self.assertTrue(os.stat(f.name))
-        clean_up_key(f.name)
-        self.assertRaises(OSError, os.stat, f.name)
 
 
 class Test_JobsInvestigator(TestCase):

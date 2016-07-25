@@ -18,37 +18,17 @@ The investigator job.
 import json
 import datetime
 import logging
-import os
 import sys
-import tempfile
 
 from time import sleep
 
 from commissaire import constants as C
-from commissaire.compat.b64 import base64
 from commissaire.containermgr.kubernetes import KubeContainerManager
 from commissaire.handlers import util
 from commissaire.handlers.models import Host
 from commissaire.oscmd import get_oscmd
 from commissaire.transport import ansibleapi
-
-
-def clean_up_key(key_file):
-    """
-    Remove the key file.
-
-    :param key_file: Full path to the key_file
-    :type key_file: str
-    """
-    logger = logging.getLogger('investigator')
-    try:
-        os.unlink(key_file)
-        logger.debug('Removed temporary key file {0}'.format(key_file))
-    except:
-        exc_type, exc_msg, tb = sys.exc_info()
-        logger.warn(
-            'Unable to remove the temporary key file: '
-            '{0}. Exception:{1}'.format(key_file, exc_msg))
+from commissaire.util.ssh import TemporarySSHKey
 
 
 def investigator(queue, config, run_once=False):
@@ -75,15 +55,6 @@ def investigator(queue, config, run_once=False):
 
         transport = ansibleapi.Transport(remote_user)
 
-        f = tempfile.NamedTemporaryFile(prefix='key', delete=False)
-        key_file = f.name
-        logger.debug(
-            'Using {0} as the temporary key location for {1}'.format(
-                key_file, address))
-        f.write(base64.decodestring(ssh_priv_key))
-        logger.info('Wrote key for {0}'.format(address))
-        f.close()
-
         try:
             host = store_manager.get(
                 Host(
@@ -96,15 +67,17 @@ def investigator(queue, config, run_once=False):
                     last_check='',
                     ssh_priv_key='',
                     remote_user=''))
+            key = TemporarySSHKey(host, logger)
+            key.create()
         except Exception as error:
             logger.warn(
                 'Unable to continue for {0} due to '
                 '{1}: {2}. Returning...'.format(address, type(error), error))
-            clean_up_key(key_file)
+            key.remove()
             continue
 
         try:
-            result, facts = transport.get_info(address, key_file)
+            result, facts = transport.get_info(address, key.path)
             # recreate the host instance with new data
             data = json.loads(host.to_json(secure=True))
             data.update(facts)
@@ -119,7 +92,7 @@ def investigator(queue, config, run_once=False):
                 address, exc_msg))
             host.status = 'failed'
             store_manager.save(host)
-            clean_up_key(key_file)
+            key.remove()
             if run_once:
                 break
             continue
@@ -134,7 +107,7 @@ def investigator(queue, config, run_once=False):
         oscmd = get_oscmd(host.os)
         try:
             result, facts = transport.bootstrap(
-                address, key_file, config, oscmd, store_manager)
+                address, key.path, config, oscmd, store_manager)
             host.status = 'inactive'
             store_manager.save(host)
         except:
@@ -143,7 +116,7 @@ def investigator(queue, config, run_once=False):
                 address, exc_msg))
             host.status = 'disassociated'
             store_manager.save(host)
-            clean_up_key(key_file)
+            key.remove()
             if run_once:
                 break
             continue
@@ -191,7 +164,7 @@ def investigator(queue, config, run_once=False):
         logging.debug('Finished bootstrapping for {0}: {1}'.format(
             address, host.to_json()))
 
-        clean_up_key(key_file)
+        key.remove()
         if run_once:
             logger.info('Exiting due to run_once request.')
             break

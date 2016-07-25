@@ -18,13 +18,12 @@ The clusterexec job.
 
 import datetime
 import logging
-import tempfile
 
 from commissaire.handlers.models import (
     ClusterDeploy, ClusterUpgrade, ClusterRestart, Cluster, Hosts)
 from commissaire.transport import ansibleapi
-from commissaire.compat.b64 import base64
 from commissaire.oscmd import get_oscmd
+from commissaire.util.ssh import TemporarySSHKey
 
 
 def clusterexec(store_manager, cluster_name, command, kwargs={}):
@@ -136,22 +135,14 @@ def clusterexec(store_manager, cluster_name, command, kwargs={}):
                 '{1}: {2}'.format(cluster_name, type(error), error))
             return
 
-        # TODO: This is reused, make it reusable
-        f = tempfile.NamedTemporaryFile(prefix='key', delete=False)
-        key_file = f.name
-        logger.debug(
-            'Using {0} as the temporary key location for {1}'.format(
-                key_file, host.address))
-
-        f.write(base64.decodestring(host.ssh_priv_key))
-        f.close()
-        logger.debug('Wrote key for {0}'.format(host.address))
+        key = TemporarySSHKey(host, logger)
+        key.create()
 
         try:
             transport = ansibleapi.Transport(host.remote_user)
             exe = getattr(transport, command)
             result, facts = exe(
-                host.address, key_file, oscmd, kwargs)
+                host.address, key.path, oscmd, kwargs)
         # XXX: ansibleapi explicitly raises Exception()
         except Exception as ex:
             # If there was a failure set the end_status and break out
@@ -161,12 +152,12 @@ def clusterexec(store_manager, cluster_name, command, kwargs={}):
             break
         finally:
             try:
-                f.unlink(key_file)
-                logger.debug('Removed temporary key file {0}'.format(key_file))
+                key.remove()
+                logger.debug('Removed temporary key file {0}'.format(key.path))
             except:
                 logger.warn(
                     'Unable to remove the temporary key file: {0}'.format(
-                        key_file))
+                        key.path))
 
         # Set the finished hosts
         new_finished_hosts = getattr(
