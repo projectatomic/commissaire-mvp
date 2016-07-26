@@ -17,6 +17,7 @@
 
 import argparse
 import cherrypy
+import importlib
 import json
 import logging
 import logging.config
@@ -59,9 +60,8 @@ def create_app(
     :rtype: falcon.API
     """
     try:
-        authentication_class = getattr(__import__(
-            authentication_module_name, fromlist=["True"]),
-            'AuthenticationPlugin')
+        module = importlib.import_module(authentication_module_name)
+        authentication_class = getattr(module, 'AuthenticationPlugin')
         authentication = authentication_class(**authentication_kwargs)
     except ImportError:
         raise Exception('Can not import {0} for authentication'.format(

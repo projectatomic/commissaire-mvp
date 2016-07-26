@@ -16,6 +16,8 @@
 Abstraction of commands that change across operating systems.
 """
 
+import importlib
+
 
 class OSCmdBase:
     """
@@ -145,9 +147,9 @@ def get_oscmd(os_type):
     :rtype: commissaire.oscmd.OSCmdBase
     """
     try:
-        return getattr(__import__(
-            'commissaire.oscmd.{0}'.format(os_type),
-            fromlist=['True']), 'OSCmd')
+        module_name = 'commissaire.oscmd.{0}'.format(os_type)
+        module = importlib.import_module(module_name)
+        return getattr(module, 'OSCmd')
     except ImportError:
         # TODO: Make this a specific exception
         raise Exception('No OSCmd class for {0}'.format(os_type))
