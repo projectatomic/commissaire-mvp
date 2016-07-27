@@ -27,6 +27,7 @@ from commissaire.containermgr.kubernetes import KubeContainerManager
 from commissaire.handlers import util
 from commissaire.handlers.models import Host
 from commissaire.oscmd import get_oscmd
+from commissaire.queues import WATCHER_QUEUE
 from commissaire.transport import ansibleapi
 from commissaire.util.ssh import TemporarySSHKey
 
@@ -163,6 +164,8 @@ def investigator(queue, config, run_once=False):
             'Finished bootstrapping for {0}'.format(address))
         logging.debug('Finished bootstrapping for {0}: {1}'.format(
             address, host.to_json()))
+
+        WATCHER_QUEUE.put_nowait((host, datetime.datetime.utcnow()))
 
         key.remove()
         if run_once:

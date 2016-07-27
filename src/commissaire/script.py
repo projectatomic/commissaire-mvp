@@ -261,6 +261,7 @@ def main():  # pragma: no cover
     """
     from commissaire.cherrypy_plugins.store import StorePlugin
     from commissaire.cherrypy_plugins.investigator import InvestigatorPlugin
+    from commissaire.cherrypy_plugins.watcher import WatcherPlugin
     config = Config()
 
     epilog = ('Example: ./commissaire -e http://127.0.0.1:2379'
@@ -408,9 +409,6 @@ def main():  # pragma: no cover
     if hasattr(cherrypy.engine, 'signal_handler'):
         cherrypy.engine.signal_handler.subscribe()
 
-    # Add our plugins
-    InvestigatorPlugin(cherrypy.engine, config).subscribe()
-
     # Configure the store plugin before starting it.
     store_plugin = StorePlugin(cherrypy.engine)
     store_manager = store_plugin.get_store_manager()
@@ -418,6 +416,10 @@ def main():  # pragma: no cover
     # XXX Temporary until we have a real storage plugin system.
     store_manager.register_store_handler(
         EtcdStoreHandler, store_kwargs, BogusModelType)
+
+    # Add our plugins
+    InvestigatorPlugin(cherrypy.engine, config).subscribe()
+    WatcherPlugin(cherrypy.engine, store_manager.clone()).subscribe()
 
     store_plugin.subscribe()
 

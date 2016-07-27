@@ -25,6 +25,7 @@ import falcon
 from commissaire.resource import Resource
 from commissaire.handlers.models import Host, Hosts, Clusters
 import commissaire.handlers.util as util
+from commissaire.queues import WATCHER_QUEUE
 
 
 class HostsResource(Resource):
@@ -167,8 +168,9 @@ class HostResource(Resource):
         resp.body = '{}'
         store_manager = cherrypy.engine.publish('get-store-manager')[0]
         try:
-            # TODO: use some kind of global default for Hosts
-            store_manager.delete(Host.new(address=address))
+            host = Host.new(address=address)
+            store_manager.delete(host)
+            WATCHER_QUEUE.dequeue(host)
             resp.status = falcon.HTTP_200
         except:
             resp.status = falcon.HTTP_404

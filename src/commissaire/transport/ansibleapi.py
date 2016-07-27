@@ -344,6 +344,24 @@ class Transport:
 
         return (result, facts)
 
+    def check_host_availability(self, host, key_file):
+        """
+        Checks if a host node is available.
+
+        :param host: The host model to check.
+        :type host: commissaire.handlers.models.Host
+        :param key_file: The path to the ssh_priv_key.
+        :type key_file: str
+        :returns: Ansible results for the run
+        :rtype: dict
+        """
+        play_file = resource_filename(
+            'commissaire',
+            'data/ansible/playbooks/check_host_availability.yaml')
+        results = self._run(
+            host.address, key_file, play_file, [0, 3], disable_reconnect=True)
+        return results
+
     def bootstrap(self, ip, key_file, config, oscmd, store_manager):
         """
         Bootstraps a host via ansible.

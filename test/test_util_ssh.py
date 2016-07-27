@@ -67,3 +67,20 @@ class Test_TemporarySSHKey(TestCase):
         with TemporarySSHKey(TEST_HOST, logging.getLogger()) as key:
             self.assertTrue(os.path.isfile(key.path))
         self.assertFalse(os.path.isfile(key.path))
+
+    def test_temporarysshkey_remove_failure(self):
+        """
+        Verify TemporarySSHKey.remove reacts properly to failure.
+        """
+        mock_logger = mock.MagicMock(logging.Logger('test'))
+        key = TemporarySSHKey(TEST_HOST, mock_logger)
+        key.create()
+        with mock.patch('os.unlink') as _unlink:
+            _unlink.side_effect = Exception
+            self.assertTrue(os.path.isfile(key.path))
+            key.remove()
+            self.assertTrue(os.path.isfile(key.path))
+            # We should have a warning in the log
+            mock_logger.warn.assert_called_once()
+        # Clean up the file
+        key.remove()
