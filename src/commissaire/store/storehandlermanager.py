@@ -70,6 +70,18 @@ class StoreHandlerManager(object):
         entry = (handler_type, config, model_types)
         self._registry.update({mt: entry for mt in model_types})
 
+    def list_store_handlers(self):
+        """
+        Returns all registered store handlers as a list of triples.
+        Each triple resembles the register_store_handler() parameters:
+        (handler_type, config, tuple_of_model_types)
+
+        :returns: List of registered store handlers
+        :rtype: list
+        """
+        # This collects all unique instances from the registry.
+        return {id(x): x for x in self._registry.values()}.values()
+
     def _get_handler(self, model):
         """
         Looks up, and if necessary instantiates, a StoreHandler instance
