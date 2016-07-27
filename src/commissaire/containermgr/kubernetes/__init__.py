@@ -18,6 +18,7 @@ The kubernetes container manager package.
 
 import requests
 
+from commissaire import constants as C
 from commissaire.containermgr import ContainerManagerBase
 
 
@@ -25,6 +26,8 @@ class ContainerManager(ContainerManagerBase):
     """
     Kubernetes container manager implementation.
     """
+
+    cluster_type = C.CLUSTER_TYPE_KUBERNETES
 
     def __init__(self, config):
         """
