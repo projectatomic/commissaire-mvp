@@ -33,22 +33,22 @@ class ContainerManager(ContainerManagerBase):
         """
         Creates an instance of the Kubernetes Container Manager.
 
-        :param config: Configuration information.
-        :type config: commissaire.config.Config
+        :param config: Configuration details
+        :type config: dict
         """
-        ContainerManagerBase.__init__(self)
-        self.scheme = config.kubernetes['uri'].scheme
-        self.host = config.kubernetes['uri'].hostname
-        self.port = config.kubernetes['uri'].port
+        ContainerManagerBase.__init__(self, config)
+        self.scheme = config['protocol']
+        self.host = config['host']
+        self.port = config['port']
         self.con = requests.Session()
-        token = config.kubernetes.get('token', None)
+        token = config.get('token', None)
         if token:
             self.con.headers["Authorization"] = "Bearer {0}".format(token)
             self.logger.info('Using bearer token')
             self.logger.debug('Bearer token: {0}'.format(token))
 
-        certificate_path = config.kubernetes.get('certificate_path')
-        certificate_key_path = config.kubernetes.get('certificate_key_path')
+        certificate_path = config.get('certificate_path')
+        certificate_key_path = config.get('certificate_key_path')
         if certificate_path and certificate_key_path:
             self.con.cert = (certificate_path, certificate_key_path)
             self.logger.info(

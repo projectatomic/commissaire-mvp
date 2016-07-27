@@ -33,15 +33,12 @@ class Test_KubeContainerManager(TestCase):
         """
         Verify that KuberContainerManager().node_registered() works as expected.
         """
-        config = Config(
-            etcd={
-                'uri': urlparse('http://127.0.0.1:2379'),
-            },
-            kubernetes={
-                'uri': urlparse('http://127.0.0.1:8080'),
-                'token': 'token',
-            }
-        )
+        config = {
+            'protocol': 'http',
+            'host': '127.0.0.1',
+            'port': '8080',
+            'token': 'token'
+        }
         kube_container_mgr = KubeContainerManager(config)
         # First call should return True. The rest should be False.
         kube_container_mgr.con = MagicMock()

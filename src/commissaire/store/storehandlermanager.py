@@ -35,6 +35,8 @@ class StoreHandlerManager(object):
         self._registry = {}
         self._handlers = {}
 
+        self._container_managers = []
+
         # Logger objects can't be pickled, so fetch ours lazily so
         # cloned StoreHandlerManagers can be passed to subprocesses.
         self.__logger = None
@@ -50,6 +52,7 @@ class StoreHandlerManager(object):
         clone = StoreHandlerManager()
         clone._registry = deepcopy(self._registry)
         # clone._handlers should remain empty.
+        # clone._container_managers should remain empty.
         # clone.__loggers should remain None.
         return clone
 

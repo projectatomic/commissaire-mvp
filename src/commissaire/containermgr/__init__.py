@@ -28,9 +28,12 @@ class ContainerManagerBase(object):  # pragma: no cover
 
     cluster_type = C.CLUSTER_TYPE_HOST
 
-    def __init__(self):
+    def __init__(self, config):
         """
         Creates a new instance of the ContainerManagerBase.
+
+        :param config: Configuration details
+        :type config: dict
         """
         self.logger = logging.getLogger('containermgr')
 
