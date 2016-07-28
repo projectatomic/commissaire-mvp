@@ -17,6 +17,8 @@ import os
 
 from falcon.testing import TestBase
 
+from commissaire.model import Model
+
 # Keep this list synchronized with oscmd modules.
 available_os_types = ('atomic', 'fedora', 'redhat', 'rhel', 'centos')
 
@@ -46,3 +48,15 @@ class TestCase(TestBase):
     Parent class for all unittests.
     """
     pass
+
+
+class TestModel(Model):
+    """
+    Simple model type for use in test cases.
+    """
+    _json_type = dict
+    _attribute_map = {
+        'foo': {'type': basestring}
+    }
+    _attribute_defaults = {'foo': ''}
+    _primary_key = 'foo'

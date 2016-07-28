@@ -18,9 +18,8 @@ Test cases for the commissaire.store.StoreHandlerManager class.
 
 import mock
 
-from . import TestCase
+from . import TestCase, TestModel
 
-from commissaire.model import Model as BogusModelType
 from commissaire.store import StoreHandlerBase
 from commissaire.store.storehandlermanager import StoreHandlerManager
 
@@ -44,7 +43,7 @@ class Test_StoreHandlerManager(TestCase):
         Verify the StoreHandlerManager clone method works as expected.
         """
         manager = StoreHandlerManager()
-        manager._registry['test'] = BogusModelType
+        manager._registry['test'] = TestModel
         clone_result = manager.clone()
         # The manager and the cloned_result should not be the same
         self.assertNotEqual(manager, clone_result)
@@ -58,12 +57,12 @@ class Test_StoreHandlerManager(TestCase):
         Verify the StoreHandlerManager get method works as expected.
         """
         StoreHandlerBase = mock.MagicMock('StoreHandlerBase')
-        StoreHandlerBase()._get.return_value = BogusModelType()
+        StoreHandlerBase()._get.return_value = TestModel.new()
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, BogusModelType)
-        key = '/test'
-        result = manager.get(key)
-        StoreHandlerBase()._get.assert_called_once_with(key)
+        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        model_instance = TestModel.new()
+        result = manager.get(model_instance)
+        StoreHandlerBase()._get.assert_called_once_with(model_instance)
         self.assertEqual(StoreHandlerBase()._get.return_value, result)
 
     def test_storehandlermanager_delete(self):
@@ -72,10 +71,10 @@ class Test_StoreHandlerManager(TestCase):
         """
         StoreHandlerBase = mock.MagicMock('StoreHandlerBase')
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, BogusModelType)
-        key = '/test'
-        manager.delete(key)
-        StoreHandlerBase()._delete.assert_called_once_with(key)
+        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        model_instance = TestModel.new()
+        manager.delete(model_instance)
+        StoreHandlerBase()._delete.assert_called_once_with(model_instance)
 
     def test_storehandlermanager_save(self):
         """
@@ -83,10 +82,8 @@ class Test_StoreHandlerManager(TestCase):
         """
         StoreHandlerBase = mock.MagicMock('StoreHandlerBase')
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, BogusModelType)
-        key = '/test'
-        value = {'test': 'data'}
-        model_instance = BogusModelType()
+        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        model_instance = TestModel.new()
         manager.save(model_instance)
         StoreHandlerBase()._save.assert_called_once_with(model_instance)
 
@@ -96,19 +93,19 @@ class Test_StoreHandlerManager(TestCase):
         """
         StoreHandlerBase = mock.MagicMock('StoreHandlerBase')
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, BogusModelType)
-        key = '/test'
-        manager.list(key)
-        StoreHandlerBase()._list.assert_called_once_with(key)
+        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        model_instance = TestModel.new()
+        manager.list(model_instance)
+        StoreHandlerBase()._list.assert_called_once_with(model_instance)
 
     def test_storehandlermanager_register_store_handler_with_one_model(self):
         """
         Verify StoreHandlerManager registers StoreHandlers properly with one model.
         """
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, BogusModelType)
+        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
         expected = {
-            BogusModelType: (StoreHandlerBase, {}, (BogusModelType, )),
+            TestModel: (StoreHandlerBase, {}, (TestModel, )),
         }
         self.assertEqual(expected, manager._registry)
 
@@ -120,16 +117,16 @@ class Test_StoreHandlerManager(TestCase):
         class BogusStoreHandler(StoreHandlerBase):
             pass
 
-        class AnotherBogusModelType(BogusModelType):
+        class AnotherTestModel(TestModel):
             pass
 
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, BogusModelType)
-        manager.register_store_handler(BogusStoreHandler, {}, AnotherBogusModelType)
+        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        manager.register_store_handler(BogusStoreHandler, {}, AnotherTestModel)
 
         expected = {
-            BogusModelType: (StoreHandlerBase, {}, (BogusModelType, )),
-            AnotherBogusModelType: (BogusStoreHandler, {}, (AnotherBogusModelType, )),
+            TestModel: (StoreHandlerBase, {}, (TestModel, )),
+            AnotherTestModel: (BogusStoreHandler, {}, (AnotherTestModel, )),
         }
 
         self.assertEqual(expected, manager._registry)
@@ -139,6 +136,6 @@ class Test_StoreHandlerManager(TestCase):
         Verify StoreHandlerManager._get_handler returns handlers properly.
         """
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, BogusModelType)
-        handler = manager._get_handler(BogusModelType())
+        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        handler = manager._get_handler(TestModel.new())
         self.assertIsInstance(handler, StoreHandlerBase)
