@@ -46,7 +46,7 @@ class Test_Status(TestCase):
 
         # Make sure a Cluster is accepted as expected
         status_model = status.Status(
-            etcd={}, investigator={})
+            etcd={}, investigator={}, watcher={})
         self.assertEquals(type(str()), type(status_model.to_json()))
 
     def test_status_defaults_values(self):
@@ -60,6 +60,9 @@ class Test_Status(TestCase):
         self.assertEquals(
             status.Status._attribute_defaults['etcd'],
             model_instance.etcd)
+        self.assertEquals(
+            status.Status._attribute_defaults['watcher'],
+            model_instance.watcher)
 
         # Only set investigator
         investigator_value = {'test': 'value'}
@@ -77,13 +80,23 @@ class Test_Status(TestCase):
             model_instance.investigator)
         self.assertEquals(etcd_value, model_instance.etcd)
 
+        # Only set watcher
+        watcher_value = {'test': 'value'}
+        model_instance = status.Status.new(watcher=etcd_value)
+        self.assertEquals(
+            status.Status._attribute_defaults['watcher'],
+            model_instance.investigator)
+        self.assertEquals(watcher_value, model_instance.watcher)
+
 
 class Test_StatusResource(TestCase):
     """
     Tests for the Status resource.
     """
     astatus = ('{"etcd": {"status": "OK"}, "investigator": {"status": '
-               '"OK", "info": {"size": 1, "in_use": 1, "errors": []}}}')
+               '"OK", "info": {"size": 1, "in_use": 1, "errors": []}}, '
+               '"watcher": {"status": "OK", "info": '
+               '{"size": 1, "in_use": 1, "errors": []}}}')
 
     def before(self):
         self.api = falcon.API(middleware=[JSONify()])

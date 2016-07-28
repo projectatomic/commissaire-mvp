@@ -36,7 +36,7 @@ class Test_StoreHandlerBaseClass(_Test_StoreHandler):
         self.assertEquals(
             '/commissaire/status',
             self.instance._format_key(
-                Status(investigator={}, etcd={})))
+                Status.new()))
 
     def test__format_key_with_primary_key(self):
         """

@@ -50,6 +50,14 @@ class StatusResource(Resource):
                     'errors': [],
                 },
             },
+            'watcher': {
+                'status': 'FAILED',
+                'info': {
+                    'size': 0,
+                    'in_use': 0,
+                    'errors': [],
+                }
+            }
         }
         resp.status = falcon.HTTP_503
 
@@ -68,6 +76,13 @@ class StatusResource(Resource):
             kwargs['investigator']['status'] = 'OK'
             kwargs['investigator']['info']['size'] = 1
             kwargs['investigator']['info']['in_use'] = 1
+
+        # Check watcher proccess
+        # XXX: Change watcher if more than 1 process is allowed
+        if cherrypy.engine.publish('watcher-is-alive')[0]:
+            kwargs['watcher']['status'] = 'OK'
+            kwargs['watcher']['info']['size'] = 1
+            kwargs['watcher']['info']['in_use'] = 1
 
         self.logger.debug('Status: {0}', kwargs)
 

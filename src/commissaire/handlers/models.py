@@ -176,5 +176,6 @@ class Status(Model):
     _attribute_map = {
         'etcd': {'type': dict},
         'investigator': {'type': dict},
+        'watcher': {'type': dict},
     }
-    _attribute_defaults = {'etcd': {}, 'investigator': {}}
+    _attribute_defaults = {'etcd': {}, 'investigator': {}, 'watcher': {}}
