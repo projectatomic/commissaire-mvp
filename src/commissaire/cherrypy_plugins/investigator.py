@@ -27,14 +27,12 @@ from commissaire.jobs.investigator import investigator
 
 class InvestigatorPlugin(plugins.SimplePlugin):
 
-    def __init__(self, bus, config):
+    def __init__(self, bus):
         """
         Creates a new instance of the InvestigatorPlugin.
 
         :param bus: The CherryPy bus.
         :type bus: cherrypy.process.wspbus.Bus
-        :param config: Configuration information.
-        :type config: commissaire.config.Config
         """
         plugins.SimplePlugin.__init__(self, bus)
         # multiprocessing.Process() uses fork() to execute the target
@@ -49,7 +47,7 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         self.main_pid = os.getpid()
         self.process = Process(
             target=investigator,
-            args=(INVESTIGATE_QUEUE, config))
+            args=(INVESTIGATE_QUEUE,))
         # TODO: Move to start()
         self.bus.subscribe('investigator-is-alive', self.is_alive)
 

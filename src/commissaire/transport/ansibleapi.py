@@ -32,6 +32,8 @@ from ansible.utils.display import Display
 
 from commissaire import constants as C
 from commissaire.handlers import util
+from commissaire.store.etcdstorehandler import EtcdStoreHandler
+from commissaire.store.kubestorehandler import KubernetesStoreHandler
 
 
 class LogForward(default.CallbackModule):
@@ -362,7 +364,54 @@ class Transport:
             host.address, key_file, play_file, [0, 3], disable_reconnect=True)
         return results
 
-    def bootstrap(self, ip, key_file, config, oscmd, store_manager):
+    def _get_etcd_config(self, store_manager):
+        """
+        Extracts etcd configuration from a registered handler.
+        If no matching handler is found, return defaults for required values.
+
+        :returns: A dictionary of configuration values
+        :rtype: dict
+        """
+        # Need defaults for all required keys.
+        etcd_config = {
+            'host': C.DEFAULT_ETCD_STORE_HANDLER['host'],
+            'port': C.DEFAULT_ETCD_STORE_HANDLER['port'],
+            'protocol': 'http'
+        }
+
+        entries = store_manager.list_store_handlers()
+        for handler_type, config, model_types in entries:
+            if handler_type is EtcdStoreHandler:
+                etcd_config.update(config)
+                break
+
+        return etcd_config
+
+    def _get_kube_config(self, store_manager):
+        """
+        Extracts Kubernetes configuration from a registered handler.
+        If no matching handler is found, return defaults for required values.
+
+        :returns: A dictionary of configuration values
+        :rtype: dict
+        """
+        # Need defaults for all required keys.
+        kube_config = {
+            'host': C.DEFAULT_KUBERNETES_STORE_HANDLER['host'],
+            'port': C.DEFAULT_KUBERNETES_STORE_HANDLER['port'],
+            'protocol': 'http',
+            'token': ''
+        }
+
+        entries = store_manager.list_store_handlers()
+        for handler_type, config, model_types in entries:
+            if handler_type is KubernetesStoreHandler:
+                kube_config.update(config)
+                break
+
+        return kube_config
+
+    def bootstrap(self, ip, key_file, store_manager, oscmd):
         """
         Bootstraps a host via ansible.
 
@@ -370,11 +419,10 @@ class Transport:
         :type ip: str
         :param key_file: Full path to the file holding the private SSH key.
         :type key_file: str
-        :param config: Configuration information.
-        :type config: commissaire.config.Config
-        :param oscmd: OSCmd class to use
         :param store_manager: Remote object for remote stores
-        :type store_manager: commissaire.store.StoreHandlerManager
+        :type store_manager: commissaire.store.storehandlermanager.
+                             StoreHandlerManager
+        :param oscmd: OSCmd class to use
         :type oscmd: commissaire.oscmd.OSCmdBase
         :returns: tuple -- (exitcode(int), facts(dict)).
         """
@@ -388,24 +436,24 @@ class Transport:
             # Not part of a cluster
             pass
 
+        etcd_config = self._get_etcd_config(store_manager)
+        kube_config = self._get_kube_config(store_manager)
+
         play_vars = {
             'commissaire_cluster_type': cluster_type,
             'commissaire_bootstrap_ip': ip,
-            'commissaire_kubernetes_api_server_scheme': config.kubernetes.get(
-                'uri').scheme,
-            'commissaire_kubernetes_api_server_host': config.kubernetes.get(
-                'uri').hostname,
-            'commissaire_kubernetes_api_server_port': config.kubernetes.get(
-                'uri').port,
-            'commissaire_kubernetes_bearer_token': config.kubernetes.get(
-                'token', ''),
+            'commissaire_kubernetes_api_server_scheme':
+                kube_config['protocol'],
+            'commissaire_kubernetes_api_server_host': kube_config['host'],
+            'commissaire_kubernetes_api_server_port': kube_config['port'],
+            'commissaire_kubernetes_bearer_token': kube_config['token'],
             # TODO: Where do we get this?
             'commissaire_docker_registry_host': '127.0.0.1',
             # TODO: Where do we get this?
             'commissaire_docker_registry_port': 8080,
-            'commissaire_etcd_scheme': config.etcd['uri'].scheme,
-            'commissaire_etcd_host': config.etcd['uri'].hostname,
-            'commissaire_etcd_port': config.etcd['uri'].port,
+            'commissaire_etcd_scheme': etcd_config['protocol'],
+            'commissaire_etcd_host': etcd_config['host'],
+            'commissaire_etcd_port': etcd_config['port'],
             # TODO: Where do we get this?
             'commissaire_flannel_key': '/atomic01/network',
             'commissaire_docker_config_local': resource_filename(
@@ -436,34 +484,34 @@ class Transport:
 
         # Provide the CA if etcd is being used over https
         if (
-                config.etcd['uri'].scheme == 'https' and
-                config.etcd.get('certificate_ca_path', None)):
+                etcd_config['protocol'] == 'https' and
+                'certificate_ca_path' in etcd_config):
             play_vars['commissaire_etcd_ca_path'] = oscmd.etcd_ca
             play_vars['commissaire_etcd_ca_path_local'] = (
-                config.etcd['certificate_ca_path'])
+                etcd_config['certificate_ca_path'])
 
         # Client Certificate additions
-        if config.etcd.get('certificate_path', None):
+        if 'certificate_path' in etcd_config:
             self.logger.info('Using etcd client certs')
             play_vars['commissaire_etcd_client_cert_path'] = (
                 oscmd.etcd_client_cert)
             play_vars['commissaire_etcd_client_cert_path_local'] = (
-                config.etcd['certificate_path'])
+                etcd_config['certificate_path'])
             play_vars['commissaire_etcd_client_key_path'] = (
                 oscmd.etcd_client_key)
             play_vars['commissaire_etcd_client_key_path_local'] = (
-                config.etcd['certificate_key_path'])
+                etcd_config['certificate_key_path'])
 
-        if config.kubernetes.get('certificate_path', None):
+        if 'certificate_path' in kube_config:
             self.logger.info('Using kubernetes client certs')
             play_vars['commissaire_kubernetes_client_cert_path'] = (
                 oscmd.kube_client_cert)
             play_vars['commissaire_kubernetes_client_cert_path_local'] = (
-                config.kubernetes['certificate_path'])
+                kube_config['certificate_path'])
             play_vars['commissaire_kubernetes_client_key_path'] = (
                 oscmd.kube_client_key)
             play_vars['commissaire_kubernetes_client_key_path_local'] = (
-                config.kubernetes['certificate_key_path'])
+                kube_config['certificate_key_path'])
 
         # XXX: Need to enable some package repositories for OS 'rhel'
         #      (or 'redhat').  This is a hack for a single corner case.

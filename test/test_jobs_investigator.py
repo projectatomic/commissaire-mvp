@@ -64,21 +64,11 @@ class Test_JobsInvestigator(TestCase):
             }
             ssh_priv_key = 'dGVzdAo='
 
-            connection_config = {
-                'etcd': {
-                    'uri': urlparse('http://127.0.0.1:2379'),
-                },
-                'kubernetes': {
-                    'uri': urlparse('http://127.0.0.1:8080'),
-                    'token': 'token',
-                }
-            }
-
             manager = MagicMock(StoreHandlerManager)
             manager.get.return_value = Host(**json.loads(self.etcd_host))
 
             q.put_nowait((manager, to_investigate, ssh_priv_key, 'root'))
-            investigator(q, connection_config, run_once=True)
+            investigator(q, run_once=True)
 
             self.assertEquals(1, manager.get.call_count)
             self.assertEquals(2, manager.save.call_count)

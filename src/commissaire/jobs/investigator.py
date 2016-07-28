@@ -31,14 +31,12 @@ from commissaire.transport import ansibleapi
 from commissaire.util.ssh import TemporarySSHKey
 
 
-def investigator(queue, config, run_once=False):
+def investigator(queue, run_once=False):
     """
     Investigates new hosts to retrieve and store facts.
 
     :param queue: Queue to pull work from.
     :type queue: Queue.Queue
-    :param config: Configuration information.
-    :type config: commissaire.config.Config
     """
     logger = logging.getLogger('investigator')
     logger.info('Investigator started')
@@ -107,7 +105,7 @@ def investigator(queue, config, run_once=False):
         oscmd = get_oscmd(host.os)
         try:
             result, facts = transport.bootstrap(
-                address, key.path, config, oscmd, store_manager)
+                address, key.path, store_manager, oscmd)
             host.status = 'inactive'
             store_manager.save(host)
         except:

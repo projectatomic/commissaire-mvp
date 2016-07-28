@@ -147,7 +147,7 @@ class Test_Transport(TestCase):
             )
 
             result, facts = transport.bootstrap(
-                '10.2.0.2', 'test/fake_key', config, oscmd, MagicMock())
+                '10.2.0.2', 'test/fake_key', MagicMock(), oscmd)
             # We should have a successful response
             self.assertEquals(0, result)
             # We should see expected calls
@@ -165,7 +165,7 @@ class Test_Transport(TestCase):
             for os_type in available_os_types:
                 oscmd = get_oscmd(os_type)
                 result, facts = transport.bootstrap(
-                    '10.2.0.2.', 'test/fake_key', config, oscmd, MagicMock())
+                    '10.2.0.2.', 'test/fake_key', MagicMock(), oscmd)
                 play_vars = transport._run.call_args[0][4]
                 command = play_vars['commissaire_enable_pkg_repos']
                 if os_type in needs_enable_repos:

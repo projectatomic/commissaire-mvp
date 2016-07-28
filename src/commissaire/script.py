@@ -492,7 +492,7 @@ def main():  # pragma: no cover
                 '{} instead: {}'.format(type(config).__name__, config))
 
     # Add our plugins
-    InvestigatorPlugin(cherrypy.engine, config).subscribe()
+    InvestigatorPlugin(cherrypy.engine).subscribe()
     WatcherPlugin(cherrypy.engine, store_manager.clone()).subscribe()
 
     store_plugin.subscribe()
