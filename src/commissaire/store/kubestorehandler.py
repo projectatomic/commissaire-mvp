@@ -20,6 +20,7 @@ import json
 import requests
 
 from commissaire.compat.b64 import base64
+from commissaire.containermgr.kubernetes import KubeContainerManager
 from commissaire.handlers.models import Hosts, Host
 from commissaire.store import StoreHandlerBase
 
@@ -42,6 +43,8 @@ class KubernetesStoreHandler(StoreHandlerBase):
     """
     Handler for data storage on Kubernetes.
     """
+
+    container_manager_class = KubeContainerManager
 
     def __init__(self, config):
         """

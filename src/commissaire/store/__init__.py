@@ -26,6 +26,9 @@ class StoreHandlerBase:
        This is not currently in use.
     """
 
+    # Subclasses override this, if applicable.
+    container_manager_class = None
+
     def __init__(self, config):
         """
         :param config: Configuration details for the StoreHandler.
