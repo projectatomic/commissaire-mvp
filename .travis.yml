@@ -9,7 +9,7 @@ install:
   - "pip install -e ."
   - "curl -L  https://github.com/coreos/etcd/releases/download/v2.3.3/etcd-v2.3.3-linux-amd64.tar.gz -o etcd-v2.3.3-linux-amd64.tar.gz && tar xvzf etcd-v2.3.3-linux-amd64.tar.gz"
 script:
-  - "python setup.py flake8"
+  - "flake8 src/"
   - "python setup.py nosetests"
   - "PYTHONPATH=$PYTHONPATH:`pwd`/src/commissaire PATH=$PATH:`pwd`/etcd-v2.3.3-linux-amd64 behave -D start-etcd=true -D start-server=true features/"
 notifications:
