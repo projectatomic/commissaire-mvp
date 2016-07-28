@@ -129,37 +129,33 @@ def investigator(queue, config, run_once=False):
             # Not part of a cluster
             pass
 
-# FIXME This commit breaks KubeContainerManager because we now pass a
-#       different kind of config argument.  Disable this temporarily.
-#
-#       # Verify association with the container manager
-#       if cluster_type == C.CLUSTER_TYPE_KUBERNETES:
-#           try:
-#               container_mgr = KubeContainerManager(config)
-#               # Try 3 times waiting 5 seconds each time before giving up
-#               for cnt in range(0, 3):
-#                   if container_mgr.node_registered(address):
-#                       logger.info(
-#                           '{0} has been registered with the '
-#                           'container manager.'.format(address))
-#                       host.status = 'active'
-#                       break
-#                   if cnt == 3:
-#                       msg = 'Could not register with the container manager'
-#                       logger.warn(msg)
-#                       raise Exception(msg)
-#                   logger.debug(
-#                       '{0} has not been registered with the container '
-#                       ' manager. Checking again in 5 seconds...'.format(
-#                           address))
-#                   sleep(5)
-#           except:
-#               _, exc_msg, _ = sys.exc_info()
-#               logger.warn(
-#                   'Unable to finish bootstrap for {0} while associating '
-#                   'with the container manager: {1}'.format(
-#                       address, exc_msg))
-#               host.status = 'inactive'
+        # Verify association with relevant container managers
+        for con_mgr in store_manager.list_container_managers(cluster_type):
+            try:
+                # Try 3 times waiting 5 seconds each time before giving up
+                for cnt in range(0, 3):
+                    if con_mgr.node_registered(address):
+                        logger.info(
+                            '{0} has been registered with the '
+                            'container manager.'.format(address))
+                        host.status = 'active'
+                        break
+                    if cnt == 3:
+                        msg = 'Could not register with the container manager'
+                        logger.warn(msg)
+                        raise Exception(msg)
+                    logger.debug(
+                        '{0} has not been registered with the container '
+                        ' manager. Checking again in 5 seconds...'.format(
+                            address))
+                    sleep(5)
+            except:
+                _, exc_msg, _ = sys.exc_info()
+                logger.warn(
+                    'Unable to finish bootstrap for {0} while associating '
+                    'with the {1}: {2}'.format(
+                        address, con_mgr.__class__.__name__, exc_msg))
+                host.status = 'inactive'
 
         store_manager.save(host)
         logger.info(

@@ -82,6 +82,45 @@ class StoreHandlerManager(object):
         # This collects all unique instances from the registry.
         return {id(x): x for x in self._registry.values()}.values()
 
+    def list_container_managers(self, cluster_type=None):
+        """
+        Returns a list of container manager instances based on the
+        registered store handler types and associated configuration.
+        If cluster_type is given, restrict the list to managers for
+        that type of cluster.
+
+        :param cluster_type: Cluster type constant
+        :type cluster_type: str
+        :returns: List of container managers
+        :rtype: list
+        """
+        if not self._container_managers:
+            # Instantiate all container managers.
+            for handler_type, config, _ in self.list_store_handlers():
+                container_manager_class = getattr(
+                    handler_type, 'container_manager_class')
+                if container_manager_class:
+                    # XXX Limit one container manager for now.
+                    if not self._container_managers:
+                        container_manager = container_manager_class(config)
+                        self._container_managers.append(container_manager)
+                    else:
+                        logger = self._get_logger()
+                        logger.warn(
+                            'A container manager is already established, '
+                            'skipping {0} as configured for store handler '
+                            '"{1}"'.format(
+                                container_manager_class.__name__,
+                                handler_type.__name__))
+
+        if cluster_type:
+            result = [x for x in self._container_managers
+                      if x.cluster_type == cluster_type]
+        else:
+            result = list(self._container_managers)
+
+        return result
+
     def _get_handler(self, model):
         """
         Looks up, and if necessary instantiates, a StoreHandler instance
