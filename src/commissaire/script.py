@@ -17,6 +17,7 @@
 
 import argparse
 import cherrypy
+import fnmatch
 import importlib
 import json
 import logging
@@ -27,6 +28,7 @@ import sys
 import etcd
 import falcon
 
+from commissaire import constants as C
 from commissaire.compat.urlparser import urlparse
 from commissaire.compat import exception
 from commissaire.config import Config, cli_etcd_or_default
@@ -40,10 +42,6 @@ from commissaire.handlers.hosts import (
 from commissaire.handlers.status import StatusResource
 from commissaire.middleware import JSONify
 from commissaire.ssl_adapter import ClientCertBuiltinSSLAdapter
-
-# XXX Temporary until we have a real storage plugin system.
-from commissaire.model import Model as BogusModelType
-from commissaire.store.etcdstorehandler import EtcdStoreHandler
 
 
 def create_app(
@@ -169,6 +167,15 @@ def _read_config_file(path=None):
         json_object[auth_key] = auth_plugin.pop('name')
         json_object['authentication_plugin_kwargs'] = auth_plugin
 
+    # Special case:
+    #
+    # In the configuration file, the "register_store_handler" member
+    # can be specified as a JSON object or a list of JSON objects.
+    handler_key = 'register_store_handler'
+    handler_list = json_object.get(handler_key)
+    if type(handler_list) is dict:
+        json_object[handler_key] = [handler_list]
+
     return argparse.Namespace(**json_object)
 
 
@@ -236,6 +243,11 @@ def parse_args(parser):
         '--authentication-plugin-kwargs', type=str, default={},
         metavar='KEYWORD_ARGS',
         help='Authentication Plugin configuration (key=value,...)')
+    parser.add_argument(
+        '--register-store-handler', type=str, default=[],
+        action='append', metavar='JSON_OBJECT',
+        help='Store Handler configuration in JSON format, '
+             'can be specified multiple times')
 
     # We have to parse the command-line arguments twice.  Once to extract
     # the --config-file option, and again with the config file content as
@@ -255,6 +267,48 @@ def parse_args(parser):
             ', '.join(missing_args)))
 
     return args
+
+
+def register_store_handler(parser, store_manager, config):
+    """
+    Registers a new store handler type with a StoreHandlerManager.
+    This function extracts and validates information required for
+    registration from the configuration dictionary.
+
+    :param parser: An argument parser
+    :type parser: argparse.ArgumentParser
+    :param store_manager: A store manager
+    :type store_manager: commissaire.store.storehandlermanager.
+                         StoreHandlerManager
+    :param config: A configuration dictionary
+    :type config: dict
+    """
+    # Import the handler class.
+    try:
+        module_name = config.pop('name')
+    except KeyError:
+        parser.error(
+            'Store handler configuration missing "name" key: '
+            '{}'.format(config))
+    try:
+        module = importlib.import_module(module_name)
+        handler_type = getattr(module, 'StoreHandler')
+    except ImportError:
+        parser.error(
+            'Invalid store handler module name: {}'.format(module_name))
+
+    # Import the model classes.
+    module = importlib.import_module('commissaire.handlers.models')
+    available = {k: v for k, v in module.__dict__.items() if
+                 isinstance(v, type) and issubclass(v, module.Model)}
+    model_types = set()
+    for pattern in config.pop('models', ['*']):
+        matches = fnmatch.filter(available.keys(), pattern)
+        if not matches:
+            parser.error('No match for model: {}'.format(pattern))
+        model_types.update([available[name] for name in matches])
+
+    store_manager.register_store_handler(handler_type, config, *model_types)
 
 
 def main():  # pragma: no cover
@@ -415,9 +469,27 @@ def main():  # pragma: no cover
     store_plugin = StorePlugin(cherrypy.engine)
     store_manager = store_plugin.get_store_manager()
 
-    # XXX Temporary until we have a real storage plugin system.
-    store_manager.register_store_handler(
-        EtcdStoreHandler, store_kwargs, BogusModelType)
+    # Configure store handlers from user data.
+    #
+    # FIXME The configuration format got too complicated to easily parse
+    #       comma-separated key-value pairs so we punted and switched to
+    #       JSON format. The authentication CLI options need reworked to
+    #       keep the input formats consistent.
+    if len(args.register_store_handler) == 0:
+        # Order is significant; Kubernetes must be first.
+        args.register_store_handler = [
+            C.DEFAULT_KUBERNETES_STORE_HANDLER,
+            C.DEFAULT_ETCD_STORE_HANDLER
+        ]
+    for config in args.register_store_handler:
+        if type(config) is str:
+            config = json.loads(config)
+        if type(config) is dict:
+            register_store_handler(parser, store_manager, config)
+        else:
+            parser.error(
+                'Store handler format must be a JSON object, got a '
+                '{} instead: {}'.format(type(config).__name__, config))
 
     # Add our plugins
     InvestigatorPlugin(cherrypy.engine, config).subscribe()

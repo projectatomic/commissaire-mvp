@@ -22,3 +22,21 @@ CLUSTER_TYPE_HOST = 'host_only'
 CLUSTER_TYPE_KUBERNETES = 'kubernetes'
 #: Cluster type to use if none is specified
 CLUSTER_TYPE_DEFAULT = CLUSTER_TYPE_KUBERNETES
+
+# Default etcd configuration
+DEFAULT_ETCD_STORE_HANDLER = {
+    'name': 'commissaire.store.etcdstorehandler',
+    'protocol': 'http',
+    'host': '127.0.0.1',
+    'port': 2379,
+    'models': []
+}
+
+# Default Kubernetes configuration
+DEFAULT_KUBERNETES_STORE_HANDLER = {
+    'name': 'commissaire.store.kubestorehandler',
+    'protocol': 'http',
+    'host': '127.0.0.1',
+    'port': 8080,
+    'models': ['*']
+}

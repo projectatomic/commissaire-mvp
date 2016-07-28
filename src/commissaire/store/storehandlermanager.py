@@ -17,8 +17,6 @@ import logging
 
 from copy import deepcopy
 
-# XXX Temporary until we have a real storage plugin system.
-from commissaire.model import Model as BogusModelType
 from commissaire.model import ValidationError
 
 
@@ -40,9 +38,6 @@ class StoreHandlerManager(object):
         # Logger objects can't be pickled, so fetch ours lazily so
         # cloned StoreHandlerManagers can be passed to subprocesses.
         self.__logger = None
-
-        # XXX Temporary, until we're passing models instead of keys.
-        self.bogus_model = BogusModelType()
 
     def clone(self):
         """
@@ -156,7 +151,7 @@ class StoreHandlerManager(object):
         :rtype: commissaire.model.Model
         """
         logger = self._get_logger()
-        handler = self._get_handler(self.bogus_model)
+        handler = self._get_handler(model_instance)
         # Validate before saving
         try:
             model_instance._validate()
@@ -178,7 +173,7 @@ class StoreHandlerManager(object):
         :rtype: commissaire.model.Model
         """
         logger = self._get_logger()
-        handler = self._get_handler(self.bogus_model)
+        handler = self._get_handler(model_instance)
         logger.debug('> GET {0}'.format(model_instance))
         model_instance = handler._get(model_instance)
         # Validate after getting
@@ -198,7 +193,7 @@ class StoreHandlerManager(object):
         :type model_instance:
         """
         logger = self._get_logger()
-        handler = self._get_handler(self.bogus_model)
+        handler = self._get_handler(model_instance)
         logger.debug('> DELETE {0}'.format(model_instance))
         handler._delete(model_instance)
 
@@ -212,7 +207,7 @@ class StoreHandlerManager(object):
         :rtype: list
         """
         logger = self._get_logger()
-        handler = self._get_handler(self.bogus_model)
+        handler = self._get_handler(model_instance)
         logger.debug('> LIST {0}'.format(model_instance))
         model_instance = handler._list(model_instance)
         logger.debug('< LIST {0}'.format(model_instance))
