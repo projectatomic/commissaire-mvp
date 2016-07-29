@@ -10,7 +10,7 @@
 
 Name:           commissaire
 Version:        0.0.1
-Release:        0.1.%{prerelease}%{?dist}
+Release:        0.6.%{prerelease}%{?dist}
 Summary:        Simple cluster host management
 License:        GPLv3+
 URL:            http://github.com/projectatomic/commissaire
@@ -43,8 +43,9 @@ Requires:  py-bcrypt
 
 # Ansible's Python API has no stability guarantees,
 # so keep the acceptable versions on a short leash.
-Requires:  ansible >= 2.1.0.0
-Requires:  ansible < 2.1.1.0
+Requires:  ansible >= 2.1.1.0
+Requires:  ansible < 2.1.2.0
+
 
 %description
 Commissaire allows administrators of a Kubernetes, Atomic Enterprise or
@@ -102,6 +103,9 @@ install -D contrib/systemd/commissaire.service %{buildroot}%{_unitdir}/commissai
 
 
 %changelog
+* Fri Jul 29 2016 Steve Milner <smilner@redhat.com> - 0.0.1-0.6.rc3
+- Bumped up ansible version.
+
 * Tue Jun 14 2016 Steve Milner <smilner@redhat.com> - 0.0.1rc3-2
 - Bumped up ansible version.
 
