@@ -205,20 +205,6 @@ def parse_args(parser):
         '--listen-port', '-p', type=int, default=8000,
         help='Port to listen on')
     parser.add_argument(
-        '--etcd-uri', '-e', type=str,
-        help=('Full URI for etcd. This value is used for both local and remote'
-              ' host node connections to etcd.'
-              ' EX: http://192.168.152.100:2379'))
-    parser.add_argument(
-        '--etcd-cert-path', '-C', type=str,
-        help='Full path to the client side certificate.')
-    parser.add_argument(
-        '--etcd-cert-key-path', '-K', type=str,
-        help='Full path to the client side certificate key.')
-    parser.add_argument(
-        '--etcd-ca-path', '-A', type=str,
-        help='Full path to the CA file.')
-    parser.add_argument(
         '--kube-uri', '-k', type=str,
         help=('Full URI for kubernetes. This value is used for both local and'
               ' remote host node connection to kubernetes.'
@@ -257,7 +243,7 @@ def parse_args(parser):
     args = parser.parse_args(namespace=namespace)
 
     # Make sure required arguments are present.
-    required_args = ('etcd_uri', 'kube_uri')
+    required_args = ('kube_uri',)
     missing_args = []
     for name in required_args:
         if getattr(args, name) is None:
@@ -327,27 +313,10 @@ def main():  # pragma: no cover
 
     try:
         args = parse_args(parser)
-        config.etcd['uri'] = parse_uri(args.etcd_uri, 'etcd')
         config.kubernetes['uri'] = parse_uri(args.kube_uri, 'kube')
     except Exception:
         _, ex, _ = exception.raise_if_not(Exception)
         parser.error(ex)
-
-    if bool(args.etcd_ca_path):
-        config.etcd['certificate_ca_path'] = args.etcd_ca_path
-
-    # We need all args to use a client side cert for etcd
-    if bool(args.etcd_cert_path) ^ bool(args.etcd_cert_key_path):
-        parser.error(
-            'Both etcd-cert-path and etcd-cert-key-path must be '
-            'provided to use a client side certificate with etcd.')
-    elif bool(args.etcd_cert_path):
-        if config.etcd['uri'].scheme != 'https':
-            parser.error('An https URI is required when using '
-                         'client side certificates.')
-        config.etcd['certificate_path'] = args.etcd_cert_path
-        config.etcd['certificate_key_path'] = args.etcd_cert_key_path
-        logging.info('Using client side certificate for etcd.')
 
     found_logger_config = False
     for logger_path in (

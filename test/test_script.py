@@ -71,21 +71,20 @@ class Test_ParseArgs(TestCase):
     """
 
     config_data = ('{'
-        '  "etcd-uri": "http://192.168.100.1:2379",'
-        '  "kube-uri": "http://192.168.100.1:8080"'
+        '  "kube-uri": "http://192.168.100.1:8080",'
+        '  "listen-interface": "127.0.0.1",'
+        '  "listen-port": 8888'
         '}')
 
     bad_config_data = '["I am supposed to be a dictionary. :("]'
 
     auth_plugin_no_name = ('{'
-        '  "etcd-uri": "http://192.168.100.1:2379",'
         '  "kube-uri": "http://192.168.100.1:8080",'
         '  "authentication-plugin": {'
         '      "kwarg": [1, 2, 3]'
         '} }')
 
     auth_plugin = ('{'
-        '  "etcd-uri": "http://192.168.100.1:2379",'
         '  "kube-uri": "http://192.168.100.1:8080",'
         '  "authentication-plugin": {'
         '      "name": "test_module",'
@@ -96,22 +95,8 @@ class Test_ParseArgs(TestCase):
         """
         Verify required arguments are caught when missing.
         """
-        failing_cases = ([''],
-                         ['', '--etcd-uri', 'http://127.0.0.1:2379'],
-                         ['', '--kube-uri', 'http://127.0.0.1:8080'])
-        for argv in failing_cases:
-            sys.argv = argv
-            parser = argparse.ArgumentParser()
-            with mock.patch('__builtin__.open') as _open, \
-                 mock.patch('argparse.ArgumentParser._print_message') as _print:
-                # Make sure no config file is opened.
-                _open.side_effect = IOError(
-                    errno.ENOENT, os.strerror(errno.ENOENT))
-                self.assertRaises(SystemExit, script.parse_args, parser)
-
         # All required arguments; no exception raised.
-        sys.argv = ['', '--etcd-uri', 'http://127.0.0.1:2379',
-                        '--kube-uri', 'http://127.0.0.1:8080']
+        sys.argv = ['', '--kube-uri', 'http://127.0.0.1:8080']
         parser = argparse.ArgumentParser()
         with mock.patch('__builtin__.open') as _open:
             # Make sure no config file is opened.
@@ -169,10 +154,10 @@ class Test_ParseArgs(TestCase):
         """
         Verify command-line arguments shadow config file.
         """
-        sys.argv = ['', '--etcd-uri', 'http://127.0.0.1:2379']
+        sys.argv = ['', '--listen-interface', '10.10.10.10']
         parser = argparse.ArgumentParser()
         with mock.patch('__builtin__.open',
                         mock.mock_open(read_data=self.config_data)) as _open:
             args = script.parse_args(parser)
-        self.assertEquals(args.etcd_uri, 'http://127.0.0.1:2379')
-        self.assertEquals(args.kube_uri, 'http://192.168.100.1:8080')
+        self.assertEquals(args.listen_interface, '10.10.10.10')
+        self.assertEquals(args.listen_port, 8888)
