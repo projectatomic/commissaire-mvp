@@ -71,7 +71,6 @@ class Test_ParseArgs(TestCase):
     """
 
     config_data = ('{'
-        '  "kube-uri": "http://192.168.100.1:8080",'
         '  "listen-interface": "127.0.0.1",'
         '  "listen-port": 8888'
         '}')
@@ -79,30 +78,15 @@ class Test_ParseArgs(TestCase):
     bad_config_data = '["I am supposed to be a dictionary. :("]'
 
     auth_plugin_no_name = ('{'
-        '  "kube-uri": "http://192.168.100.1:8080",'
         '  "authentication-plugin": {'
         '      "kwarg": [1, 2, 3]'
         '} }')
 
     auth_plugin = ('{'
-        '  "kube-uri": "http://192.168.100.1:8080",'
         '  "authentication-plugin": {'
         '      "name": "test_module",'
         '      "kwarg": [1, 2, 3, 4]'
         '} }')
-
-    def test_missing_req_args(self):
-        """
-        Verify required arguments are caught when missing.
-        """
-        # All required arguments; no exception raised.
-        sys.argv = ['', '--kube-uri', 'http://127.0.0.1:8080']
-        parser = argparse.ArgumentParser()
-        with mock.patch('__builtin__.open') as _open:
-            # Make sure no config file is opened.
-            _open.side_effect = IOError(
-                errno.ENOENT, os.strerror(errno.ENOENT))
-            args = script.parse_args(parser)
 
     def test_missing_config_file(self):
         """
