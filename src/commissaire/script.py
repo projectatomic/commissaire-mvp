@@ -30,7 +30,6 @@ import falcon
 from commissaire import constants as C
 from commissaire.compat.urlparser import urlparse
 from commissaire.compat import exception
-from commissaire.config import Config
 from commissaire.handlers.clusters import (
     ClustersResource, ClusterResource,
     ClusterHostsResource, ClusterSingleHostResource,
@@ -288,7 +287,6 @@ def main():  # pragma: no cover
     from commissaire.cherrypy_plugins.store import StorePlugin
     from commissaire.cherrypy_plugins.investigator import InvestigatorPlugin
     from commissaire.cherrypy_plugins.watcher import WatcherPlugin
-    config = Config()
 
     epilog = ('Example: ./commissaire -e http://127.0.0.1:2379'
               ' -k http://127.0.0.1:8080')
@@ -314,14 +312,6 @@ def main():  # pragma: no cover
     if not found_logger_config:
         parser.error(
             'Unable to find any logging configuration. Exiting ...')
-
-    # Add our config instance to the cherrypy global config so we can use it's
-    # values elsewhere
-    # TODO: Technically this should be in the cherrypy.request.app.config
-    # but it looks like that isn't accessable with WSGI based apps
-    cherrypy.config['commissaire.config'] = config
-
-    logging.debug('Config: {0}'.format(config))
 
     cherrypy.server.unsubscribe()
     # Disable autoreloading and use our logger
