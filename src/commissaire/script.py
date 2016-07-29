@@ -31,7 +31,7 @@ import falcon
 from commissaire import constants as C
 from commissaire.compat.urlparser import urlparse
 from commissaire.compat import exception
-from commissaire.config import Config, cli_etcd_or_default
+from commissaire.config import Config
 from commissaire.handlers.clusters import (
     ClustersResource, ClusterResource,
     ClusterHostsResource, ClusterSingleHostResource,
@@ -200,10 +200,11 @@ def parse_args(parser):
         help='Full path to a JSON configuration file '
              '(command-line arguments override)')
     parser.add_argument(
-        '--listen-interface', '-i', type=str,
+        '--listen-interface', '-i', type=str, default='0.0.0.0',
         help='Interface to listen on')
     parser.add_argument(
-        '--listen-port', '-p', type=int, help='Port to listen on')
+        '--listen-port', '-p', type=int, default=8000,
+        help='Port to listen on')
     parser.add_argument(
         '--etcd-uri', '-e', type=str,
         help=('Full URI for etcd. This value is used for both local and remote'
@@ -385,18 +386,6 @@ def main():  # pragma: no cover
         parser.error('{0}\n'.format(err))
         raise SystemExit(1)
 
-    # TLS options
-    tls_keyfile = cli_etcd_or_default(
-        'tlskeyfile', args.tls_keyfile, None, ds)
-    tls_certfile = cli_etcd_or_default(
-        'tlscertfile', args.tls_certfile, None, ds)
-    tls_clientverifyfile = cli_etcd_or_default(
-        'tls-clientverifyfile', args.tls_clientverifyfile, None, ds)
-
-    interface = cli_etcd_or_default(
-        'listeninterface', args.listen_interface, '0.0.0.0', ds)
-    port = cli_etcd_or_default('listenport', args.listen_port, 8000, ds)
-
     # Pull options for accessing kubernetes
     try:
         config.kubernetes['token'] = ds.get(
@@ -431,7 +420,7 @@ def main():  # pragma: no cover
     new_ssl_adapter_cls = type(
         "CustomClientCertBuiltinSSLAdapter",
         (ClientCertBuiltinSSLAdapter,),
-        {"verify_location": tls_clientverifyfile}
+        {"verify_location": args.tls_clientverifyfile}
     )
 
     if sys.version_info < (3, 0):
@@ -441,23 +430,23 @@ def main():  # pragma: no cover
     ssl_adapters['builtin_client'] = new_ssl_adapter_cls
 
     server = cherrypy._cpserver.Server()
-    server.socket_host = interface
-    server.socket_port = int(port)
+    server.socket_host = args.listen_interface
+    server.socket_port = args.listen_port
     server.thread_pool = 10
 
-    if bool(tls_keyfile) ^ bool(tls_certfile):
+    if bool(args.tls_keyfile) ^ bool(args.tls_certfile):
         parser.error(
             'Both a keyfile and certfile must be '
             'given for commissaire server TLS. Exiting ...')
-    elif bool(tls_clientverifyfile) and not bool(tls_certfile):
+    elif bool(args.tls_clientverifyfile) and not bool(args.tls_certfile):
         parser.error(
             'If a client verify file is given a TLS keyfile and '
             'certfile must be given as well. Exiting ...')
 
-    if tls_keyfile and tls_certfile:
+    if args.tls_keyfile and args.tls_certfile:
         server.ssl_module = 'builtin_client'
-        server.ssl_certificate = tls_certfile
-        server.ssl_private_key = tls_keyfile
+        server.ssl_certificate = args.tls_certfile
+        server.ssl_private_key = args.tls_keyfile
         logging.info('Commissaire server TLS will be enabled.')
     server.subscribe()
 

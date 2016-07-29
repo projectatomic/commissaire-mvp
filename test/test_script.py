@@ -36,7 +36,7 @@ class Test_CreateApp(TestCase):
 
     def test_create_app(self):
         """
-        Verify cli_etcd_or_default works with cli input.
+        Verify the application is created as expected.
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
             _publish.return_value = [[[], etcd.EtcdKeyNotFound]]

@@ -40,31 +40,3 @@ class Config(dict):
         self.listen = listen
         self.etcd = etcd
         self.kubernetes = kubernetes
-
-
-def cli_etcd_or_default(name, cli, default, ds):
-    """
-    Returns the value for an option in the following order:
-    CLI switch, etcd value, default.
-
-    :param name: The name of the switch/etcd key.
-    :type name: str
-    :param cli: The argparse value.
-    :param default: The default value if CLI and etcd have no values.
-    :param ds: Etcd client
-    :type ds: etcd.Client
-    """
-    result = None
-    if cli:
-        result = cli
-        logging.info('Using CLI for {0} configuration.'.format(name))
-    else:
-        try:
-            result = ds.get('/commissaire/config/{0}'.format(name)).value
-            logging.info('Using Etcd for {0} configuration.'.format(name))
-        except etcd.EtcdKeyNotFound:
-            logging.info(
-                'No CLI or etcd defined for {0}.'
-                ' Using default of {1}.'.format(name, default))
-            result = default
-    return result
