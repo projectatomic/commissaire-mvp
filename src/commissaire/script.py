@@ -25,7 +25,6 @@ import logging.config
 import os
 import sys
 
-import etcd
 import falcon
 
 from commissaire import constants as C
@@ -334,13 +333,6 @@ def main():  # pragma: no cover
         _, ex, _ = exception.raise_if_not(Exception)
         parser.error(ex)
 
-    store_kwargs = {
-        'read_timeout': 2,
-        'host': config.etcd['uri'].hostname,
-        'port': config.etcd['uri'].port,
-        'protocol': config.etcd['uri'].scheme,
-    }
-
     if bool(args.etcd_ca_path):
         config.etcd['certificate_ca_path'] = args.etcd_ca_path
 
@@ -353,54 +345,23 @@ def main():  # pragma: no cover
         if config.etcd['uri'].scheme != 'https':
             parser.error('An https URI is required when using '
                          'client side certificates.')
-        store_kwargs['cert'] = (args.etcd_cert_path, args.etcd_cert_key_path)
         config.etcd['certificate_path'] = args.etcd_cert_path
         config.etcd['certificate_key_path'] = args.etcd_cert_key_path
         logging.info('Using client side certificate for etcd.')
 
-    ds = etcd.Client(**store_kwargs)
-
-    try:
-        logging.config.dictConfig(
-            json.loads(ds.read('/commissaire/config/logger').value))
-        logging.info('Using Etcd for logging configuration.')
-    except etcd.EtcdKeyNotFound:
-        found_logger_config = False
-        for logger_path in (
-                '/etc/commissaire/logger.json', './conf/logger.json'):
-            if os.path.isfile(logger_path):
-                with open(logger_path, 'r') as logging_default_cfg:
-                    logging.config.dictConfig(
-                        json.loads(logging_default_cfg.read()))
-                    found_logger_config = True
-                logging.warn('No logger configuration in Etcd. Using defaults '
-                             'at {0}'.format(logger_path))
-        if not found_logger_config:
-            parser.error(
-                'Unable to find any logging configuration. Exiting ...')
-
-    except etcd.EtcdConnectionFailed:
-        _, ecf, _ = exception.raise_if_not(etcd.EtcdConnectionFailed)
-        err = 'Unable to connect to Etcd: {0}. Exiting ...'.format(ecf)
-        logging.fatal(err)
-        parser.error('{0}\n'.format(err))
-        raise SystemExit(1)
-
-    # Pull options for accessing kubernetes
-    try:
-        config.kubernetes['token'] = ds.get(
-            '/commissaire/config/kubetoken').value
-        logging.info('Using kubetoken for kubernetes.')
-    except etcd.EtcdKeyNotFound:
-        logging.debug('No kubetoken set.')
-    try:
-        config.kubernetes['certificate_path'] = ds.get(
-            '/commissaire/config/kube_certificate_path').value
-        config.kubernetes['certificate_key_path'] = ds.get(
-            '/commissaire/config/kube_certificate_key_path').value
-        logging.info('Using client side certificate for kubernetes.')
-    except etcd.EtcdKeyNotFound:
-        logging.debug('No kubernetes client side certificate set.')
+    found_logger_config = False
+    for logger_path in (
+            '/etc/commissaire/logger.json', './conf/logger.json'):
+        if os.path.isfile(logger_path):
+            with open(logger_path, 'r') as logging_default_cfg:
+                logging.config.dictConfig(
+                    json.loads(logging_default_cfg.read()))
+                found_logger_config = True
+            logging.warn('No logger configuration in Etcd. Using defaults '
+                         'at {0}'.format(logger_path))
+    if not found_logger_config:
+        parser.error(
+            'Unable to find any logging configuration. Exiting ...')
 
     # Add our config instance to the cherrypy global config so we can use it's
     # values elsewhere
