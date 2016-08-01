@@ -40,6 +40,7 @@ from commissaire.handlers.hosts import (
 from commissaire.handlers.status import StatusResource
 from commissaire.middleware import JSONify
 from commissaire.ssl_adapter import ClientCertBuiltinSSLAdapter
+from commissaire.store import ConfigurationError
 
 
 def create_app(
@@ -277,7 +278,13 @@ def register_store_handler(parser, store_manager, config):
             parser.error('No match for model: {}'.format(pattern))
         model_types.update([available[name] for name in matches])
 
-    store_manager.register_store_handler(handler_type, config, *model_types)
+    try:
+        store_manager.register_store_handler(
+            handler_type, config, *model_types)
+    except ConfigurationError as error:
+        parser.error(
+            'Configuration error for store handler "{0}": '
+            '{1}'.format(module_name, error.message))
 
 
 def main():  # pragma: no cover

@@ -17,6 +17,13 @@ Store implementations.
 """
 
 
+class ConfigurationError(Exception):
+    """
+    Exception class for user configuration errors.
+    """
+    pass
+
+
 class StoreHandlerBase:
     """
     Base class for all StoreHandler classes.
@@ -28,6 +35,20 @@ class StoreHandlerBase:
 
     # Subclasses override this, if applicable.
     container_manager_class = None
+
+    @classmethod
+    def check_config(cls, config):
+        """
+        Examines the configuration parameters for a particular class of
+        store handler and throws a ConfigurationError if any parameters
+        are invalid.
+
+        :param config: Configuration parameters for the handler type
+        :type config: dict
+        :raises ConfigurationError: if any parameters are invalid
+        """
+        raise NotImplementedError(
+            '{0}.check_config() must be overridden.'.format(cls.__name__))
 
     def __init__(self, config):
         """

@@ -54,6 +54,8 @@ class StoreHandlerManager(object):
     def register_store_handler(self, handler_type, config, *model_types):
         """
         Associates a StoreHandler subclass with one or more model types.
+        This will raise a ConfigurationError if any configuration parameters
+        are invalid.
 
         :param handler_type: A class derived from StoreHandler
         :type handler_type: type
@@ -62,6 +64,7 @@ class StoreHandlerManager(object):
         :param model_types: Model types under the handler's purview
         :type module_types: tuple
         """
+        handler_type.check_config(config)
         entry = (handler_type, config, model_types)
         self._registry.update({mt: entry for mt in model_types})
 

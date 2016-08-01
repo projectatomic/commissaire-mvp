@@ -20,7 +20,7 @@ import json
 
 import etcd
 
-from commissaire.store import StoreHandlerBase
+from commissaire.store import ConfigurationError, StoreHandlerBase
 
 #: Maps ModelClassName to a key pattern
 _etcd_mapper = {
@@ -39,6 +39,24 @@ class EtcdStoreHandler(StoreHandlerBase):
     """
     Handler for data storage on etcd.
     """
+
+    @classmethod
+    def check_config(cls, config):
+        """
+        Examines the configuration parameters for an EtcdStoreHandler
+        and throws a ConfigurationError if any parameters are invalid.
+        """
+        if (bool(config.get('certificate-path')) ^
+                bool(config.get('certificate-key-path'))):
+            raise ConfigurationError(
+                'Both "certificate_path" and "certificate_key_path" '
+                'must be provided to use a client side certificate')
+        if config.get('certificate-path'):
+            protocol = config.get('protocol')
+            if protocol != 'https':
+                raise ConfigurationError(
+                    'Protocol must be "https" when using client side '
+                    'certificates (got "{0}")'.format(protocol))
 
     def __init__(self, config):
         """

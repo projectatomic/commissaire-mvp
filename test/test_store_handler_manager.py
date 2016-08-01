@@ -24,6 +24,18 @@ from commissaire.store import StoreHandlerBase
 from commissaire.store.storehandlermanager import StoreHandlerManager
 
 
+class PhonyStoreHandler(StoreHandlerBase):
+    """
+    Minimal store handler class for testing.
+    """
+    @classmethod
+    def check_config(cls, config):
+        """
+        Base class requires this to be overridden.
+        """
+        pass
+
+
 class Test_StoreHandlerManager(TestCase):
     """
     Tests for the StoreHandlerManager class.
@@ -52,60 +64,60 @@ class Test_StoreHandlerManager(TestCase):
         # And the handlers should still be empty
         self.assertEqual({}, manager._handlers)
 
-    def test_storehandlermanager_get(self):
+    @mock.patch.object(PhonyStoreHandler, 'check_config')
+    def test_storehandlermanager_get(self, PhonyStoreHandler):
         """
         Verify the StoreHandlerManager get method works as expected.
         """
-        StoreHandlerBase = mock.MagicMock('StoreHandlerBase')
-        StoreHandlerBase()._get.return_value = TestModel.new()
+        PhonyStoreHandler()._get.return_value = TestModel.new()
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        manager.register_store_handler(PhonyStoreHandler, {}, TestModel)
         model_instance = TestModel.new()
         result = manager.get(model_instance)
-        StoreHandlerBase()._get.assert_called_once_with(model_instance)
-        self.assertEqual(StoreHandlerBase()._get.return_value, result)
+        PhonyStoreHandler()._get.assert_called_once_with(model_instance)
+        self.assertEqual(PhonyStoreHandler()._get.return_value, result)
 
-    def test_storehandlermanager_delete(self):
+    @mock.patch.object(PhonyStoreHandler, 'check_config')
+    def test_storehandlermanager_delete(self, PhonyStoreHandler):
         """
         Verify the StoreHandlerManager delete method works as expected.
         """
-        StoreHandlerBase = mock.MagicMock('StoreHandlerBase')
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        manager.register_store_handler(PhonyStoreHandler, {}, TestModel)
         model_instance = TestModel.new()
         manager.delete(model_instance)
-        StoreHandlerBase()._delete.assert_called_once_with(model_instance)
+        PhonyStoreHandler()._delete.assert_called_once_with(model_instance)
 
-    def test_storehandlermanager_save(self):
+    @mock.patch.object(PhonyStoreHandler, 'check_config')
+    def test_storehandlermanager_save(self, PhonyStoreHandler):
         """
         Verify the StoreHandlerManager save method works as expected.
         """
-        StoreHandlerBase = mock.MagicMock('StoreHandlerBase')
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        manager.register_store_handler(PhonyStoreHandler, {}, TestModel)
         model_instance = TestModel.new()
         manager.save(model_instance)
-        StoreHandlerBase()._save.assert_called_once_with(model_instance)
+        PhonyStoreHandler()._save.assert_called_once_with(model_instance)
 
-    def test_storehandlermanager_list(self):
+    @mock.patch.object(PhonyStoreHandler, 'check_config')
+    def test_storehandlermanager_list(self, PhonyStoreHandler):
         """
         Verify the StoreHandlerManager list method works as expected.
         """
-        StoreHandlerBase = mock.MagicMock('StoreHandlerBase')
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        manager.register_store_handler(PhonyStoreHandler, {}, TestModel)
         model_instance = TestModel.new()
         manager.list(model_instance)
-        StoreHandlerBase()._list.assert_called_once_with(model_instance)
+        PhonyStoreHandler()._list.assert_called_once_with(model_instance)
 
     def test_storehandlermanager_register_store_handler_with_one_model(self):
         """
         Verify StoreHandlerManager registers StoreHandlers properly with one model.
         """
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        manager.register_store_handler(PhonyStoreHandler, {}, TestModel)
         expected = {
-            TestModel: (StoreHandlerBase, {}, (TestModel, )),
+            TestModel: (PhonyStoreHandler, {}, (TestModel, )),
         }
         self.assertEqual(expected, manager._registry)
 
@@ -114,18 +126,18 @@ class Test_StoreHandlerManager(TestCase):
         Verify StoreHandlerManager registers StoreHandlers properly with multiple models.
         """
         # Set up a few more bogus classes for testing
-        class BogusStoreHandler(StoreHandlerBase):
+        class BogusStoreHandler(PhonyStoreHandler):
             pass
 
         class AnotherTestModel(TestModel):
             pass
 
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        manager.register_store_handler(PhonyStoreHandler, {}, TestModel)
         manager.register_store_handler(BogusStoreHandler, {}, AnotherTestModel)
 
         expected = {
-            TestModel: (StoreHandlerBase, {}, (TestModel, )),
+            TestModel: (PhonyStoreHandler, {}, (TestModel, )),
             AnotherTestModel: (BogusStoreHandler, {}, (AnotherTestModel, )),
         }
 
@@ -136,6 +148,6 @@ class Test_StoreHandlerManager(TestCase):
         Verify StoreHandlerManager._get_handler returns handlers properly.
         """
         manager = StoreHandlerManager()
-        manager.register_store_handler(StoreHandlerBase, {}, TestModel)
+        manager.register_store_handler(PhonyStoreHandler, {}, TestModel)
         handler = manager._get_handler(TestModel.new())
-        self.assertIsInstance(handler, StoreHandlerBase)
+        self.assertIsInstance(handler, PhonyStoreHandler)
