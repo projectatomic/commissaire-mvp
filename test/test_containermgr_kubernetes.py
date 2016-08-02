@@ -30,7 +30,7 @@ class Test_KubeContainerManager(TestCase):
 
     def test_node_registered(self):
         """
-        Verify that KuberContainerManager().node_registered() works as expected.
+        Verify that KubeContainerManager().node_registered() works as expected.
         """
         config = {
             'protocol': 'http',

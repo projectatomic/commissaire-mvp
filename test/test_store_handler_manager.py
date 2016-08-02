@@ -22,6 +22,7 @@ from . import TestCase, TestModel
 
 from commissaire.store import StoreHandlerBase
 from commissaire.store.storehandlermanager import StoreHandlerManager
+from commissaire.containermgr import ContainerManagerBase
 
 
 class PhonyStoreHandler(StoreHandlerBase):
@@ -34,6 +35,42 @@ class PhonyStoreHandler(StoreHandlerBase):
         Base class requires this to be overridden.
         """
         pass
+
+
+# More phony classes, for variety in test cases.
+
+BOGUS_CLUSTER_TYPE = 'bogus'
+
+
+class BogusContainerManager(ContainerManagerBase):
+    cluster_type = BOGUS_CLUSTER_TYPE
+
+
+class BogusStoreHandler(PhonyStoreHandler):
+    container_manager_class = BogusContainerManager
+
+
+SILLY_CLUSTER_TYPE = 'silly'
+
+
+class SillyContainerManager(ContainerManagerBase):
+    cluster_type = SILLY_CLUSTER_TYPE
+
+
+class SillyStoreHandler(PhonyStoreHandler):
+    container_manager_class = SillyContainerManager
+
+
+class TestModelA(TestModel):
+    pass
+
+
+class TestModelB(TestModel):
+    pass
+
+
+class TestModelC(TestModel):
+    pass
 
 
 class Test_StoreHandlerManager(TestCase):
@@ -125,23 +162,55 @@ class Test_StoreHandlerManager(TestCase):
         """
         Verify StoreHandlerManager registers StoreHandlers properly with multiple models.
         """
-        # Set up a few more bogus classes for testing
-        class BogusStoreHandler(PhonyStoreHandler):
-            pass
-
-        class AnotherTestModel(TestModel):
-            pass
-
         manager = StoreHandlerManager()
-        manager.register_store_handler(PhonyStoreHandler, {}, TestModel)
-        manager.register_store_handler(BogusStoreHandler, {}, AnotherTestModel)
+        manager.register_store_handler(PhonyStoreHandler, {}, TestModelA)
+        manager.register_store_handler(BogusStoreHandler, {}, TestModelB)
 
         expected = {
-            TestModel: (PhonyStoreHandler, {}, (TestModel, )),
-            AnotherTestModel: (BogusStoreHandler, {}, (AnotherTestModel, )),
+            TestModelA: (PhonyStoreHandler, {}, (TestModelA, )),
+            TestModelB: (BogusStoreHandler, {}, (TestModelB, )),
         }
 
         self.assertEqual(expected, manager._registry)
+
+    def test_storehandlermanager_list_store_handlers(self):
+        """
+        Verify StoreHandlerManager can list unique store handler instances.
+        """
+        manager = StoreHandlerManager()
+
+        # handler_type -> one model_type
+        manager.register_store_handler(
+            PhonyStoreHandler, {}, TestModelA)
+        self.assertEqual(len(manager.list_store_handlers()), 1)
+
+        # handler_type -> multiple model_types
+        manager.register_store_handler(
+            BogusStoreHandler, {}, TestModelB, TestModelC)
+        self.assertEqual(len(manager.list_store_handlers()), 2)
+
+    def test_storehandlermanager_list_container_managers(self):
+        """
+        Verify StoreHandlerManager correctly creates container managers.
+        """
+        manager = StoreHandlerManager()
+        manager.register_store_handler(BogusStoreHandler, {}, TestModelA)
+
+        mgrs = manager.list_container_managers()
+        self.assertEqual(len(mgrs), 1)
+        self.assertIsInstance(mgrs[0], BogusContainerManager)
+
+        mgrs = manager.list_container_managers(BOGUS_CLUSTER_TYPE)
+        self.assertEqual(len(mgrs), 1)
+        self.assertIsInstance(mgrs[0], BogusContainerManager)
+
+        manager.register_store_handler(SillyStoreHandler, {}, TestModelB)
+
+        # XXX We currently only keep the first container manager.
+        mgrs = manager.list_container_managers()
+        self.assertEqual(len(mgrs), 1)
+        mgrs = manager.list_container_managers(SILLY_CLUSTER_TYPE)
+        self.assertEqual(len(mgrs), 0)
 
     def test_storehandlermanager__get_handler(self):
         """

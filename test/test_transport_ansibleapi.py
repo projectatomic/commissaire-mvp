@@ -26,6 +26,9 @@ from ansible.playbook.task import Task
 from commissaire.compat.urlparser import urlparse
 from commissaire.transport import ansibleapi
 from commissaire.oscmd import OSCmdBase, get_oscmd
+from commissaire.store.etcdstorehandler import EtcdStoreHandler
+from commissaire.store.kubestorehandler import KubernetesStoreHandler
+from commissaire.store.storehandlermanager import StoreHandlerManager
 from mock import MagicMock, patch
 
 
@@ -142,6 +145,49 @@ class Test_Transport(TestCase):
             # We should see expected calls
             self.assertEquals(1, oscmd.install_docker.call_count)
             self.assertEquals(1, oscmd.install_kube.call_count)
+
+            # Check user-config to playbook-variable translation.
+            etcd_config = {
+                'protocol': 'https',
+                'host': '1.1.1.1',
+                'port': 1234,
+                'certificate_ca_path': '/path/to/etcd/ca/cert',
+                'certificate_path': '/path/to/etcd/client/cert',
+                'certificate_key_path': '/path/to/etcd/client/key'
+            }
+            kube_config = {
+                'protocol': 'https',
+                'host': '2.2.2.2',
+                'port': 4567,
+                'certificate_path': '/path/to/kube/client/cert',
+                'certificate_key_path': '/path/to/kube/client/key'
+            }
+            store_manager = MagicMock(StoreHandlerManager)
+            store_manager.list_store_handlers.return_value = [
+                (EtcdStoreHandler, etcd_config, ()),
+                (KubernetesStoreHandler, kube_config, ())
+            ]
+            transport = ansibleapi.Transport()
+            transport._run = MagicMock()
+            transport._run.return_value = (0, {})
+            result, facts = transport.bootstrap(
+                '10.2.0.2.', 'test/fake_key', store_manager, oscmd)
+            play_vars = transport._run.call_args[0][4]
+            self.assertEqual(
+                play_vars['commissaire_etcd_scheme'], 'https')
+            self.assertEqual(
+                play_vars['commissaire_etcd_host'], '1.1.1.1')
+            self.assertEqual(
+                play_vars['commissaire_etcd_port'], 1234)
+            self.assertEqual(
+                play_vars['commissaire_etcd_ca_path_local'],
+                '/path/to/etcd/ca/cert')
+            self.assertEqual(
+                play_vars['commissaire_etcd_client_cert_path_local'],
+                '/path/to/etcd/client/cert')
+            self.assertEqual(
+                play_vars['commissaire_etcd_client_key_path_local'],
+                '/path/to/etcd/client/key')
 
             # Check 'commissaire_enable_pkg_repos' playbook variable
             # for various operating systems.

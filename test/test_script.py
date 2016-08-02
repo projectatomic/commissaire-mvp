@@ -27,6 +27,8 @@ import sys
 
 from . import TestCase
 from commissaire import script
+from commissaire.store import ConfigurationError
+from commissaire.store.storehandlermanager import StoreHandlerManager
 
 
 class Test_CreateApp(TestCase):
@@ -63,6 +65,78 @@ class Test_ParseUri(TestCase):
 
         for x in ('http://127.0.0.1:', 'http://127.0.0.1', 'http://1:a', ''):
             self.assertRaises(Exception, script.parse_uri, x, 'test')
+
+
+class Test_ConfigFile(TestCase):
+    """
+    Tests user configuration permutations.
+    """
+
+    def test_read_config_file(self):
+        """
+        Test the _read_config_file function.
+        """
+
+        # Check handling of register-store-handler.
+        data = ('{'
+                '  "register-store-handler": ['
+                '    {"name": "commissaire.store.etcdstorehandler"}'
+                '  ]'
+                '}')
+        with mock.patch('__builtin__.open',
+                        mock.mock_open(read_data=data)) as _open:
+            namespace = script._read_config_file()
+            self.assertIsInstance(namespace.register_store_handler, list)
+        data = ('{'
+                '  "register-store-handler": {'
+                '    "name": "commissaire.store.etcdstorehandler"'
+                '  }'
+                '}')
+        with mock.patch('__builtin__.open',
+                        mock.mock_open(read_data=data)) as _open:
+            namespace = script._read_config_file()
+            self.assertIsInstance(namespace.register_store_handler, list)
+
+    def test_register_store_handler(self):
+        """
+        Test the register_store_handler function.
+        """
+        def override_parser_error(string):
+            raise sys.exc_info()[0]
+
+        parser = mock.MagicMock(argparse.ArgumentParser)
+        parser.error = override_parser_error
+        store_manager = mock.MagicMock(StoreHandlerManager)
+
+        config = {}
+        self.assertRaises(
+            KeyError, script.register_store_handler,
+            parser, store_manager, config)
+
+        config = {'name': 'commissaire.bogus.module'}
+        self.assertRaises(
+            ImportError, script.register_store_handler,
+            parser, store_manager, config)
+
+        config = {
+            'name': 'commissaire.store.etcdstorehandler',
+            'models': ['Host*']
+        }
+        script.register_store_handler(parser, store_manager, config)
+        models = store_manager.register_store_handler.call_args[0][2:]
+        self.assertTrue(len(models) > 1)
+        self.assertTrue(all(x.__name__.startswith('Host') for x in models))
+
+        # Note, this config is missing required info.
+        config = {
+            'name': 'commissaire.store.etcdstorehandler',
+            'certificate-path': '/path/to/cert',
+            'models': ['*']
+        }
+        store_manager = StoreHandlerManager()
+        self.assertRaises(
+            ConfigurationError, script.register_store_handler,
+            parser, store_manager, config)
 
 
 class Test_ParseArgs(TestCase):
