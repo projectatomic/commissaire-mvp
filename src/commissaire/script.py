@@ -198,6 +198,9 @@ def parse_args(parser):
         help='Full path to a JSON configuration file '
              '(command-line arguments override)')
     parser.add_argument(
+        '--no-config-file', action='store_true',
+        help='Disregard default configuration file, if it exists')
+    parser.add_argument(
         '--listen-interface', '-i', type=str, default='0.0.0.0',
         help='Interface to listen on')
     parser.add_argument(
@@ -233,8 +236,9 @@ def parse_args(parser):
     # the --config-file option, and again with the config file content as
     # a baseline.
     args = parser.parse_args()
-    namespace = _read_config_file(args.config_file)
-    args = parser.parse_args(namespace=namespace)
+    if not args.no_config_file:
+        namespace = _read_config_file(args.config_file)
+        args = parser.parse_args(namespace=namespace)
 
     return args
 

@@ -35,8 +35,7 @@ default_server_args = [
     '--authentication-plugin',
     'commissaire.authentication.httpbasicauth',
     '--authentication-plugin-kwargs',
-    'filepath=conf/users.json',
-    '-k', 'http://127.0.0.1:8080'
+    'filepath=conf/users.json'
 ]
 
 def generate_certificates(context):
@@ -79,12 +78,21 @@ def start_server(context, *args):
         # TODO: add kubernetes URL to options
         server_cli_args = [
             'python', 'src/commissaire/script.py',
+            '--no-config-file',
             '--listen-port', str(server_port)]
 
         server_cli_args += args
 
         if context.ETCD:
-            server_cli_args += ['-e', context.ETCD]
+            url = urlparse(context.ETCD)
+            server_cli_args += [
+                '--register-store-handler',
+                '{{'
+                ' "name": "commissaire.store.etcdstorehandler",'
+                ' "protocol": "{0}",'
+                ' "host": "{1}",'
+                ' "port": {2}'
+                '}}'.format(url.scheme, url.hostname, url.port)]
 
         # Add any other server-args
         extra_server_args = context.config.userdata.get(
@@ -120,7 +128,6 @@ def before_tag(context, tag):
                 'commissaire.authentication.httpauthclientcert',
                 '--authentication-plugin-kwargs',
                 'cn=test-client',
-                '-k', 'http://127.0.0.1:8080',
                 '--tls-keyfile={}'.format(keyfile),
                 '--tls-certfile={}'.format(certfile),
                 '--tls-clientverifyfile={}'.format(verifyfile),
