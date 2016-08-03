@@ -119,13 +119,15 @@ def investigator(queue, run_once=False):
                 break
             continue
 
-        host.status = cluster_type = C.CLUSTER_TYPE_HOST
         try:
             cluster = util.cluster_for_host(address, store_manager)
             cluster_type = cluster.type
-        except KeyError:
-            # Not part of a cluster
-            pass
+        except KeyError as ke:
+            logger.debug(
+                '{0} not part of a cluster. Assuming {1}. "{2}"'.format(
+                    host.address, C.CLUSTER_TYPE_HOST, ke))
+            # Not part of a cluster. Assume host_only
+            cluster_type = C.CLUSTER_TYPE_HOST
 
         # Verify association with relevant container managers
         for con_mgr in store_manager.list_container_managers(cluster_type):
