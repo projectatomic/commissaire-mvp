@@ -163,17 +163,21 @@ class ClusterResource(Resource):
             cluster_type = args['type']
         except KeyError:
             # Data was provided but no type was listed. Use default.
-            pass
+            self.logger.info(
+                'No data given on cluster creation. Using {0}'.format(
+                    cluster_type))
         except ValueError:
             # Cluster type was not provided. Use default.
-            pass
+            self.logger.info('No cluster type given. Using {0}'.format(
+                cluster_type))
 
         cluster = Cluster.new(
-            name=name, cluster=cluster_type, status='ok', hostset=[])
-
+            name=name, type=cluster_type, status='ok', hostset=[])
         store_manager.save(cluster)
         self.logger.info(
             'Created cluster {0} per request.'.format(name))
+        self.logger.debug('New Cluster: {0}'.format(
+            cluster.to_json_with_hosts()))
         resp.status = falcon.HTTP_201
 
     def on_delete(self, req, resp, name):
