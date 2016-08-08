@@ -41,6 +41,7 @@ def impl(context, host):
         '/commissaire/hosts/{0}'.format(host),
         json.dumps(data))
 
+
 @given('we have a host at {host}')
 def impl(context, host):
     data = dict(context.HOST_DATA)
@@ -65,6 +66,14 @@ def impl(context):
     context.request = requests.get(
         context.SERVER + '/api/v0/hosts',
         auth=(context.username, context.password))
+
+
+@when('we get host status for {host}')
+def impl(context, host):
+    context.host = host
+    context.request = requests.get(
+        context.SERVER + '/api/v0/host/{0}/status'.format(context.host),
+        auth=context.auth)
 
 
 @when('we {operation} the host {host}')
@@ -92,6 +101,14 @@ def impl(context, host):
     context.request = requests.get(
         context.SERVER + '/api/v0/host/{0}/creds'.format(context.host),
         auth=context.auth)
+
+
+@then('commissaire will return the host status')
+def impl(context):
+    data = context.request.json()
+    assert 'type' in data.keys()
+    assert 'host' in data.keys()
+    assert 'container_manager' in data.keys()
 
 
 @then('commissaire will return the host credentials')

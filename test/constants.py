@@ -20,7 +20,8 @@ import copy
 import json
 
 from commissaire.handlers.models import (
-    Hosts, Host, Cluster, ClusterRestart, ClusterUpgrade, ClusterDeploy)
+    Hosts, Host, HostStatus, Cluster, ClusterRestart,
+    ClusterUpgrade, ClusterDeploy)
 
 
 def make_new(instance):
@@ -38,11 +39,18 @@ HOST_JSON = (
     ' "last_check": "2015-12-17T15:48:18.710454"}')
 #: Credential JSON for tests
 HOST_CREDS_JSON = '{"remote_user": "root", "ssh_priv_key": "dGVzdAo="}'
+#: HostStatus JSON for tests
+HOST_STATUS_JSON = (
+    '{"type": "host_only", "container_manager": {}, "commissaire": '
+    '{"status": "available", "last_check": "2016-07-29T20:39:50.529454"}}')
 #: Host model for most tests
 HOST = Host.new(
     ssh_priv_key='dGVzdAo=',
     remote_user='root',
     **json.loads(HOST_JSON))
+#: HostStatus model for most tests
+HOST_STATUS = HostStatus.new(
+    **json.loads(HOST_STATUS_JSON))
 #: Hosts model for most tests
 HOSTS = Hosts.new(
     hosts=[HOST]

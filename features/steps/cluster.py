@@ -59,6 +59,7 @@ def impl(context, host, cluster):
 
 
 @when('we add host {host} to the cluster {cluster}')
+@given('we add host {host} to the cluster {cluster}')
 def impl(context, host, cluster):
     context.cluster = cluster
     context.request = requests.put(

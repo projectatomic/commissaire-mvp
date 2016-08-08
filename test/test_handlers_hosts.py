@@ -19,13 +19,16 @@ Test cases for the commissaire.handlers.hosts module.
 import mock
 
 import falcon
+import requests
 
 from . import TestCase
 from .constants import *
+from commissaire import constants as C
 from commissaire.handlers import hosts
-from commissaire.handlers.models import Hosts, Host, Cluster
+from commissaire.handlers.models import Hosts, Host, Cluster, Clusters
 from commissaire.middleware import JSONify
 from commissaire.store.storehandlermanager import StoreHandlerManager
+from commissaire.containermgr.kubernetes import KubeContainerManager
 
 
 class Test_Hosts(TestCase):
@@ -64,6 +67,7 @@ class Test_Hosts(TestCase):
         hosts = Hosts.new()
         self.assertEquals(Hosts._attribute_defaults['hosts'], hosts.hosts)
 
+
 class Test_HostCredsResource(TestCase):
     """
     Tests for the HostCreds Resource.
@@ -99,6 +103,82 @@ class Test_HostCredsResource(TestCase):
             body = self.simulate_request('/api/v0/host/10.9.9.9/creds')
             self.assertEqual(self.srmock.status, falcon.HTTP_404)
             self.assertEqual({}, json.loads(body[0]))
+
+
+class Test_HostStatusResource(TestCase):
+    """
+    Tests for the HostStatus Resource.
+    """
+
+    def before(self):
+        self.api = falcon.API(middleware = [JSONify()])
+        self.resource = hosts.HostStatusResource()
+        self.api.add_route('/api/v0/host/{address}/status', self.resource)
+
+    def test_host_status_retrieve_host_only(self):
+        """
+        Verify retrieving Host status when it is in a host only cluster.
+        """
+        with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            _publish.return_value = [manager]
+
+            test_host = make_new(HOST)
+            test_cluster = make_new(CLUSTER)
+            test_cluster.hostset = [test_host.address]
+
+            # Verify if the host exists the data is returned
+            manager.get.side_effect = (
+                test_host,
+                test_cluster)
+
+            body = self.simulate_request('/api/v0/host/10.2.0.2/status')
+            self.assertEqual(self.srmock.status, falcon.HTTP_200)
+            result = json.loads(body[0])
+            self.assertEquals(C.CLUSTER_TYPE_HOST, result['type'])
+            self.assertEquals('available', result['host']['status'])
+            self.assertEquals({}, result['container_manager'])
+
+    def test_host_status_retrieve_with_container_manager(self):
+        """
+        Verify retrieving Host status when it is in a container manager cluster.
+        """
+        with mock.patch('cherrypy.engine.publish') as _publish:
+            manager = mock.MagicMock(StoreHandlerManager)
+            kube_container_mgr = KubeContainerManager({
+                'protocol': 'http',
+                'host': '127.0.0.1',
+                'port': '8080',
+                'token': 'token'
+            })
+
+            # A dummy requests.Response
+            response = requests.Response()
+            response.status_code = 200
+            response._content='{"use": "kube"}'
+
+            kube_container_mgr._get = mock.MagicMock(return_value=response)
+            manager.list_container_managers.return_value = [kube_container_mgr]
+            _publish.return_value = [manager]
+
+            test_host = make_new(HOST)
+            test_cluster = make_new(CLUSTER)
+            test_cluster.type = C.CLUSTER_TYPE_KUBERNETES
+            test_cluster.hostset = [test_host.address]
+
+            # Verify if the host exists the data is returned
+            manager.get.side_effect = (
+                test_host,
+                test_cluster)
+            manager.list.return_value = Clusters.new(clusters=[test_cluster])
+
+            body = self.simulate_request('/api/v0/host/10.2.0.2/status')
+            self.assertEqual(self.srmock.status, falcon.HTTP_200)
+            result = json.loads(body[0])
+            self.assertEquals(C.CLUSTER_TYPE_KUBERNETES, result['type'])
+            self.assertEquals('available', result['host']['status'])
+            self.assertEquals({'use': 'kube'}, result['container_manager'])
+
 
 class Test_HostsResource(TestCase):
     """

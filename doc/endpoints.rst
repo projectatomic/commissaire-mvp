@@ -363,6 +363,69 @@ Retrieve a specific hosts credentials.
        "remote_user":  string, // name of ssh user to use for connections
    }
 
+HostStatus
+----------
+
+**Endpoint**: /api/v0/host/{IP}/status
+
+GET
+```
+Retrieve a specific hosts status.
+
+**Query Parameters**
+ * *raw*:
+
+   * **Examples**: ``true``, ``false``, ``True``, ``False``, ``0``, ``1``
+   * **Optional**: Yes
+   * **Description**: If set to true only the status structure from the container manager will be returned
+
+.. code-block:: javascript
+
+  {
+      "type":               string, // type of status
+      "host":               dict,   // status elements from the Host instance
+      "container_manager":  dict,   // status elements reported from the Container Manager
+  }
+
+
+Example: Default
+~~~~~~~~~~~~~~~~
+
+.. code-block:: javascript
+
+  {
+      "type": "host_only",
+      "host": {
+          "last_check": "2016-07-29T19:54:57.204671",
+          "status": "active",
+      },
+      "container_manager": {...}
+  }
+
+
+Example: Raw
+~~~~~~~~~~~~
+
+This example is partially what would be returned from a kubernetes type cluster.
+
+  .. code-block:: javascript
+
+    {
+        "status": {
+            "capacity": {
+              "cpu": "1",
+              "memory": "500680Ki",
+              "pods": "110"
+            },
+            "allocatable": {
+              "cpu": "1",
+              "memory": "500680Ki",
+              "pods": "110"
+            },
+            ...
+        }
+    }
+
 
 Hosts
 -----

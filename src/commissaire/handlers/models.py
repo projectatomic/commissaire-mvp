@@ -155,6 +155,23 @@ class Host(Model):
     _primary_key = 'address'
 
 
+class HostStatus(Model):
+    """
+    Representation of Host status.
+    """
+    _json_type = dict
+    _attribute_map = {
+        'type': {'type': basestring},
+        'host': {'type': dict},
+        'container_manager': {'type: dict'},
+    }
+    _attribute_defaults = {
+        'type': '',
+        'host': {},
+        'container_manager': {}
+    }
+
+
 class Hosts(Model):
     """
     Representation of a group of one or more Hosts.

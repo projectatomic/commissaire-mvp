@@ -106,6 +106,23 @@ class ContainerManager(ContainerManagerBase):
             return True
         return False
 
+    def get_host_status(self, address, raw=False):
+        """
+        Returns the node status.
+
+        :param address: The address of the host to check.
+        :type address: str
+        :param raw: If the result should be limited to its own status.
+        :type raw: bool
+        :returns: The response back from kubernetes.
+        :rtype: requests.Response
+        """
+        part = '/nodes/{0}'.format(address)
+        resp = self._get(part)
+        data = resp.json()
+        if raw:
+            data = data['status']
+        return (resp.status_code, data)
 
 #: Friendly name for the class
 KubeContainerManager = ContainerManager

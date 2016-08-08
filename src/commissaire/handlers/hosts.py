@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 Host(s) handlers.
-
 """
 
 import json
@@ -22,9 +21,11 @@ import json
 import cherrypy
 import falcon
 
-from commissaire.resource import Resource
-from commissaire.handlers.models import Host, Hosts, Clusters
 import commissaire.handlers.util as util
+
+from commissaire import constants as C
+from commissaire.resource import Resource
+from commissaire.handlers.models import Host, HostStatus, Hosts, Clusters
 from commissaire.queues import WATCHER_QUEUE
 
 
@@ -92,6 +93,98 @@ class HostCredsResource(Resource):
         except:
             resp.status = falcon.HTTP_404
             return
+
+
+class HostStatusResource(Resource):
+    """
+    Resource for getting status for a single host.
+    """
+
+    def on_get(self, req, resp, address):
+        """
+        Handles retrieval of existing Host status.
+
+        :param req: Request instance that will be passed through.
+        :type req: falcon.Request
+        :param resp: Response instance that will be passed through.
+        :type resp: falcon.Response
+        :param address: The address of the Host being requested.
+        :type address: str
+        """
+        try:
+            store_manager = cherrypy.engine.publish('get-store-manager')[0]
+            host = store_manager.get(Host.new(address=address))
+            self.logger.debug('StatusHost found host {0}'.format(host.address))
+            status = HostStatus.new(
+                host={
+                    'last_check': host.last_check,
+                    'status': host.status,
+                })
+
+            try:
+                resp.status = falcon.HTTP_200
+                cluster = util.cluster_for_host(host.address, store_manager)
+                status.type = cluster.type
+                self.logger.debug('Cluster type for {0} is {1}'.format(
+                    host.address, status.type))
+
+                if status.type != C.CLUSTER_TYPE_HOST:
+                    try:
+                        container_mgr = store_manager.list_container_managers(
+                            cluster.type)[0]
+                    except Exception as error:
+                        self.logger.error(
+                            'StatusHost for host {0} did not find a '
+                            'container_mgr: {1}: {2}'.format(
+                                host.address, type(error), error))
+                        raise error
+                    self.logger.debug(
+                        'StatusHost for host {0} got container_mgr '
+                        'instance {1}'.format(
+                            host.address, type(container_mgr)))
+
+                    is_raw = req.get_param_as_bool('raw') or False
+                    self.logger.debug(
+                        'StatusHost raw={0} found host {0} will'.format(
+                            is_raw, host.address))
+
+                    status_code, result = container_mgr.get_host_status(
+                        host.address, is_raw)
+
+                    # If we have a raw request ..
+                    if is_raw:
+                        # .. forward the http status as well or fall back to
+                        # service unavailable
+                        resp.status = getattr(
+                            falcon.status_codes,
+                            'HTTP_{0}'.format(status_code),
+                            falcon.status_codes.HTTP_SERVICE_UNAVAILABLE)
+                    status.container_manager = result
+                else:
+                    # Raise to be caught in host only type
+                    raise KeyError
+            except KeyError:
+                # The host is not in a cluster.
+                self.logger.info(
+                    'Host {0} is not in a cluster. Defaulting to {1}'.format(
+                        host.address, C.CLUSTER_TYPE_HOST))
+                status.type = C.CLUSTER_TYPE_HOST
+
+            self.logger.debug(
+                'StatusHost end status code: {0} json={1}'.format(
+                    resp.status, status.to_json()))
+
+        except Exception as ex:
+            self.logger.debug(
+                'Host Status exception caught for {0}: {1}:{2}'.format(
+                    host.address, type(ex), ex))
+            resp.status = falcon.HTTP_404
+            return
+
+        self.logger.debug('Status for {0}: {1}'.format(
+            host.address, status.to_json()))
+
+        req.context['model'] = status
 
 
 class HostResource(Resource):
