@@ -85,6 +85,25 @@ Name Required Description
 cn   No       Common name which must match on the client certificate
 ==== ======== ======================================================
 
+commissaire.authentication.kubeauth
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Enables `Bearer Token Authentication <https://tools.ietf.org/html/rfc6750#section-2.1>`_
+which comes from Kubernetes.
+
+
+Arguments
+`````````
+======== ======== =========================================================
+Name     Required Description
+======== ======== =========================================================
+resource No       Kubernetes resource used to check authentication against.
+======== ======== =========================================================
+
+.. note::
+
+   If resource is not provided it will default to ``/serviceaccounts``
+
+
 Using an Authentication Plugin
 ------------------------------
 
