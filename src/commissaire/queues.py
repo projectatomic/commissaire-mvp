@@ -140,7 +140,7 @@ INVESTIGATE_QUEUE = MPQueue()
 """
 Input queue for the investigator thread(s).
 
-:expects: (store_manager, address, ssh_priv_key, remote_user)
+:expects: (store_manager, host_dictionary)
 :type: multiprocessing.queues.Queues
 """
 

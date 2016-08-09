@@ -44,12 +44,12 @@ def investigator(queue, run_once=False):
     while True:
         # Statuses follow:
         # http://commissaire.readthedocs.org/en/latest/enums.html#host-statuses
-        store_manager, to_investigate, ssh_priv_key, remote_user = queue.get()
+        store_manager, to_investigate = queue.get()
         address = to_investigate['address']
+        remote_user = to_investigate['remote_user']
         logger.info('{0} is now in investigating.'.format(address))
         logger.debug(
-            'Investigation details: key={0}, data={1}, remote_user={2}'.format(
-                to_investigate, ssh_priv_key, remote_user))
+            'Investigation details: {0}'.format(to_investigate))
 
         transport = ansibleapi.Transport(remote_user)
 

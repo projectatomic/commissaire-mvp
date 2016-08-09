@@ -61,13 +61,14 @@ class Test_JobsInvestigator(TestCase):
 
             to_investigate = {
                 'address': '10.0.0.2',
+                'ssh_priv_key': 'dGVzdAo=',
+                'remote_user': 'root'
             }
-            ssh_priv_key = 'dGVzdAo='
 
             manager = MagicMock(StoreHandlerManager)
             manager.get.return_value = Host(**json.loads(self.etcd_host))
 
-            q.put_nowait((manager, to_investigate, ssh_priv_key, 'root'))
+            q.put_nowait((manager, to_investigate))
             investigator(q, run_once=True)
 
             self.assertEquals(1, manager.get.call_count)

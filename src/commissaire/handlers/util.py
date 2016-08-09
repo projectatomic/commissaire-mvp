@@ -241,7 +241,7 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
         etcd_cluster_add_host(cluster_name, address)
 
     manager_clone = store_manager.clone()
-    job_request = (manager_clone, host_creation, ssh_priv_key, remote_user)
+    job_request = (manager_clone, host_creation)
     INVESTIGATE_QUEUE.put(job_request)
 
     return (falcon.HTTP_201, new_host)
