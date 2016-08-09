@@ -20,8 +20,7 @@ import os
 
 from cherrypy.process import plugins
 
-from multiprocessing import Process
-from commissaire.queues import INVESTIGATE_QUEUE
+from multiprocessing import Process, Queue
 from commissaire.jobs.investigator import investigator
 
 
@@ -45,17 +44,18 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         # distinguish whether we're the parent or child process and
         # avoid interacting with an invalid Process object.
         self.main_pid = os.getpid()
+        self.request_queue = Queue()
         self.process = Process(
             target=investigator,
-            args=(INVESTIGATE_QUEUE,))
-        # TODO: Move to start()
-        self.bus.subscribe('investigator-is-alive', self.is_alive)
+            args=(self.request_queue,))
 
     def start(self):
         """
         Starts the plugin and the investigator process.
         """
         self.bus.log('Starting up Investigator plugin')
+        self.bus.subscribe('investigator-is-alive', self.is_alive)
+        self.bus.subscribe('investigator-submit', self.submit)
         self.process.start()
 
     def stop(self):
@@ -64,9 +64,24 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         """
         self.bus.log('Stopping down Investigator plugin')
         self.bus.unsubscribe('investigator-is-alive', self.is_alive)
+        self.bus.unsubscribe('investigator-submit', self.submit)
         if os.getpid() == self.main_pid:
             self.process.terminate()
             self.process.join()
+
+    def submit(self, store_manager, host):
+        """
+        Submits a new request to the investigator process.
+
+        :param store_manager: A store manager (will be cloned)
+        :type store_manager: commissaire.store.storehandlermanager.
+                             StoreHandlerManager
+        :param host: A Host model representing the host to investigate.
+        :type host: commissaire.handlers.models.Host
+        """
+        manager_clone = store_manager.clone()
+        job_request = (manager_clone, host.__dict__)
+        self.request_queue.put(job_request)
 
     def is_alive(self):
         """

@@ -136,15 +136,6 @@ class IterableModelQueue(MPQueue):
         raise Exception('No model in {0}'.format(item))
 
 
-INVESTIGATE_QUEUE = MPQueue()
-"""
-Input queue for the investigator thread(s).
-
-:expects: (store_manager, host_dictionary)
-:type: multiprocessing.queues.Queues
-"""
-
-
 WATCHER_QUEUE = IterableModelQueue()
 """
 Input queue for watcher thread(s).

@@ -18,7 +18,6 @@ Resource utilities.
 import cherrypy
 import falcon
 
-from commissaire.queues import INVESTIGATE_QUEUE
 from commissaire.handlers.models import Cluster, Clusters, Host
 
 
@@ -219,20 +218,17 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
     except:
         pass
 
-    host_creation = Host.new(
-        address=address,
-        ssh_priv_key=ssh_priv_key,
-        status='investigating',
-        remote_user=remote_user
-    ).__dict__
-
     # Verify the cluster exists, if given.  Do it now
     # so we can fail before writing anything to etcd.
     if cluster_name:
         if not etcd_cluster_exists(cluster_name):
             return (falcon.HTTP_409, None)
 
-    host = Host(**host_creation)
+    host = Host.new(
+        address=address,
+        ssh_priv_key=ssh_priv_key,
+        status='investigating',
+        remote_user=remote_user)
 
     new_host = store_manager.save(host)
 
@@ -240,8 +236,6 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
     if cluster_name:
         etcd_cluster_add_host(cluster_name, address)
 
-    manager_clone = store_manager.clone()
-    job_request = (manager_clone, host_creation)
-    INVESTIGATE_QUEUE.put(job_request)
+    cherrypy.engine.publish('investigator-submit', store_manager, host)
 
     return (falcon.HTTP_201, new_host)

@@ -28,7 +28,7 @@ class Test_InvestigatorPlugin(TestCase):
     """
 
     #: Topics that should be registered
-    topics = ('investigator-is-alive', )
+    topics = ('investigator-is-alive', 'investigator-submit')
 
     def before(self):
         """
@@ -51,16 +51,17 @@ class Test_InvestigatorPlugin(TestCase):
         # The processes should not have started yet
         self.assertFalse(self.plugin.is_alive())
 
-        # There should be bus subscribed topics
-        for topic in self.topics:
-            self.bus.subscribe.assert_any_call(topic, mock.ANY)
-
     def test_investigator_plugin_start(self):
         """
         Verify start() starts the background process.
         """
         self.assertFalse(self.plugin.is_alive())
         self.plugin.start()
+
+        # There should be bus subscribed topics
+        for topic in self.topics:
+            self.bus.subscribe.assert_any_call(topic, mock.ANY)
+
         self.assertTrue(self.plugin.is_alive())
         self.plugin.stop()
 
