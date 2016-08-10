@@ -15,6 +15,7 @@
 
 import cherrypy
 import falcon
+import requests
 
 from commissaire.authentication import Authenticator
 
@@ -85,9 +86,10 @@ class KubernetesAuth(Authenticator):
             try:
                 # NOTE: We are assuming that if the user has access to
                 # the resource they should be granted access to commissaire
-                self.logger.debug('Checking against {0}.'.format(
-                    self.resource_check))
-                resp = self._kubernetes._get(self.resource_check)
+                endpoint = self._kubernetes.base_uri + self.resource_check
+                self.logger.debug('Checking against {0}.'.format(endpoint))
+                resp = requests.get(
+                    endpoint, headers={'Authentication': 'Bearer ' + token})
                 self.logger.debug('Kubernetes response: {0}'.format(
                     resp.json()))
                 # If we get a 200 then the user is valid. Anything else is
