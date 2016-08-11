@@ -21,6 +21,7 @@ import os
 from cherrypy.process import plugins
 
 from multiprocessing import Process, Queue
+from threading import Thread
 from commissaire.jobs.investigator import investigator
 
 
@@ -45,9 +46,39 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         # avoid interacting with an invalid Process object.
         self.main_pid = os.getpid()
         self.request_queue = Queue()
+        self.response_queue = Queue()
         self.process = Process(
             target=investigator,
-            args=(self.request_queue,))
+            args=(self.request_queue, self.response_queue))
+        self.response_thread = None
+        self.pending_requests = {}  # host address -> closure
+        self.sentinel = object()    # stops the response thread
+
+    def __response_thread(self):
+        """
+        Helper thread runs while the plugin is started.  It waits for
+        completion responses from the investigator process, matches them
+        to a pending requests table, and invokes a user-provided callback
+        function.
+        """
+        while True:
+            response = self.response_queue.get()
+            assert os.getpid() == self.main_pid
+            if response is self.sentinel:
+                break
+            host, exception = response
+            try:
+                closure = self.pending_requests.pop(host.address)
+            except KeyError:
+                self.bus.log(
+                    'Unmatched investigator response '
+                    'for host {0}'.format(host.address))
+                continue
+            self.bus.log(
+                'Investigator response for host {0}: {1}'.format(
+                    host.address, exception if exception else 'success!'))
+            if callable(closure):
+                closure(host, exception)
 
     def start(self):
         """
@@ -55,7 +86,10 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         """
         self.bus.log('Starting up Investigator plugin')
         self.bus.subscribe('investigator-is-alive', self.is_alive)
+        self.bus.subscribe('investigator-is-pending', self.is_pending)
         self.bus.subscribe('investigator-submit', self.submit)
+        self.response_thread = Thread(target=self.__response_thread)
+        self.response_thread.start()
         self.process.start()
 
     def stop(self):
@@ -64,23 +98,40 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         """
         self.bus.log('Stopping down Investigator plugin')
         self.bus.unsubscribe('investigator-is-alive', self.is_alive)
+        self.bus.unsubscribe('investigator-is-pending', self.is_pending)
         self.bus.unsubscribe('investigator-submit', self.submit)
         if os.getpid() == self.main_pid:
+            if self.response_thread:
+                self.response_queue.put(self.sentinel)
+                self.response_thread.join()
+                self.response_thread = None
             self.process.terminate()
             self.process.join()
 
-    def submit(self, store_manager, host):
+    def submit(self, store_manager, host, cluster_type, callback=None):
         """
-        Submits a new request to the investigator process.
+        Submits a new request to the investigator process.  If a callback
+        was given, it will be invoked when the request has finished.  The
+        callback arguments are (store_manager, host, exception).  If the
+        request is successful, the exception argument will be None.
 
         :param store_manager: A store manager (will be cloned)
         :type store_manager: commissaire.store.storehandlermanager.
                              StoreHandlerManager
         :param host: A Host model representing the host to investigate.
         :type host: commissaire.handlers.models.Host
+        :param cluster_type: The type of cluster the host is to be added to
+        :type cluster_type: str
+        :param callback: A callable to invoke when the request is complete.
+        :type callback: callable or None
         """
+        def invoke_callback(new_host, exception):
+            callback(store_manager, new_host, exception)
+
+        closure = invoke_callback if callback is not None else None
+        self.pending_requests[host.address] = closure
         manager_clone = store_manager.clone()
-        job_request = (manager_clone, host.__dict__)
+        job_request = (manager_clone, host.__dict__, cluster_type)
         self.request_queue.put(job_request)
 
     def is_alive(self):
@@ -94,6 +145,15 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         :rtype: bool
         """
         return self.process.is_alive()
+
+    def is_pending(self, address):
+        """
+        Returns whether a request is pending for the given host address.
+
+        :param address: Host address
+        :type address: str
+        """
+        return address in self.pending_requests
 
 
 #: Generic name for the plugin

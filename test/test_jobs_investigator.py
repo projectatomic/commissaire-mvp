@@ -57,7 +57,10 @@ class Test_JobsInvestigator(TestCase):
                 }
             )
 
-            q = Queue()
+            _tp().bootstrap.return_value = (0, {})
+
+            request_queue = Queue()
+            response_queue = MagicMock(Queue)
 
             to_investigate = {
                 'address': '10.0.0.2',
@@ -68,8 +71,13 @@ class Test_JobsInvestigator(TestCase):
             manager = MagicMock(StoreHandlerManager)
             manager.get.return_value = Host(**json.loads(self.etcd_host))
 
-            q.put_nowait((manager, to_investigate))
-            investigator(q, run_once=True)
+            request_queue.put_nowait((manager, to_investigate, 'host_only'))
+            investigator(request_queue, response_queue, run_once=True)
 
-            self.assertEquals(1, manager.get.call_count)
-            self.assertEquals(2, manager.save.call_count)
+            # Investigator saves *after* bootstrapping.
+            self.assertEquals(0, manager.save.call_count)
+
+            self.assertEquals(1, response_queue.put.call_count)
+            host, error = response_queue.put.call_args[0][0]
+            self.assertEquals(host.status, 'inactive')
+            self.assertIsNone(error)

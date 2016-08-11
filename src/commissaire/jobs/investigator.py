@@ -22,8 +22,6 @@ import sys
 
 from time import sleep
 
-from commissaire import constants as C
-from commissaire.handlers import util
 from commissaire.handlers.models import Host
 from commissaire.oscmd import get_oscmd
 from commissaire.queues import WATCHER_QUEUE
@@ -31,12 +29,12 @@ from commissaire.transport import ansibleapi
 from commissaire.util.ssh import TemporarySSHKey
 
 
-def investigator(queue, run_once=False):
+def investigator(request_queue, response_queue, run_once=False):
     """
     Investigates new hosts to retrieve and store facts.
 
-    :param queue: Queue to pull work from.
-    :type queue: Queue.Queue
+    :param request_queue: Queue to pull work from.
+    :type request_queue: Queue.Queue
     """
     logger = logging.getLogger('investigator')
     logger.info('Investigator started')
@@ -44,7 +42,7 @@ def investigator(queue, run_once=False):
     while True:
         # Statuses follow:
         # http://commissaire.readthedocs.org/en/latest/enums.html#host-statuses
-        store_manager, to_investigate = queue.get()
+        store_manager, to_investigate, cluster_type = request_queue.get()
         address = to_investigate['address']
         remote_user = to_investigate['remote_user']
         logger.info('{0} is now in investigating.'.format(address))
@@ -54,24 +52,23 @@ def investigator(queue, run_once=False):
         transport = ansibleapi.Transport(remote_user)
 
         try:
-            host = store_manager.get(
-                Host(
-                    address=address,
-                    status='',
-                    os='',
-                    cpus=0,
-                    memory=0,
-                    space=0,
-                    last_check='',
-                    ssh_priv_key='',
-                    remote_user=''))
-            key = TemporarySSHKey(host, logger)
+            host = Host.new(**to_investigate)
+        except Exception as error:
+            logger.warn(
+                'Unable to continue for {0} due to '
+                '{1}: {2}. Returning...'.format(address, type(error), error))
+            host = Host.new(address=address)
+            response_queue.put((host, error))
+            continue
+
+        key = TemporarySSHKey(host, logger)
+        try:
             key.create()
         except Exception as error:
             logger.warn(
                 'Unable to continue for {0} due to '
                 '{1}: {2}. Returning...'.format(address, type(error), error))
-            key.remove()
+            response_queue.put((host, error))
             continue
 
         try:
@@ -84,18 +81,16 @@ def investigator(queue, run_once=False):
             host.status = 'bootstrapping'
             logger.info('Facts for {0} retrieved'.format(address))
             logger.debug('Data: {0}'.format(host.to_json()))
-        except:
-            exc_type, exc_msg, tb = sys.exc_info()
+        except Exception as error:
             logger.warn('Getting info failed for {0}: {1}'.format(
-                address, exc_msg))
+                address, error.message))
             host.status = 'failed'
-            store_manager.save(host)
+            response_queue.put((host, error))
             key.remove()
             if run_once:
                 break
             continue
 
-        store_manager.save(host)
         logger.info(
             'Finished and stored investigation data for {0}'.format(address))
         logger.debug('Finished investigation update for {0}: {1}'.format(
@@ -105,29 +100,17 @@ def investigator(queue, run_once=False):
         oscmd = get_oscmd(host.os)
         try:
             result, facts = transport.bootstrap(
-                address, key.path, store_manager, oscmd)
+                address, cluster_type, key.path, store_manager, oscmd)
             host.status = 'inactive'
-            store_manager.save(host)
-        except:
-            exc_type, exc_msg, tb = sys.exc_info()
+        except Exception as error:
             logger.warn('Unable to start bootstraping for {0}: {1}'.format(
-                address, exc_msg))
+                address, error.message))
             host.status = 'disassociated'
-            store_manager.save(host)
+            response_queue.put((host, error))
             key.remove()
             if run_once:
                 break
             continue
-
-        try:
-            cluster = util.cluster_for_host(address, store_manager)
-            cluster_type = cluster.type
-        except KeyError as ke:
-            logger.debug(
-                '{0} not part of a cluster. Assuming {1}. "{2}"'.format(
-                    host.address, C.CLUSTER_TYPE_HOST, ke))
-            # Not part of a cluster. Assume host_only
-            cluster_type = C.CLUSTER_TYPE_HOST
 
         # Verify association with relevant container managers
         for con_mgr in store_manager.list_container_managers(cluster_type):
@@ -157,7 +140,6 @@ def investigator(queue, run_once=False):
                         address, con_mgr.__class__.__name__, exc_msg))
                 host.status = 'inactive'
 
-        store_manager.save(host)
         logger.info(
             'Finished bootstrapping for {0}'.format(address))
         logging.debug('Finished bootstrapping for {0}: {1}'.format(
@@ -165,6 +147,7 @@ def investigator(queue, run_once=False):
 
         WATCHER_QUEUE.put_nowait((host, datetime.datetime.utcnow()))
 
+        response_queue.put((host, None))
         key.remove()
         if run_once:
             logger.info('Exiting due to run_once request.')

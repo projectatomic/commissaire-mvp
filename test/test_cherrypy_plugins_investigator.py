@@ -28,7 +28,9 @@ class Test_InvestigatorPlugin(TestCase):
     """
 
     #: Topics that should be registered
-    topics = ('investigator-is-alive', 'investigator-submit')
+    topics = ('investigator-is-alive',
+              'investigator-is-pending',
+              'investigator-submit')
 
     def before(self):
         """

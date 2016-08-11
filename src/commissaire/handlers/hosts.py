@@ -203,6 +203,14 @@ class HostResource(Resource):
         :param address: The address of the Host being requested.
         :type address: str
         """
+        # If the host is still bootstrapping, the store handler
+        # won't find it yet.  So respond with a fake host status.
+        if cherrypy.engine.publish('investigator-is-pending', address)[0]:
+            host = Host.new(address=address, status='investigating')
+            resp.status = falcon.HTTP_200
+            req.context['model'] = host
+            return
+
         # TODO: Verify input
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]

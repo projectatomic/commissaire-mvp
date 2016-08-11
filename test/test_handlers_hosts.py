@@ -281,7 +281,7 @@ class Test_HostResource(TestCase):
         """
         with mock.patch('cherrypy.engine.publish') as _publish:
             manager = mock.MagicMock(StoreHandlerManager)
-            _publish.return_value = [manager]
+            _publish.side_effect = ([False], [manager])
 
             # Verify if the host exists the data is returned
             manager.get.return_value = make_new(HOST)
@@ -294,6 +294,8 @@ class Test_HostResource(TestCase):
                 json.loads(body[0]))
 
             # Verify no host returns the proper result
+            _publish.reset_mock()
+            _publish.side_effect = ([False], [manager])
             manager.reset_mock()
             manager.get.side_effect = Exception
 
@@ -341,6 +343,7 @@ class Test_HostResource(TestCase):
             test_cluster = make_new(CLUSTER)
             manager.get.side_effect = (
                 Exception,
+                test_cluster,
                 make_new(HOST),
                 test_cluster,
                 test_cluster)
@@ -348,9 +351,11 @@ class Test_HostResource(TestCase):
             data = ('{"ssh_priv_key": "dGVzdAo=", "remote_user": "root",'
                     ' "cluster": "cluster"}')
             body = self.simulate_request(
-                '/api/v0/host/10.2.0.1', method='PUT', body=data)
+                '/api/v0/host/10.2.0.2', method='PUT', body=data)
             self.assertEqual(self.srmock.status, falcon.HTTP_201)
-            self.assertEqual(json.loads(HOST_JSON), json.loads(body[0]))
+            self.assertEqual(
+                json.loads(INITIAL_HOST_JSON),
+                json.loads(body[0]))
 
             # Make sure creation fails if the cluster doesn't exist
             manager.get.side_effect = Exception
@@ -365,8 +370,11 @@ class Test_HostResource(TestCase):
                 make_new(HOST),
                 test_cluster)
 
+            manager.get.side_effect = (
+                make_new(HOST),
+                make_new(CLUSTER_WITH_FLAT_HOST))
             body = self.simulate_request(
-                '/api/v0/host/10.2.0.1', method='PUT', body=data)
+                '/api/v0/host/10.2.0.2', method='PUT', body=data)
             # datasource's set should not have been called
             self.assertEqual(self.srmock.status, falcon.HTTP_200)
             self.assertEqual(json.loads(HOST_JSON), json.loads(body[0]))
@@ -406,6 +414,7 @@ class Test_ImplicitHostResource(TestCase):
 
             manager.get.side_effect = (
                 Exception,
+                make_new(CLUSTER),
                 make_new(HOST),
                 make_new(CLUSTER),
                 make_new(HOST))
@@ -414,7 +423,9 @@ class Test_ImplicitHostResource(TestCase):
             body = self.simulate_request(
                 '/api/v0/host', method='PUT', body=data)
             self.assertEqual(self.srmock.status, falcon.HTTP_201)
-            self.assertEqual(json.loads(HOST_JSON), json.loads(body[0]))
+            self.assertEqual(
+                json.loads(INITIAL_IMPLICIT_HOST_JSON),
+                json.loads(body[0]))
 
             # Make sure creation fails if the cluster doesn't exist
             manager.get.side_effect = (
