@@ -22,6 +22,37 @@ from commissaire import constants as C
 from commissaire.model import Model
 
 
+class Network(Model):
+    """
+    Representation of a network.
+    """
+    _json_type = dict
+    _attribute_map = {
+        'name': {'type': basestring},
+        'type': {'type': basestring},
+        'options': {'type': dict},
+    }
+    _attribute_defaults = {
+        'name': '',
+        'type': C.NETWORK_TYPE_FLANNEL_ETCD,
+        'options': {},
+    }
+    _primary_key = 'name'
+
+
+class Networks(Model):
+    """
+    Representation of a group of one or more Networks.
+    """
+    _json_type = list
+    _attribute_map = {
+        'networks': {'type': list},
+    }
+    _attribute_defaults = {'networks': []}
+    _list_attr = 'networks'
+    _list_class = Network
+
+
 class Cluster(Model):
     """
     Representation of a Cluster.
@@ -31,12 +62,15 @@ class Cluster(Model):
         'name': {'type': basestring},
         'status': {'type': basestring},
         'type': {'type': basestring},
+        'network': {'type': basestring},
         'hostset': {'type': list},
     }
     _hidden_attributes = ('hostset',)
     _attribute_defaults = {
         'name': '', 'type': C.CLUSTER_TYPE_DEFAULT,
-        'status': '', 'hostset': []}
+        'status': '', 'hostset': [],
+        'network': 'flannel_etcd',
+    }
     _primary_key = 'name'
 
     def __init__(self, **kwargs):

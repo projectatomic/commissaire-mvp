@@ -18,8 +18,6 @@ Resource utilities.
 import cherrypy
 import falcon
 
-import commissaire.constants as C
-
 from commissaire.handlers.models import Cluster, Clusters, Host
 
 
@@ -226,9 +224,8 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
         cluster = get_cluster_model(cluster_name)
         if cluster is None:
             return (falcon.HTTP_409, None)
-        cluster_type = cluster.type
     else:
-        cluster_type = C.CLUSTER_TYPE_HOST
+        cluster = None
 
     host = Host.new(
         address=address,
@@ -245,6 +242,6 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
                 etcd_cluster_add_host(cluster_name, host.address)
 
     cherrypy.engine.publish(
-        'investigator-submit', store_manager, host, cluster_type, callback)
+        'investigator-submit', store_manager, host, cluster, callback)
 
     return (falcon.HTTP_201, host)

@@ -24,7 +24,7 @@ from . import TestCase
 from commissaire.compat.urlparser import urlparse
 
 from commissaire.jobs.investigator import investigator
-from commissaire.handlers.models import Host
+from commissaire.handlers.models import Host, Cluster
 from commissaire.store.storehandlermanager import StoreHandlerManager
 from Queue import Queue
 from mock import MagicMock
@@ -71,7 +71,8 @@ class Test_JobsInvestigator(TestCase):
             manager = MagicMock(StoreHandlerManager)
             manager.get.return_value = Host(**json.loads(self.etcd_host))
 
-            request_queue.put_nowait((manager, to_investigate, 'host_only'))
+            request_queue.put_nowait((
+                manager, to_investigate, Cluster.new().__dict__))
             investigator(request_queue, response_queue, run_once=True)
 
             # Investigator saves *after* bootstrapping.

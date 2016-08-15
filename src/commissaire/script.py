@@ -38,6 +38,7 @@ from commissaire.handlers.clusters import (
 from commissaire.handlers.hosts import (
     HostCredsResource, HostStatusResource, HostsResource,
     HostResource, ImplicitHostResource)
+from commissaire.handlers.networks import (NetworkResource, NetworksResource)
 from commissaire.handlers.status import StatusResource
 from commissaire.middleware import JSONify
 from commissaire.ssl_adapter import ClientCertBuiltinSSLAdapter
@@ -85,6 +86,8 @@ def create_app(
         '/api/v0/cluster/{name}/upgrade',
         ClusterUpgradeResource())
     app.add_route('/api/v0/clusters', ClustersResource())
+    app.add_route('/api/v0/network/{name}', NetworkResource())
+    app.add_route('/api/v0/networks', NetworksResource())
     app.add_route('/api/v0/host', ImplicitHostResource())
     app.add_route('/api/v0/host/{address}', HostResource())
     app.add_route('/api/v0/host/{address}/creds', HostCredsResource())

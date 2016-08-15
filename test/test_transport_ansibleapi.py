@@ -18,6 +18,7 @@ Test cases for the commissaire.transport.ansibleapi module.
 
 import logging
 
+from commissaire.handlers.models import Cluster, Network
 from . import TestCase, available_os_types, get_fixture_file_path
 
 from ansible.executor.task_result import TaskResult
@@ -139,7 +140,7 @@ class Test_Transport(TestCase):
             oscmd = MagicMock(OSCmdBase)
 
             result, facts = transport.bootstrap(
-                '10.2.0.2', 'host_only',
+                '10.2.0.2', Cluster.new().__dict__,
                 'test/fake_key', MagicMock(), oscmd)
             # We should have a successful response
             self.assertEquals(0, result)
@@ -168,11 +169,18 @@ class Test_Transport(TestCase):
                 (EtcdStoreHandler, etcd_config, ()),
                 (KubernetesStoreHandler, kube_config, ())
             ]
+
+            store_manager.get.return_value = Network.new(
+                name='default', type='flannel_etcd')
+
+            cluster_data = Cluster.new(
+                name='default', network='default').__dict__
+
             transport = ansibleapi.Transport()
             transport._run = MagicMock()
             transport._run.return_value = (0, {})
             result, facts = transport.bootstrap(
-                '10.2.0.2.', 'host_only',
+                '10.2.0.2', cluster_data,
                 'test/fake_key', store_manager, oscmd)
             play_vars = transport._run.call_args[0][4]
             self.assertEqual(
@@ -202,7 +210,7 @@ class Test_Transport(TestCase):
             for os_type in available_os_types:
                 oscmd = get_oscmd(os_type)
                 result, facts = transport.bootstrap(
-                    '10.2.0.2.', 'host_only',
+                    '10.2.0.2.', cluster_data,
                     'test/fake_key', MagicMock(), oscmd)
                 play_vars = transport._run.call_args[0][4]
                 command = play_vars['commissaire_enable_pkg_repos']

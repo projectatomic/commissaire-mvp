@@ -50,6 +50,7 @@ Creates a new cluster.
 
     {
         "type": enum(string), // The cluster type
+        "network": string     // The name of the network
     }
 
 .. note::
@@ -63,7 +64,8 @@ Example
 .. code-block:: javascript
 
    {
-       "type": "kubernetes"
+       "type": "kubernetes",
+       "network": "default"
    }
 
 
@@ -509,6 +511,103 @@ Example
            "last_check": "2015-12-17T15:48:30.401090"
        }
    ]
+
+
+.. _networks_op:
+
+
+Networks
+--------
+**Endpoint**: /api/v0/networks/
+
+GET
+```
+Retrieve a list of all networks.
+
+.. code-block:: javascript
+
+   [
+       string,...
+   ]
+
+
+Example
+~~~~~~~
+
+.. code-block:: javascript
+
+   [
+      "mynetwork",
+   ]
+
+
+.. _network_op:
+
+Network
+-------
+
+**Endpoint**: /api/v0/network/{name}
+
+GET
+```
+Retrieve a specific network record.
+
+.. code-block:: javascript
+
+  {
+      "name": string,        // The name of the network
+      "type":  enum(string), // The type of the network
+      "options": dict        // Options to explain a network
+  }
+
+.. note::
+  See :ref:`network-types` for a list and description of network types.
+
+Example
+~~~~~~~
+
+.. code-block:: javascript
+
+  {
+      "name": "mynetwork",
+      "type": "flannel_server",
+      "options": {
+          "address": "192.168.152.101:8080"
+      },
+  }
+
+PUT
+```
+Creates a new network record.
+
+
+.. code-block:: javascript
+
+  {
+      "type":  enum(string), // The type of the network
+      "options": dict        // Options to explain a network
+  }
+
+.. note::
+  See :ref:`network-types` for a list and description of network types.
+
+
+Example
+~~~~~~~
+
+.. code-block:: javascript
+
+  {
+      "type": "flannel_server",
+      "options": {
+          "address": "192.168.152.101:8080"
+      },
+  }
+
+DELETE
+``````
+Deletes a network record.
+
 
 
 Status

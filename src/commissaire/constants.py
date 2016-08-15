@@ -23,6 +23,19 @@ CLUSTER_TYPE_KUBERNETES = 'kubernetes'
 #: Cluster type to use if none is specified
 CLUSTER_TYPE_DEFAULT = CLUSTER_TYPE_KUBERNETES
 
+#: Flannel using etcd as it's configuration end
+NETWORK_TYPE_FLANNEL_ETCD = 'flannel_etcd'
+#: Flannel using a flannel server as it's configuration end
+NETWORK_TYPE_FLANNEL_SERVER = 'flannel_server'
+#: Network type to use if none is specified
+NETWORK_TYPE_DEFAULT = NETWORK_TYPE_FLANNEL_ETCD
+
+#: Default network if non is provided
+DEFAULT_CLUSTER_NETWORK_JSON = {
+    'name': 'default',
+    'type': NETWORK_TYPE_DEFAULT
+}
+
 # Default etcd configuration
 DEFAULT_ETCD_STORE_HANDLER = {
     'name': 'commissaire.store.etcdstorehandler',

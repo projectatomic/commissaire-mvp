@@ -35,6 +35,8 @@ _model_mapper = {
     'Clusters': '/namespaces/default/',
     'Host': '/nodes/',
     'Hosts': '/nodes/',
+    'Network': '/nodes/',
+    'Networks': '/nodes/',
     'Status': '/namespaces/default/',
 }
 

@@ -9,6 +9,7 @@ Submodules
    commissaire.handlers.clusters
    commissaire.handlers.hosts
    commissaire.handlers.models
+   commissaire.handlers.networks
    commissaire.handlers.status
    commissaire.handlers.util
 

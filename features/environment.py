@@ -211,7 +211,7 @@ def before_all(context):
 
 
     # Connect to the etcd service
-    print("Connecting to ETCD...")
+    print('Connecting to ETCD...')
     url = urlparse(context.ETCD)
     context.etcd = etcd.Client(host=url.hostname, port=url.port)
     context.etcd.write('/commissaire/config/kubetoken', 'test')
@@ -221,7 +221,8 @@ def before_all(context):
             print('Using vagrant. Ignoring start-server...')
         else:
             try:
-                context.SERVER_PROCESS = start_server(context, *default_server_args)
+                context.SERVER_PROCESS = start_server(
+                    context, *default_server_args)
             except:
                 print("Could not find a random port to use for "
                       "commissaire. Exiting...")
@@ -242,7 +243,14 @@ def before_scenario(context, scenario):
         "memory": 1234,
         "space": 12345,
         "last_check": "",
-        "ssh_priv_key": context.SSH_PRIV_KEY
+        "ssh_priv_key": context.SSH_PRIV_KEY,
+    }
+
+    # Reset NETWORK_DATA
+    context.NETWORK_DATA = {
+        "name": "default",
+        "type": "flannel_etcd",
+        "options": {},
     }
 
     # Wipe etcd state clean
@@ -251,12 +259,18 @@ def before_scenario(context, scenario):
     #     state in one shot?  e.g. '/commissaire/state/...'
     delete_dirs = ['/commissaire/hosts',
                    '/commissaire/cluster',
-                   '/commissaire/clusters']
+                   '/commissaire/clusters',
+                   '/commissaire/networks']
     for dir in delete_dirs:
         try:
             context.etcd.delete(dir, recursive=True)
         except etcd.EtcdKeyNotFound:
             pass
+
+    # Recreate default network
+    context.etcd.write(
+        '/commissaire/networks/default',
+        '{"name": "default", "type": "flannel_etcd", "options": {}}')
 
 
 def after_scenario(context, scenario):

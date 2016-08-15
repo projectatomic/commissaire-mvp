@@ -31,6 +31,7 @@ from ansible.plugins.callback import default
 from ansible.utils.display import Display
 
 from commissaire import constants as C
+from commissaire.handlers.models import Cluster, Network
 from commissaire.store.etcdstorehandler import EtcdStoreHandler
 from commissaire.store.kubestorehandler import KubernetesStoreHandler
 
@@ -410,14 +411,14 @@ class Transport:
 
         return kube_config
 
-    def bootstrap(self, ip, cluster_type, key_file, store_manager, oscmd):
+    def bootstrap(self, ip, cluster_data, key_file, store_manager, oscmd):
         """
         Bootstraps a host via ansible.
 
         :param ip: IP address to bootstrap.
         :type ip: str
-        :param cluster_type: The type of cluster the host is to be added to
-        :type cluster_type: str
+        :param cluster_data: The data required to create a Cluster instance.
+        :type cluster_data: dict or None
         :param key_file: Full path to the file holding the private SSH key.
         :type key_file: str
         :param store_manager: Remote object for remote stores
@@ -429,6 +430,16 @@ class Transport:
         """
         self.logger.debug('Using {0} as the oscmd class for {1}'.format(
             oscmd.os_type, ip))
+
+        cluster_type = C.CLUSTER_TYPE_HOST
+        network = Network.new(**C.DEFAULT_CLUSTER_NETWORK_JSON)
+        try:
+            cluster = Cluster.new(**cluster_data)
+            cluster_type = cluster.type
+            network = store_manager.get(Network.new(name=cluster.network))
+        except KeyError:
+            # Not part of a cluster
+            pass
 
         etcd_config = self._get_etcd_config(store_manager)
         kube_config = self._get_kube_config(store_manager)
@@ -445,9 +456,6 @@ class Transport:
             'commissaire_docker_registry_host': '127.0.0.1',
             # TODO: Where do we get this?
             'commissaire_docker_registry_port': 8080,
-            'commissaire_etcd_scheme': etcd_config['protocol'],
-            'commissaire_etcd_host': etcd_config['host'],
-            'commissaire_etcd_port': etcd_config['port'],
             # TODO: Where do we get this?
             'commissaire_flannel_key': '/atomic01/network',
             'commissaire_docker_config_local': resource_filename(
@@ -475,6 +483,16 @@ class Transport:
             'commissaire_kubelet_service': oscmd.kubelet_service,
             'commissaire_kubeproxy_service': oscmd.kubelet_proxy_service,
         }
+
+        # TODO: get the data!!
+        # If we are a flannel_server network then set the var
+        if network.type == 'flannel_server':
+            play_vars['commissaire_flanneld_server'] = network.options.get(
+                'address')
+        elif network.type == 'flannel_etcd':
+            play_vars['commissaire_etcd_scheme'] = etcd_config['protocol']
+            play_vars['commissaire_etcd_host'] = etcd_config['host']
+            play_vars['commissaire_etcd_port'] = etcd_config['port']
 
         # Provide the CA if etcd is being used over https
         if (

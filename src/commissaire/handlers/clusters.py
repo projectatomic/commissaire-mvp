@@ -28,7 +28,8 @@ from commissaire import constants as C
 from commissaire.resource import Resource
 from commissaire.jobs.clusterexec import clusterexec
 from commissaire.handlers.models import (
-    Cluster, Clusters, ClusterDeploy, ClusterRestart, ClusterUpgrade, Hosts)
+    Cluster, Clusters, ClusterDeploy, ClusterRestart,
+    ClusterUpgrade, Hosts, Network)
 
 import commissaire.handlers.util as util
 
@@ -119,7 +120,8 @@ class ClusterResource(Resource):
         try:
             store_manager = cherrypy.engine.publish('get-store-manager')[0]
             cluster = store_manager.get(Cluster.new(name=name))
-        except:
+        except Exception as error:
+            self.logger.error("{0}: {1}".format(type(error), error))
             resp.status = falcon.HTTP_404
             return
 
@@ -131,6 +133,7 @@ class ClusterResource(Resource):
         # Have to set resp.body explicitly to include Hosts.
         resp.body = cluster.to_json_with_hosts()
         resp.status = falcon.HTTP_200
+        self.logger.debug('Cluster retrieval: {0}'.format(resp.body))
 
     def on_put(self, req, resp, name):
         """
@@ -155,24 +158,25 @@ class ClusterResource(Resource):
         except:
             pass
 
-        # Honor cluster type if it is passed in
-        cluster_type = C.CLUSTER_TYPE_DEFAULT
+        args = {}
+        data = req.stream.read()
+        if data:
+            try:
+                args = json.loads(data.decode())
+                self.logger.debug('Cluster args received: "{0}"'.format(args))
+            except ValueError as error:
+                self.logger.error(
+                    'Unable to parse cluster arguments: {0}'.format(error))
         try:
-            data = req.stream.read().decode()
-            args = json.loads(data)
-            cluster_type = args['type']
+            network = store_manager.get(
+                Network.new(name=args['network']))
         except KeyError:
-            # Data was provided but no type was listed. Use default.
-            self.logger.info(
-                'No data given on cluster creation. Using {0}'.format(
-                    cluster_type))
-        except ValueError:
-            # Cluster type was not provided. Use default.
-            self.logger.info('No cluster type given. Using {0}'.format(
-                cluster_type))
-
+            network = Network.new(**C.DEFAULT_CLUSTER_NETWORK_JSON)
         cluster = Cluster.new(
-            name=name, type=cluster_type, status='ok', hostset=[])
+            name=name, type=args.get('type', C.CLUSTER_TYPE_DEFAULT),
+            network=network.name, status='ok', hostset=[])
+        self.logger.debug('Cluster to create: {0}'.format(
+            cluster.to_json_with_hosts()))
         store_manager.save(cluster)
         self.logger.info(
             'Created cluster {0} per request.'.format(name))

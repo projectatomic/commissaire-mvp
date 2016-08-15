@@ -31,6 +31,8 @@ _etcd_mapper = {
     'Clusters': '/clusters/',
     'Host': '/hosts/{0}',
     'Hosts': '/hosts',
+    'Network': '/networks/{0}',
+    'Networks': '/networks',
     'Status': '/status',
 }
 

@@ -42,12 +42,13 @@ def investigator(request_queue, response_queue, run_once=False):
     while True:
         # Statuses follow:
         # http://commissaire.readthedocs.org/en/latest/enums.html#host-statuses
-        store_manager, to_investigate, cluster_type = request_queue.get()
+        store_manager, to_investigate, cluster_data = request_queue.get()
         address = to_investigate['address']
         remote_user = to_investigate['remote_user']
         logger.info('{0} is now in investigating.'.format(address))
         logger.debug(
-            'Investigation details: {0}'.format(to_investigate))
+            'Investigation details: {0}. Related cluster: {1}'.format(
+                to_investigate, cluster_data))
 
         transport = ansibleapi.Transport(remote_user)
 
@@ -100,7 +101,7 @@ def investigator(request_queue, response_queue, run_once=False):
         oscmd = get_oscmd(host.os)
         try:
             result, facts = transport.bootstrap(
-                address, cluster_type, key.path, store_manager, oscmd)
+                address, cluster_data, key.path, store_manager, oscmd)
             host.status = 'inactive'
         except Exception as error:
             logger.warn('Unable to start bootstraping for {0}: {1}'.format(
@@ -113,7 +114,8 @@ def investigator(request_queue, response_queue, run_once=False):
             continue
 
         # Verify association with relevant container managers
-        for con_mgr in store_manager.list_container_managers(cluster_type):
+        for con_mgr in store_manager.list_container_managers(
+                cluster_data['type']):
             try:
                 # Try 3 times waiting 5 seconds each time before giving up
                 for cnt in range(0, 3):

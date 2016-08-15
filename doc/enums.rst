@@ -12,6 +12,11 @@ OS's
 * **fedora**: https://getfedora.org/
 
 
+.. _network-types:
+
+* **flannel_etcd**: Uses the configured etcd store handler for it's network configuration
+* **flanneld_service**:  Uses flannel in client/server mode. Requires options to have ``address`` of ``host:port``.
+
 
 Statuses
 --------

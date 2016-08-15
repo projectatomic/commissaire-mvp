@@ -115,7 +115,7 @@ class InvestigatorPlugin(plugins.SimplePlugin):
             self.process.terminate()
             self.process.join()
 
-    def submit(self, store_manager, host, cluster_type, callback=None):
+    def submit(self, store_manager, host, cluster, callback=None):
         """
         Submits a new request to the investigator process.  If a callback
         was given, it will be invoked when the request has finished.  The
@@ -127,8 +127,8 @@ class InvestigatorPlugin(plugins.SimplePlugin):
                              StoreHandlerManager
         :param host: A Host model representing the host to investigate.
         :type host: commissaire.handlers.models.Host
-        :param cluster_type: The type of cluster the host is to be added to
-        :type cluster_type: str
+        :param cluster: Cluster model instance the host is to be added to
+        :type cluster: commissaire.handlers.models.Cluster or None
         :param callback: A callable to invoke when the request is complete.
         :type callback: callable or None
         """
@@ -138,7 +138,11 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         closure = invoke_callback if callback is not None else None
         self.pending_requests[host.address] = closure
         manager_clone = store_manager.clone()
-        job_request = (manager_clone, host.__dict__, cluster_type)
+
+        # Since cluster might be None we need to check for __dict__
+        cluster_dict = getattr(cluster, '__dict__', None)
+
+        job_request = (manager_clone, host.__dict__, cluster_dict)
         self.request_queue.put(job_request)
 
     def is_alive(self):

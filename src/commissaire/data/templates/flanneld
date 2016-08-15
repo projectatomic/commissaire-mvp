@@ -1,5 +1,22 @@
+{%- set OPTIONS="" %}
+
+{%- if commissaire_etcd_scheme is defined %}
 FLANNEL_ETCD="{{ commissaire_etcd_scheme }}://{{ commissaire_etcd_host }}:{{ commissaire_etcd_port }}"
 FLANNEL_ETCD_KEY="{{ commissaire_flannel_key }}"
+{%- elif commissaire_flanneld_server is defined %}
+{#- commissaire_flanneld_server indicates a client/server model #}
+{%- set OPTIONS=OPTIONS ~ "--remote=" ~ commissaire_flanneld_server ~ " " %}
+{%- endif %}
+{#- commissaire_flanneld_etcd_client_keypath indicates the use of TLS for either client/server or etcd #}
 {%- if commissaire_etcd_client_key_path is defined %}
-FLANNEL_OPTIONS="-remote-keyfile={{ commissaire_etcd_client_key_path }} -remote-certfile={{ commissaire_etcd_client_cert_path }} -etcd-cafile={{ commissaire_etcd_ca_path }}"{% elif commissaire_etcd_ca_path is defined %}
-FLANNEL_OPTIONS="-etcd-cafile={{ commissaire_etcd_ca_path }}"{% endif %}
+    {%- set OPTIONS=OPTIONS ~ "--remote-keyfile=" ~ commissaire_etcd_client_key_path ~ " --remote-certfile=" ~ commissaire_etcd_client_cert_path ~ " " %}
+{%- endif %}
+
+{%- if commissaire_etcd_ca_path is defined %}
+    {%- set OPTIONS=OPTIONS ~ "--etcd-cafile=" ~ commissaire_etcd_ca_path ~ " " %}
+{%- endif %}
+{%- if OPTIONS %}
+
+{#- Set FLANNEL_OPTIONS to OPTIONS with the last character removed #}
+FLANNEL_OPTIONS="{{ OPTIONS[:-1] }}"
+{%- endif %}

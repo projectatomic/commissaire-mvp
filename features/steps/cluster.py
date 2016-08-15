@@ -30,7 +30,9 @@ def impl(context, cluster):
     request = requests.put(
         context.SERVER + '/api/v0/cluster/{0}'.format(cluster),
         auth=(VALID_USERNAME, VALID_PASSWORD),
-        data=json.dumps({'type': C.CLUSTER_TYPE_HOST}))
+        data=json.dumps({
+            'type': C.CLUSTER_TYPE_HOST,
+            'network': 'default'}))
     assert_status_code(request.status_code, 201)
 
 
@@ -144,17 +146,17 @@ def impl(context):
 
 @then('the provided cluster status is {status}')
 def impl(context, status):
-    json = context.request.json()
-    assert json['status'] == status, \
-        'Expected status {0}, got {1}'.format(status, json['status'])
+    json_data = context.request.json()
+    assert json_data['status'] == status, \
+        'Expected status {0}, got {1}'.format(status, json_data['status'])
 
 
 @then('the provided cluster {what} hosts is {expected}')
 def impl(context, what, expected):
-    json = context.request.json()
-    assert json['hosts'][what] == int(expected), \
+    json_data = context.request.json()
+    assert json_data['hosts'][what] == int(expected), \
         'Expected {0} {1} hosts, got {2}'.format(
-            expected, what, json['hosts'][what])
+            expected, what, json_data['hosts'][what])
 
 
 @then('the host {host} will be in the cluster {cluster}')
@@ -185,7 +187,7 @@ def impl(context, cluster):
 
 @then('commissaire will provide {async_operation} status')
 def impl(context, async_operation):
-    json = context.request.json()
+    json_data = context.request.json()
     if async_operation == 'upgrade':
         expected_keys = set(('name', 'status', 'upgraded',
                              'in_process', 'started_at', 'finished_at'))
@@ -195,14 +197,14 @@ def impl(context, async_operation):
     elif async_operation == 'deployment':
         expected_keys = set(('name', 'status', 'version', 'deployed',
                              'in_process', 'started_at', 'finished_at'))
-    actual_keys = set(json.keys())
+    actual_keys = set(json_data.keys())
     assert actual_keys == expected_keys, \
-           'Expected keys {0}, got {1}'.format(expected_keys, actual_keys)
+        'Expected keys {0}, got {1}'.format(expected_keys, actual_keys)
 
 
 @then('the provided status is {status}')
 def impl(context, status):
-    json = context.request.json()
-    actual_status = json.get('status')
+    json_data = context.request.json()
+    actual_status = json_data.get('status')
     assert actual_status == status, \
-           'Expected status {0}, got {1}'.format(status, actual_status)
+        'Expected status {0}, got {1}'.format(status, actual_status)

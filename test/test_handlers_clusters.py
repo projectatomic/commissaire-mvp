@@ -278,15 +278,17 @@ class Test_ClusterResource(TestCase):
                 test_cluster
             )
 
+            test_body = '{"network": "default"}'
+
             body = self.simulate_request(
-                '/api/v0/cluster/development', method='PUT')
+                '/api/v0/cluster/development', method='PUT', body=test_body)
             self.assertEquals(falcon.HTTP_201, self.srmock.status)
             self.assertEquals('{}', body[0])
 
             # Verify with existing cluster
             manager.get.return_value = CLUSTER
             body = self.simulate_request(
-                '/api/v0/cluster/development', method='PUT')
+                '/api/v0/cluster/development', method='PUT', body=test_body)
             self.assertEquals(falcon.HTTP_201, self.srmock.status)
             self.assertEquals('{}', body[0])
 
