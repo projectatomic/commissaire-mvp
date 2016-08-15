@@ -117,6 +117,10 @@ def stop_server(context, attr):
         server.wait()
 
 def before_tag(context, tag):
+    if tag == "slow":
+        if not context.config.userdata.get('use-vagrant', None):
+            context.scenario.skip(reason='requires vagrant environment')
+
     if tag == "clientcert":
         verifyfile = os.path.join(context.CERT_DIR, "ca.pem")
         certfile = os.path.join(context.CERT_DIR, "server.pem")
