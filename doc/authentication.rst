@@ -85,6 +85,9 @@ Name Required Description
 cn   No       Common name which must match on the client certificate
 ==== ======== ======================================================
 
+
+.. _kubeauth:
+
 commissaire.authentication.kubeauth
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Enables `Bearer Token Authentication <https://tools.ietf.org/html/rfc6750#section-2.1>`_

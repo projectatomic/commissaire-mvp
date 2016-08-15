@@ -8,6 +8,7 @@ Submodules
 
    commissaire.cherrypy_plugins.investigator
    commissaire.cherrypy_plugins.store
+   commissaire.cherrypy_plugins.watcher
 
 Module contents
 ---------------

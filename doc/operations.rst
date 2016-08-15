@@ -26,6 +26,14 @@ The password may be stored in the configuration file as well.
 .. include:: examples/commctl_config_with_password.rst
 
 
+If you are using the :ref:`Kubernetes authentication plugin <kubeauth>` you can opt to reuse the credentials from your kubeconfig like so:
+
+.. note::
+
+    If you include username/password and kubeconfig items the username/password will be ignored in favor of the kubeconfig.
+
+.. include:: examples/commctl_config_with_kubeconfig.rst
+
 Multiple endpoints may be specified. If the first endpoint is unreachable
 the next endpoint in the list is used.
 

@@ -8,6 +8,7 @@ Submodules
 
    commissaire.authentication.httpauthclientcert
    commissaire.authentication.httpbasicauth
+   commissaire.authentication.kubeauth
 
 Module contents
 ---------------

@@ -8,6 +8,7 @@ Submodules
 
    commissaire.jobs.clusterexec
    commissaire.jobs.investigator
+   commissaire.jobs.watcher
 
 Module contents
 ---------------

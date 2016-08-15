@@ -6,7 +6,8 @@ Submodules
 
 .. toctree::
 
-   commissaire.store.etcdstoreplugin
+   commissaire.store.etcdstorehandler
+   commissaire.store.kubestorehandler
    commissaire.store.storehandlermanager
 
 Module contents
