@@ -1,5 +1,4 @@
 .. code-block:: shell
 
-   (virtualenv)$ pip install -r test-requirements.txt
+   $ tox
    ...
-   (virtualenv)$ python setup.py nosetests
