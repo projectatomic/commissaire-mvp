@@ -18,7 +18,8 @@ Resource utilities.
 import cherrypy
 import falcon
 
-from commissaire.queues import INVESTIGATE_QUEUE
+import commissaire.constants as C
+
 from commissaire.handlers.models import Cluster, Clusters, Host
 
 
@@ -219,29 +220,31 @@ def etcd_host_create(address, ssh_priv_key, remote_user, cluster_name=None):
     except:
         pass
 
-    host_creation = Host.new(
-        address=address,
-        ssh_priv_key=ssh_priv_key,
-        status='investigating',
-        remote_user=remote_user
-    ).__dict__
-
     # Verify the cluster exists, if given.  Do it now
     # so we can fail before writing anything to etcd.
     if cluster_name:
-        if not etcd_cluster_exists(cluster_name):
+        cluster = get_cluster_model(cluster_name)
+        if cluster is None:
             return (falcon.HTTP_409, None)
+        cluster_type = cluster.type
+    else:
+        cluster_type = C.CLUSTER_TYPE_HOST
 
-    host = Host(**host_creation)
+    host = Host.new(
+        address=address,
+        ssh_priv_key=ssh_priv_key,
+        status='investigating',
+        remote_user=remote_user)
 
-    new_host = store_manager.save(host)
+    def callback(store_manager, host, exception):
+        if exception is None:
+            store_manager.save(host)
 
-    # Add host to the requested cluster.
-    if cluster_name:
-        etcd_cluster_add_host(cluster_name, address)
+            # Add host to the requested cluster.
+            if cluster_name:
+                etcd_cluster_add_host(cluster_name, host.address)
 
-    manager_clone = store_manager.clone()
-    job_request = (manager_clone, host_creation, ssh_priv_key, remote_user)
-    INVESTIGATE_QUEUE.put(job_request)
+    cherrypy.engine.publish(
+        'investigator-submit', store_manager, host, cluster_type, callback)
 
-    return (falcon.HTTP_201, new_host)
+    return (falcon.HTTP_201, host)

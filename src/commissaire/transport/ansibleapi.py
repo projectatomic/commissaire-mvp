@@ -31,7 +31,6 @@ from ansible.plugins.callback import default
 from ansible.utils.display import Display
 
 from commissaire import constants as C
-from commissaire.handlers import util
 from commissaire.store.etcdstorehandler import EtcdStoreHandler
 from commissaire.store.kubestorehandler import KubernetesStoreHandler
 
@@ -411,12 +410,14 @@ class Transport:
 
         return kube_config
 
-    def bootstrap(self, ip, key_file, store_manager, oscmd):
+    def bootstrap(self, ip, cluster_type, key_file, store_manager, oscmd):
         """
         Bootstraps a host via ansible.
 
-        :param ip: IP address to reboot.
+        :param ip: IP address to bootstrap.
         :type ip: str
+        :param cluster_type: The type of cluster the host is to be added to
+        :type cluster_type: str
         :param key_file: Full path to the file holding the private SSH key.
         :type key_file: str
         :param store_manager: Remote object for remote stores
@@ -428,13 +429,6 @@ class Transport:
         """
         self.logger.debug('Using {0} as the oscmd class for {1}'.format(
             oscmd.os_type, ip))
-
-        cluster_type = C.CLUSTER_TYPE_HOST
-        try:
-            cluster_type = util.cluster_for_host(ip, store_manager).type
-        except KeyError:
-            # Not part of a cluster
-            pass
 
         etcd_config = self._get_etcd_config(store_manager)
         kube_config = self._get_kube_config(store_manager)

@@ -37,6 +37,18 @@ HOST_JSON = (
     ' "status": "available", "os": "atomic",'
     ' "cpus": 2, "memory": 11989228, "space": 487652,'
     ' "last_check": "2015-12-17T15:48:18.710454"}')
+#: Response JSON for a newly created host
+INITIAL_HOST_JSON = (
+    '{"address": "10.2.0.2",'
+    ' "status": "investigating", "os": "",'
+    ' "cpus": 0, "memory": 0, "space": 0,'
+    ' "last_check": ""}')
+#: Response JSON for a newly created implicit host (no address given)
+INITIAL_IMPLICIT_HOST_JSON = (
+    '{"address": "127.0.0.1",'
+    ' "status": "investigating", "os": "",'
+    ' "cpus": 0, "memory": 0, "space": 0,'
+    ' "last_check": ""}')
 #: Credential JSON for tests
 HOST_CREDS_JSON = '{"remote_user": "root", "ssh_priv_key": "dGVzdAo="}'
 #: HostStatus JSON for tests

@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
+import time
 import requests
 
 from behave import *
@@ -51,6 +52,20 @@ def impl(context, host):
         auth=(VALID_USERNAME, VALID_PASSWORD),
         data=json.dumps(data))
     assert_status_code(request.status_code, 201)
+
+    # Poll until the host is finished bootstrapping.
+    # We can't watch an etcd key because the host record
+    # is only written to etcd after a successful bootstrap.
+    busy_states = ('investigating', 'bootstrapping')
+    status_is_busy = True
+    while status_is_busy:
+        time.sleep(1)
+        request = requests.get(
+            context.SERVER + '/api/v0/host/{0}'.format(host),
+            auth=(VALID_USERNAME, VALID_PASSWORD))
+        assert_status_code(request.status_code, 200)
+        data = request.json()
+        status_is_busy = data['status'] in busy_states
 
 
 @given('we have deleted host {host}')
