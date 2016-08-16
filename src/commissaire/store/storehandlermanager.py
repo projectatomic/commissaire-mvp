@@ -33,6 +33,10 @@ class StoreHandlerManager(object):
         self._registry = {}
         self._handlers = {}
 
+        # Handler types + configs with no associated model types.
+        # Stash them here to include them in list_store_handlers().
+        self._registry_extras = []
+
         self._container_managers = []
 
         # Logger objects can't be pickled, so fetch ours lazily so
@@ -46,6 +50,7 @@ class StoreHandlerManager(object):
         """
         clone = StoreHandlerManager()
         clone._registry = deepcopy(self._registry)
+        clone._registry_extras = deepcopy(self._registry_extras)
         # clone._handlers should remain empty.
         # clone._container_managers should remain empty.
         # clone.__loggers should remain None.
@@ -66,7 +71,10 @@ class StoreHandlerManager(object):
         """
         handler_type.check_config(config)
         entry = (handler_type, config, model_types)
-        self._registry.update({mt: entry for mt in model_types})
+        if len(model_types) > 0:
+            self._registry.update({mt: entry for mt in model_types})
+        else:
+            self._registry_extras.append(entry)
 
     def list_store_handlers(self):
         """
@@ -78,7 +86,9 @@ class StoreHandlerManager(object):
         :rtype: list
         """
         # This collects all unique instances from the registry.
-        return {id(x): x for x in self._registry.values()}.values()
+        entries = {id(x): x for x in self._registry.values()}.values()
+        entries.extend(self._registry_extras)
+        return entries
 
     def list_container_managers(self, cluster_type=None):
         """
