@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import base64
 import etcd
 import json
 import os
@@ -169,6 +170,11 @@ def before_all(context):
         context.ETCD = 'http://192.168.152.101:2379'
         context.USE_VAGRANT = True
 
+    # Read and encode SSH key
+    with open('features/id_rsa', 'rb') as f:
+        b64_bytes = base64.b64encode(f.read())
+        context.SSH_PRIV_KEY = b64_bytes.decode()
+
     # Start etcd up via -D start-etcd=$ANYTHING
     if context.config.userdata.get('start-etcd', None):
         if context.USE_VAGRANT:
@@ -229,14 +235,14 @@ def before_scenario(context, scenario):
     # Reset HOST_DATA
     context.HOST_DATA = {
         "address": "",
-        "remote_user": "root",
+        "remote_user": "vagrant",
         "status": "active",
         "os": "fedora",
         "cpus": 1,
         "memory": 1234,
         "space": 12345,
         "last_check": "",
-        "ssh_priv_key": "",
+        "ssh_priv_key": context.SSH_PRIV_KEY
     }
 
     # Wipe etcd state clean
