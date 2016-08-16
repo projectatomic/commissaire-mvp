@@ -48,7 +48,7 @@ Vagrant.configure(2) do |config|
         sudo systemctl enable kube-apiserver kube-scheduler kube-controller-manager
         sudo systemctl start kube-apiserver kube-scheduler kube-controller-manager
       SHELL
-    # End etcd
+    # End kubernetes
     end
 
 
@@ -64,7 +64,7 @@ Vagrant.configure(2) do |config|
         echo "===> Installing OS dependencies"
         sudo dnf install -y python
       SHELL
-    # End etcd
+    # End fedora-cloud
     end
 
     # Development Node 1
@@ -78,7 +78,7 @@ Vagrant.configure(2) do |config|
         sudo atomic host upgrade
         sudo systemctl reboot
       SHELL
-    # End node2
+    # End fedora-atomic
     end
 
   # Development commissaire server
@@ -100,7 +100,7 @@ Vagrant.configure(2) do |config|
       echo "===> Setting up commissaire to autostart"
       sudo cp /vagrant/contrib/systemd/commissaire.service /etc/systemd/system/commissaire.service
       sudo chmod 644 /etc/systemd/system/commissaire.service
-      sudo mkdir /etc/commissaire
+      sudo mkdir --parents /etc/commissaire
       sudo cp /vagrant/conf/commissaire.conf /etc/commissaire/commissaire.conf
       sudo sed -i 's|127.0.0.1|192.168.152.100|g' /etc/commissaire/commissaire.conf
       sudo sed -i 's|^ExecStart=.*|ExecStart=/bin/bash -c ". /home/vagrant/commissaire_env/bin/activate \\&\\& commissaire -c /etc/commissaire/commissaire.conf"|' /etc/systemd/system/commissaire.service
