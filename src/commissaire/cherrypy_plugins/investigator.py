@@ -25,13 +25,6 @@ from threading import Thread
 from commissaire.jobs.investigator import investigator
 
 
-class Sentinel(object):
-    """
-    Passed over a multiprocessing.Queue as a loop terminator.
-    """
-    pass
-
-
 class InvestigatorPlugin(plugins.SimplePlugin):
 
     def __init__(self, bus):
@@ -59,7 +52,7 @@ class InvestigatorPlugin(plugins.SimplePlugin):
             args=(self.request_queue, self.response_queue))
         self.response_thread = None
         self.pending_requests = {}  # host address -> closure
-        self.sentinel = Sentinel()  # stops the response thread
+        self.sentinel = object()    # stops the response thread
 
     def __response_thread(self):
         """
@@ -71,7 +64,7 @@ class InvestigatorPlugin(plugins.SimplePlugin):
         while True:
             response = self.response_queue.get()
             assert os.getpid() == self.main_pid
-            if isinstance(response, Sentinel):
+            if response is self.sentinel:
                 break
             host, exception = response
             try:
