@@ -20,6 +20,7 @@ import json
 
 import etcd
 
+from commissaire.compat.urlparser import urlparse
 from commissaire.store import ConfigurationError, StoreHandlerBase
 
 #: Maps ModelClassName to a key pattern
@@ -42,23 +43,25 @@ class EtcdStoreHandler(StoreHandlerBase):
     Handler for data storage on etcd.
     """
 
+    DEFAULT_SERVER_URL = 'http://127.0.0.1:2379'
+
     @classmethod
     def check_config(cls, config):
         """
         Examines the configuration parameters for an EtcdStoreHandler
         and throws a ConfigurationError if any parameters are invalid.
         """
+        url = urlparse(config.get('server_url', cls.DEFAULT_SERVER_URL))
         if (bool(config.get('certificate-path')) ^
                 bool(config.get('certificate-key-path'))):
             raise ConfigurationError(
                 'Both "certificate_path" and "certificate_key_path" '
                 'must be provided to use a client side certificate')
         if config.get('certificate-path'):
-            protocol = config.get('protocol')
-            if protocol != 'https':
+            if url.scheme != 'https':
                 raise ConfigurationError(
-                    'Protocol must be "https" when using client side '
-                    'certificates (got "{0}")'.format(protocol))
+                    'Server URL scheme must be "https" when using client '
+                    'side certificates (got "{0}")'.format(url.scheme))
 
     def __init__(self, config):
         """
@@ -67,7 +70,18 @@ class EtcdStoreHandler(StoreHandlerBase):
         :param config: Configuration details
         :type config: dict
         """
-        self._store = etcd.Client(**config)
+        url = urlparse(config.get('server_url', self.DEFAULT_SERVER_URL))
+        client_args = {
+            'host': url.hostname,
+            'protocol': url.scheme
+        }
+        if url.port is not None:
+            client_args['port'] = url.port
+        if config.get('certificate-path'):
+            client_args['cert'] = (
+                config['certificate-path'],
+                config['certificate-key-path'])
+        self._store = etcd.Client(**client_args)
         self._etcd_namespace = '/commissaire'
 
     def _format_key(self, model_instance):

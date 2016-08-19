@@ -146,9 +146,7 @@ class Test_HostStatusResource(TestCase):
         with mock.patch('cherrypy.engine.publish') as _publish:
             manager = mock.MagicMock(StoreHandlerManager)
             kube_container_mgr = KubeContainerManager({
-                'protocol': 'http',
-                'host': '127.0.0.1',
-                'port': '8080',
+                'server_url': 'http://127.0.0.1:8080',
                 'token': 'token'
             })
 

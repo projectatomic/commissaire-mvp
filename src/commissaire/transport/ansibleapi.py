@@ -374,9 +374,7 @@ class Transport:
         """
         # Need defaults for all required keys.
         etcd_config = {
-            'host': C.DEFAULT_ETCD_STORE_HANDLER['host'],
-            'port': C.DEFAULT_ETCD_STORE_HANDLER['port'],
-            'protocol': 'http'
+            'server_url': EtcdStoreHandler.DEFAULT_SERVER_URL
         }
 
         entries = store_manager.list_store_handlers()
@@ -397,9 +395,7 @@ class Transport:
         """
         # Need defaults for all required keys.
         kube_config = {
-            'host': C.DEFAULT_KUBERNETES_STORE_HANDLER['host'],
-            'port': C.DEFAULT_KUBERNETES_STORE_HANDLER['port'],
-            'protocol': 'http',
+            'server_url': KubernetesStoreHandler.DEFAULT_SERVER_URL,
             'token': ''
         }
 
@@ -447,10 +443,7 @@ class Transport:
         play_vars = {
             'commissaire_cluster_type': cluster_type,
             'commissaire_bootstrap_ip': ip,
-            'commissaire_kubernetes_api_server_scheme':
-                kube_config['protocol'],
-            'commissaire_kubernetes_api_server_host': kube_config['host'],
-            'commissaire_kubernetes_api_server_port': kube_config['port'],
+            'commissaire_kubernetes_api_server_url': kube_config['server_url'],
             'commissaire_kubernetes_bearer_token': kube_config['token'],
             # TODO: Where do we get this?
             'commissaire_docker_registry_host': '127.0.0.1',
@@ -490,13 +483,12 @@ class Transport:
             play_vars['commissaire_flanneld_server'] = network.options.get(
                 'address')
         elif network.type == 'flannel_etcd':
-            play_vars['commissaire_etcd_scheme'] = etcd_config['protocol']
-            play_vars['commissaire_etcd_host'] = etcd_config['host']
-            play_vars['commissaire_etcd_port'] = etcd_config['port']
+            play_vars['commissaire_etcd_server_url'] = etcd_config[
+                'server_url']
 
         # Provide the CA if etcd is being used over https
         if (
-                etcd_config['protocol'] == 'https' and
+                etcd_config['server_url'].startswith('https:') and
                 'certificate_ca_path' in etcd_config):
             play_vars['commissaire_etcd_ca_path'] = oscmd.etcd_ca
             play_vars['commissaire_etcd_ca_path_local'] = (

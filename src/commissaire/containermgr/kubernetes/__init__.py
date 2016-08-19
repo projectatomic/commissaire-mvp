@@ -19,6 +19,7 @@ The kubernetes container manager package.
 import requests
 
 from commissaire import constants as C
+from commissaire.compat.urlparser import urljoin
 from commissaire.containermgr import ContainerManagerBase
 
 
@@ -37,9 +38,6 @@ class ContainerManager(ContainerManagerBase):
         :type config: dict
         """
         ContainerManagerBase.__init__(self, config)
-        self.scheme = config['protocol']
-        self.host = config['host']
-        self.port = config['port']
         self.con = requests.Session()
         token = config.get('token', None)
         if token:
@@ -58,8 +56,7 @@ class ContainerManager(ContainerManagerBase):
 
         # TODO: Verify TLS!!!
         self.con.verify = False
-        self.base_uri = '{0}://{1}:{2}/api/v1'.format(
-            self.scheme, self.host, self.port)
+        self.base_uri = urljoin(config['server_url'], '/api/v1')
         self.logger.info('Kubernetes Container Manager created: {0}'.format(
             self.base_uri))
         self.logger.debug(

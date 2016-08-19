@@ -21,9 +21,12 @@ from commissaire.compat import __python_version__
 
 if __python_version__ == '2':
     from urlparse import urlparse as _urlparse
+    from urlparse import urljoin as _urljoin
 else:
     from urllib.parse import urlparse as _urlparse
+    from urllib.parse import urljoin as _urljoin
 
 
-#: The proper urlparse function
+#: The proper URL functions
 urlparse = _urlparse
+urljoin = _urljoin

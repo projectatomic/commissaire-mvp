@@ -38,7 +38,7 @@ class Test_KubernetesStoreHandlerClass(_Test_StoreHandler):
         Sets up a fresh instance of the class before each run.
         """
         self.instance = self.cls(
-            {'protocol': 'http', 'host': '127.0.0.1', 'port': 8080})
+            {'server_url': 'http://127.0.0.1:8080'})
 
     def test__format_kwargs(self):
         """

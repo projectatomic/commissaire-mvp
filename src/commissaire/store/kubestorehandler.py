@@ -20,6 +20,7 @@ import json
 import requests
 
 from commissaire.compat.b64 import base64
+from commissaire.compat.urlparser import urlparse, urljoin
 from commissaire.containermgr.kubernetes import KubeContainerManager
 from commissaire.handlers.models import Hosts, Host
 from commissaire.store import ConfigurationError, StoreHandlerBase
@@ -46,6 +47,8 @@ class KubernetesStoreHandler(StoreHandlerBase):
     Handler for data storage on Kubernetes.
     """
 
+    DEFAULT_SERVER_URL = 'http://127.0.0.1:8080'
+
     container_manager_class = KubeContainerManager
 
     @classmethod
@@ -54,17 +57,17 @@ class KubernetesStoreHandler(StoreHandlerBase):
         Examines the configuration parameters for a KubernetesStoreHandler
         and throws a ConfigurationError if any parameters are invalid.
         """
+        url = urlparse(config.get('server_url', cls.DEFAULT_SERVER_URL))
         if (bool(config.get('certificate-path')) ^
                 bool(config.get('certificate-key-path'))):
             raise ConfigurationError(
                 'Both "certificate_path" and "certificate_key_path" '
                 'must be provided to use a client side certificate')
         if config.get('certificate-path'):
-            protocol = config.get('protocol')
-            if protocol != 'https':
+            if url.scheme != 'https':
                 raise ConfigurationError(
-                    'Protocol must be "https" when using client side '
-                    'certificates (got "{0}")'.format(protocol))
+                    'Server URL scheme must be "https" when using client '
+                    'side certificates (got "{0}")'.format(url.scheme))
 
     def __init__(self, config):
         """
@@ -87,9 +90,8 @@ class KubernetesStoreHandler(StoreHandlerBase):
 
         # TODO: Verify TLS!!!
         self._store.verify = False
-        self._endpoint = '{0}://{1}:{2}/api/{3}'.format(
-            config['protocol'], config['host'],
-            config['port'], _API_VERSION)
+        base_url = config.get('server_url', self.DEFAULT_SERVER_URL)
+        self._endpoint = urljoin(base_url, '/api/' + _API_VERSION)
 
         # The endpoint to hit for secrets
         self._secrets_endpoint = self._endpoint + '/namespaces/default/secrets'

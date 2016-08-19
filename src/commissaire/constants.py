@@ -37,19 +37,15 @@ DEFAULT_CLUSTER_NETWORK_JSON = {
 }
 
 # Default etcd configuration
+# (server URL provided by store handler)
 DEFAULT_ETCD_STORE_HANDLER = {
     'name': 'commissaire.store.etcdstorehandler',
-    'protocol': 'http',
-    'host': '127.0.0.1',
-    'port': 2379,
     'models': []
 }
 
 # Default Kubernetes configuration
+# (server URL provided by store handler)
 DEFAULT_KUBERNETES_STORE_HANDLER = {
     'name': 'commissaire.store.kubestorehandler',
-    'protocol': 'http',
-    'host': '127.0.0.1',
-    'port': 8080,
     'models': ['*']
 }

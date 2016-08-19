@@ -1,7 +1,7 @@
 {%- set OPTIONS="" %}
 
 {%- if commissaire_etcd_scheme is defined %}
-FLANNEL_ETCD="{{ commissaire_etcd_scheme }}://{{ commissaire_etcd_host }}:{{ commissaire_etcd_port }}"
+FLANNEL_ETCD="{{ commissaire_etcd_server_url }}
 FLANNEL_ETCD_KEY="{{ commissaire_flannel_key }}"
 {%- elif commissaire_flanneld_server is defined %}
 {#- commissaire_flanneld_server indicates a client/server model #}

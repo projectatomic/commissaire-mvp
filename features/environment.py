@@ -85,15 +85,12 @@ def start_server(context, *args):
         server_cli_args += args
 
         if context.ETCD:
-            url = urlparse(context.ETCD)
             server_cli_args += [
                 '--register-store-handler',
                 '{{'
                 ' "name": "commissaire.store.etcdstorehandler",'
-                ' "protocol": "{0}",'
-                ' "host": "{1}",'
-                ' "port": {2}'
-                '}}'.format(url.scheme, url.hostname, url.port)]
+                ' "server_url": "{0}"'
+                '}}'.format(context.ETCD)]
 
         # Add any other server-args
         extra_server_args = context.config.userdata.get(
