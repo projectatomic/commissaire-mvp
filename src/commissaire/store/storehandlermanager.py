@@ -18,6 +18,7 @@ import logging
 from copy import deepcopy
 
 from commissaire.model import ValidationError
+from commissaire.store import ConfigurationError
 
 
 class StoreHandlerManager(object):
@@ -72,7 +73,15 @@ class StoreHandlerManager(object):
         handler_type.check_config(config)
         entry = (handler_type, config, model_types)
         if len(model_types) > 0:
-            self._registry.update({mt: entry for mt in model_types})
+            for mt in model_types:
+                if mt in self._registry:
+                    conflicting_type, _, _ = self._registry[mt]
+                    raise ConfigurationError(
+                        'Model "{0}" already assigned to "{1}"'.format(
+                            getattr(mt, '__name__', '?'),
+                            getattr(conflicting_type, '__module__', '?')))
+                else:
+                    self._registry[mt] = entry
         else:
             self._registry_extras.append(entry)
 

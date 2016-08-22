@@ -127,13 +127,30 @@ class Test_ConfigFile(TestCase):
         self.assertTrue(len(models) > 1)
         self.assertTrue(all(x.__name__.startswith('Host') for x in models))
 
+        store_manager = StoreHandlerManager()
+
         # Note, this config is missing required info.
         config = {
             'name': 'commissaire.store.etcdstorehandler',
             'certificate-path': '/path/to/cert',
             'models': ['*']
         }
+        self.assertRaises(
+            ConfigurationError, script.register_store_handler,
+            parser, store_manager, config)
+
         store_manager = StoreHandlerManager()
+
+        # Catch model conflicts (TestModel assigned to both handlers)
+        config = {
+            'name': 'commissaire.store.etcdstorehandler',
+            'models': ['*']
+        }
+        script.register_store_handler(parser, store_manager, config)
+        config = {
+            'name': 'commissaire.store.kubestorehandler',
+            'models': ['Host']
+        }
         self.assertRaises(
             ConfigurationError, script.register_store_handler,
             parser, store_manager, config)
