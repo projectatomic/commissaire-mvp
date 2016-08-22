@@ -33,15 +33,6 @@ Flannel requires a configuration inside of etcd.
 .. include:: examples/flannel_overlay_network_example.rst
 
 
-(Optional): Put Configs in Etcd
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-commissaire will default back to the local files but using Etcd is where configuration should be stored.
-
-.. include:: examples/etcd_authentication_example.rst
-
-.. include:: examples/etcd_logging_example.rst
-
-
 (Optional) Set The OpenShift or Kubernetes Access Method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -50,20 +41,20 @@ There are two methods for accessing the container manager: Client Side Certifica
 (Recommended) Client Certificate
 ````````````````````````````````
 
-To use a client certificate:
+To configure a client certificate:
 
 .. note:: There is no default for the client certificate!
 
-.. include:: examples/etcd_set_kube_client_side_certificate.rst
+.. include:: examples/config_kube_client_side_certificate.rst
 
 Bearer Token
 ````````````
 
-To use a Bearer token:
+To configure a Bearer token:
 
 .. note:: There is no default for the bearer token!
 
-.. include:: examples/etcd_set_kube_bearer_token.rst
+.. include:: examples/config_kube_bearer_token.rst
 
 
 (Optional): Build Docker Container
@@ -99,38 +90,37 @@ as those given below:
 
 .. include:: examples/run_from_source.rst
 
-**Not So Secure Mode**
+**Not So Secure Configuration**
 
-.. literalinclude:: ../conf/commissaire.conf
-   :language: javascript
+.. include:: examples/insecure_config.rst
 
-**More Secure Mode**
+**More Secure Configuration**
+
+.. note::
+
+   Using client side certificates to access etcd/kubernetes will require proper configuration within etcd/kubernetes.
+
+   Also, this example shows placing hashed user passwords in a separate `users.json` file, presumably with more restrictive access permissions.
 
 .. include:: examples/secure_config.rst
 
 
 Via Docker
 ``````````
-To run the image, place a ``commissaire.conf`` file in an empty directory
-and then bind-mount the directory to ``/etc/commissaire`` in the container.
+To run the image, place a ``commissaire.conf`` file (see the examples above)
+in an empty directory and then bind-mount the directory to ``/etc/commissaire``
+in the container.
 
-.. note::
+Similarly, if you are using client-side certificates, place the certificate
+files in an empty directory and then bind-mount the directory inside the
+container (shown below as ``/certs``), making sure all the certificate path
+settings in ``commissaire.conf`` use the bind-mounted directory path.
 
-   These commands assume you have put user configuration in etcd and are using
-   the ``commissaire.authentication.httpbasicauth`` authentication plugin.
+.. include:: examples/run_via_docker.rst
 
 .. note::
 
    Make sure that your firewall allows access to the etcd and kubernetes hosts and ports!
-
-**Not So Secure Mode**
-
-.. include:: examples/run_via_docker.rst
-
-
-**More Secure Mode**
-
-.. include:: examples/run_via_docker_more_secure.rst
 
 
 Adding a Cluster

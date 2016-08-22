@@ -11,6 +11,8 @@ Cluster
 
 **Endpoint**: /api/v0/cluster/{NAME}
 
+(Internal model name: ``Cluster``)
+
 GET
 ```
 Retrieve the status of the cluster.
@@ -141,11 +143,84 @@ Removes host {IP} from cluster. (Idempotent)
 No body.
 
 
+.. _cluster_op_deploy:
+
+Cluster Operations: Deploy
+--------------------------
+**Endpoint**: /api/v0/cluster/{NAME}/deploy
+
+(Internal model name: ``ClusterDeploy``)
+
+GET
+```
+Retrieve the current status of an OSTree tree deployment.
+
+.. code-block:: javascript
+
+   {
+       "status": string,
+       "version": string,
+       "deployed": HOST_LIST,
+       "in_process": HOST_LIST,
+       "started_at": string,
+       "finished_at": string
+   }
+
+Example
+~~~~~~~
+
+.. code-block:: javascript
+
+   {
+       "status": "in_process",
+       "version": "7.2.6",
+       "deployed": [{...}],
+       "in_process": [{...}],
+       "started_at": "2015-12-17T15:48:18.710454",
+       "finished_at": null
+   }
+
+PUT
+```
+Start a new OSTree tree deployment.
+
+.. code-block:: javascript
+
+   {
+       "version": string  // Which OSTree tree to deploy
+   }
+
+Example
+~~~~~~~
+
+.. code-block:: javascript
+
+   {
+       "version": "7.2.6"
+   }
+
+Example Response
+~~~~~~~~~~~~~~~~
+
+.. code-block:: javascript
+
+   {
+       "status": "in_process",
+       "version": "7.2.6",
+       "deployed": [{...}],
+       "in_process": [{...}],
+       "started_at": "2015-12-17T15:48:18.710454",
+       "finished_at": null
+   }
+
+
 .. _cluster_op_upgrade:
 
 Cluster Operations: Upgrade
 ---------------------------
 **Endpoint**: /api/v0/cluster/{NAME}/upgrade
+
+(Internal model name: ``ClusterUpgrade``)
 
 GET
 ```
@@ -200,6 +275,8 @@ Cluster Operations: Restart
 ---------------------------
 **Endpoint**: /api/v0/cluster/{NAME}/restart
 
+(Internal model name: ``ClusterRestart``)
+
 GET
 ```
 Retrieve the status of a restart.
@@ -251,6 +328,8 @@ Clusters
 --------
 **Endpoint**: /api/v0/cluster/
 
+(Internal model name: ``Clusters``)
+
 GET
 ```
 Retrieve a list of all clusters.
@@ -278,6 +357,8 @@ Host
 ----
 
 **Endpoint**: /api/v0/host/{IP}
+
+(Internal model name: ``Host``)
 
 GET
 ```
@@ -377,6 +458,8 @@ HostStatus
 
 **Endpoint**: /api/v0/host/{IP}/status
 
+(Internal model name: ``HostStatus``)
+
 GET
 ```
 Retrieve a specific hosts status.
@@ -441,31 +524,7 @@ Hosts
 
 **Endpoint**: /api/v0/hosts
 
-
-GET
-```
-Retrieve a list of hosts
-
-.. code-block:: javascript
-
-   [
-       string...
-   ]
-
-
-Example
-~~~~~~~
-
-.. code-block:: javascript
-
-   [
-       "192.168.122.50",
-       "192.168.122.51"
-   ]
-
-
-**Endpoint**: /api/v0/hosts
-
+(Internal model name: ``Hosts``)
 
 GET
 ```
@@ -527,6 +586,8 @@ Networks
 --------
 **Endpoint**: /api/v0/networks/
 
+(Internal model name: ``Networks``)
+
 GET
 ```
 Retrieve a list of all networks.
@@ -554,6 +615,8 @@ Network
 -------
 
 **Endpoint**: /api/v0/network/{name}
+
+(Internal model name: ``Network``)
 
 GET
 ```
@@ -621,6 +684,8 @@ Status
 ------
 
 **Endpoint**: /api/v0/status
+
+(Internal model name: ``Status``)
 
 GET
 ```

@@ -1,3 +1,5 @@
+.. _authdevel:
+
 Authentication Plugins
 ======================
 

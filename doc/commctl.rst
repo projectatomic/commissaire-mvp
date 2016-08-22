@@ -409,6 +409,8 @@ To list all hosts in a specific cluster:
 
 
 
+.. _commctl_passhash:
+
 passhash
 ~~~~~~~~
 

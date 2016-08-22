@@ -9,9 +9,9 @@ Contents
    overview
    gettingstarted
    tested_host_node_oss
+   server_configuration
    operations
    commctl
-   authentication
    logging
    components
    enums
