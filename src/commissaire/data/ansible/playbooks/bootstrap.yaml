@@ -17,12 +17,16 @@
   hosts: commissaire_targets
   gather_facts: no
   tasks:
+    - debug: msg="is_atomic={{ is_atomic }}"
     - name: Enable Package Repositories
       command: "{{ commissaire_enable_pkg_repos }}"
+      when: "is_atomic == False"
     - name: Install libselinux-python
       command: "{{ commissaire_install_libselinux_python }}"
+      when: "is_atomic == False"
     - name: Install Flannel
       command: "{{ commissaire_install_flannel }}"
+      when: "is_atomic == False"
     - name: Configure Flannel
       template:
         src: "{{ commissaire_flanneld_config_local }}"
@@ -45,6 +49,7 @@
       when: "commissaire_etcd_ca_path is defined"
     - name: Install Docker
       command: "{{ commissaire_install_docker }}"
+      when: "is_atomic == False"
     - name: Configure Docker
       template:
         dest: "{{ commissaire_docker_config }}"
@@ -52,7 +57,7 @@
         force: yes
     - name: Install Kubernetes Node
       command: "{{ commissaire_install_kube }}"
-      when: "commissaire_cluster_type == 'kubernetes'"
+      when: "commissaire_cluster_type == 'kubernetes' and is_atomic == False"
     - name: Configure Kubernetes Node
       template:
         dest: "{{ commissaire_kubernetes_config }}"

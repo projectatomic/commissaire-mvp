@@ -85,8 +85,8 @@ def investigator(request_queue, response_queue, run_once=False):
             logger.info('Facts for {0} retrieved'.format(address))
             logger.debug('Data: {0}'.format(host.to_json()))
         except Exception as error:
-            logger.warn('Getting info failed for {0}: {1}'.format(
-                address, error.message))
+            logger.warn('Getting info failed for {0}. {1}: {2}'.format(
+                address, type(error), error.message))
             host.status = 'failed'
             response_queue.put((host, error))
             key.remove()

@@ -20,7 +20,7 @@ from falcon.testing import TestBase
 from commissaire.model import Model
 
 # Keep this list synchronized with oscmd modules.
-available_os_types = ('atomic', 'fedora', 'redhat', 'rhel', 'centos')
+available_os_types = ('fedora', 'redhat', 'rhel', 'centos')
 
 def get_fixture_file_path(filename):
     """

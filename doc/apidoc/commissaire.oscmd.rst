@@ -6,7 +6,6 @@ Submodules
 
 .. toctree::
 
-   commissaire.oscmd.atomic
    commissaire.oscmd.centos
    commissaire.oscmd.fedora
    commissaire.oscmd.redhat

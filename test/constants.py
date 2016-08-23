@@ -34,7 +34,7 @@ def make_new(instance):
 #: Response JSON for a single host
 HOST_JSON = (
     '{"address": "10.2.0.2",'
-    ' "status": "available", "os": "atomic",'
+    ' "status": "available", "os": "fedora",'
     ' "cpus": 2, "memory": 11989228, "space": 487652,'
     ' "last_check": "2015-12-17T15:48:18.710454"}')
 #: Response JSON for a newly created host

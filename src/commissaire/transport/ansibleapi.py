@@ -314,6 +314,7 @@ class Transport:
         play_file = resource_filename(
             'commissaire', 'data/ansible/playbooks/get_info.yaml')
         result, fact_cache = self._run(ip, key_file, play_file)
+        self.logger.debug('Fact cache: {0}'.format(fact_cache))
         facts = {}
         facts['os'] = fact_cache['ansible_distribution'].lower()
         facts['cpus'] = fact_cache['ansible_processor_cores']
@@ -323,27 +324,7 @@ class Transport:
             space += x['size_total']
         facts['space'] = space
 
-        # Special case for atomic: Since Atomic doesn't advertise itself
-        # and instead calls itself 'redhat' or 'centos' or 'fedora', we
-        # need to check for 'atomicos' in other ansible_cmdline facts.
-        atomic_os_types = {
-            'redhat': '/ostree/rhel-atomic-host',
-            'centos': '/ostree/centos-atomic-host',
-            'fedora': '/ostree/fedora-atomic'
-        }
-        os_type = facts['os']
-        if os_type in atomic_os_types:
-            self.logger.debug(
-                'Found os of {0}. Checking for special '
-                'atomic case...'.format(os_type))
-            boot_image = fact_cache.get(
-                'ansible_cmdline', {}).get('BOOT_IMAGE', '')
-            root_mapper = fact_cache.get('ansible_cmdline', {}).get('root', '')
-            if (boot_image.startswith(atomic_os_types[os_type]) or
-                    'atomicos' in root_mapper):
-                facts['os'] = 'atomic'
-            self.logger.debug('Facts: {0}'.format(facts))
-
+        self.logger.debug('Grabbed Facts: {0}'.format(facts))
         return (result, facts)
 
     def check_host_availability(self, host, key_file):
@@ -437,6 +418,8 @@ class Transport:
                 cluster_data))
             cluster = Cluster.new(**cluster_data)
             cluster_type = cluster.type
+            self.logger.debug('Found network {0}'.format(
+                cluster.network))
             network = store_manager.get(Network.new(name=cluster.network))
         except KeyError:
             # Not part of a cluster
