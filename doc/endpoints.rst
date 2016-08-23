@@ -1,10 +1,14 @@
+.. _rest_endpoints:
+
 REST Endpoints
 ==============
 
-.. _rest_endpoints:
+.. _cluster_op:
 
 Cluster
 -------
+
+
 **Endpoint**: /api/v0/cluster/{NAME}
 
 GET
@@ -348,6 +352,9 @@ Example
 DELETE
 ``````
 Deletes a host record.
+
+
+.. _host_creds_op:
 
 HostCreds
 ---------

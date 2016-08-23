@@ -4,40 +4,8 @@ Operations
 Preface
 -------
 All operations via commissaire are done via REST. While any HTTP client can
-be used this document will show examples using *commctl* as well as *curl*.
+be used, many users will feel more comfortable using :ref:`commctl <commctl_preface>`.
 
-.. include:: examples/commctl_note.rst
-
-
-commctl
-~~~~~~~
-commctl requires a configuration file. The default path is
-``~/.commissaire.json`` though it can be changed with the ``--config``/``-c``
-option.
-
-.. include:: examples/commctl_config.rst
-
-The password may be stored in the configuration file as well.
-
-.. warning::
-
-   The configuration file is plain text. If you choose to keep a password in the file make sure to keep the file permissions locked down.
-
-.. include:: examples/commctl_config_with_password.rst
-
-
-If you are using the :ref:`Kubernetes authentication plugin <kubeauth>` you can opt to reuse the credentials from your kubeconfig like so:
-
-.. note::
-
-    If you include username/password and kubeconfig items the username/password will be ignored in favor of the kubeconfig.
-
-.. include:: examples/commctl_config_with_kubeconfig.rst
-
-Multiple endpoints may be specified. If the first endpoint is unreachable
-the next endpoint in the list is used.
-
-.. include:: examples/commctl_config_multihost.rst
 
 
 curl
@@ -91,66 +59,6 @@ For specifics on the endpoint see :ref:`host_op`
    commissaire can help automate the bootstrapping of new hosts using
    cloud-init for early initialization.  See :ref:`cloud_init`.
 
-Connecting to a Host Node with commctl
---------------------------------------
-
-.. _connecting_to_a_host_node_with_commctl:
-
-`commctl` provides a simple way to connect to your host node by pulling down
-the `ssh_priv_key` and `remote_user` from the server. The `ssh_priv_key` is
-stored temporarily and is removed upon the completion of the connection.
-
-To connect to a host node:
-
-.. include:: examples/commctl_host_ssh.rst
-
-To connect to a host node with extra ssh parameters:
-
-.. include:: examples/commctl_host_ssh_with_parameters.rst
-
-Cluster Operations with commctl
--------------------------------
-
-.. _cluster_operations_with_commctl:
-
-These operations are done across all hosts associated with a cluster.
-
-List
-~~~~
-To list all clusters:
-
-.. include:: examples/commctl_list_clusters.rst
-
-To list all hosts:
-
-.. include:: examples/commctl_list_hosts.rst
-
-To list all hosts in a specific cluster:
-
-.. include:: examples/commctl_list_hosts_in_cluster.rst
-
-
-Restart
-~~~~~~~
-To restart a cluster:
-
-.. include:: examples/commctl_create_restart.rst
-
-To check up on a restart:
-
-.. include:: examples/commctl_get_restart.rst
-
-
-Upgrade
-~~~~~~~
-To upgrade a cluster:
-
-.. include:: examples/commctl_create_upgrade.rst
-
-To check up on an upgrade:
-
-.. include:: examples/commctl_get_upgrade.rst
-
 
 Cluster Operations with curl
 ----------------------------
@@ -185,3 +93,17 @@ current status.
 .. include:: examples/get_upgrade.rst
 
 For specifics on the endpoint see :ref:`cluster_op_upgrade`
+
+Deploy
+~~~~~~
+Deploying to a cluster is done by creating a new upgrade record for a specific
+cluster.
+
+.. include:: examples/create_deploy.rst
+
+To check up on a deploy a REST *GET* call on the same endpoint will show the
+current status.
+
+.. include:: examples/get_deploy.rst
+
+For specifics on the endpoint see :ref:`cluster_op_deploy`

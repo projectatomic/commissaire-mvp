@@ -10,12 +10,14 @@ Contents
    gettingstarted
    tested_host_node_oss
    operations
+   commctl
    authentication
    logging
    components
    enums
    endpoints
    license
+
 
 Development
 -----------
