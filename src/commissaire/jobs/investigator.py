@@ -43,6 +43,8 @@ def investigator(request_queue, response_queue, run_once=False):
         # Statuses follow:
         # http://commissaire.readthedocs.org/en/latest/enums.html#host-statuses
         store_manager, to_investigate, cluster_data = request_queue.get()
+        if cluster_data is None:
+            cluster_data = {}
         address = to_investigate['address']
         remote_user = to_investigate['remote_user']
         logger.info('{0} is now in investigating.'.format(address))
@@ -114,9 +116,13 @@ def investigator(request_queue, response_queue, run_once=False):
             continue
 
         # Verify association with relevant container managers
+        logger.debug('Attempting to register with relevant container '
+                     'managers: cluster_data={0}'.format(cluster_data))
         for con_mgr in store_manager.list_container_managers(
-                cluster_data['type']):
+                cluster_data.get('type', '')):
             try:
+                logger.debug('Trying to register with {0}...'.format(
+                    con_mgr.__class__.__name__))
                 # Try 3 times waiting 5 seconds each time before giving up
                 for cnt in range(0, 3):
                     if con_mgr.node_registered(address):

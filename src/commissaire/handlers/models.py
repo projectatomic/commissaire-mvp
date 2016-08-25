@@ -69,7 +69,7 @@ class Cluster(Model):
     _attribute_defaults = {
         'name': '', 'type': C.CLUSTER_TYPE_DEFAULT,
         'status': '', 'hostset': [],
-        'network': 'flannel_etcd',
+        'network': C.DEFAULT_CLUSTER_NETWORK_JSON['name'],
     }
     _primary_key = 'name'
 

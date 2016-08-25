@@ -427,9 +427,14 @@ class Transport:
         self.logger.debug('Using {0} as the oscmd class for {1}'.format(
             oscmd.os_type, ip))
 
+        # cluster_data can be None. If it is change it to an empty dict
+        if cluster_data is None:
+            cluster_data = {}
         cluster_type = C.CLUSTER_TYPE_HOST
         network = Network.new(**C.DEFAULT_CLUSTER_NETWORK_JSON)
         try:
+            self.logger.debug('Grabbing cluster type from {0}'.format(
+                cluster_data))
             cluster = Cluster.new(**cluster_data)
             cluster_type = cluster.type
             network = store_manager.get(Network.new(name=cluster.network))
@@ -477,7 +482,6 @@ class Transport:
             'commissaire_kubeproxy_service': oscmd.kubelet_proxy_service,
         }
 
-        # TODO: get the data!!
         # If we are a flannel_server network then set the var
         if network.type == 'flannel_server':
             play_vars['commissaire_flanneld_server'] = network.options.get(

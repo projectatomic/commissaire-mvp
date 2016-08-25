@@ -168,6 +168,8 @@ class ClusterResource(Resource):
                 self.logger.error(
                     'Unable to parse cluster arguments: {0}'.format(error))
         try:
+            self.logger.debug('Looking for network {0}'.format(
+                args['network']))
             network = store_manager.get(
                 Network.new(name=args['network']))
         except KeyError:
