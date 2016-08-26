@@ -6,15 +6,14 @@
 %bcond_without tests
 %endif
 
-%global prerelease rc3
 
 Name:           commissaire
 Version:        0.0.1
-Release:        0.6.%{prerelease}%{?dist}
+Release:        1%{?dist}
 Summary:        Simple cluster host management
 License:        GPLv3+
 URL:            http://github.com/projectatomic/commissaire
-Source0:        https://github.com/projectatomic/%{name}/archive/%{version}%{prerelease}.tar.gz
+Source0:        https://github.com/projectatomic/%{name}/archive/%{version}.tar.gz
 
 BuildArch:      noarch
 
@@ -61,7 +60,7 @@ Example tasks include:
 
 
 %prep
-%autosetup -n %{name}-%{version}%{prerelease}
+%autosetup -n %{name}-%{version}
 
 
 %build
@@ -72,7 +71,7 @@ Example tasks include:
 
 %install
 %py2_install
-install -D contrib/systemd/commissaire %{buildroot}%{_sysconfdir}/sysconfig/commissaire
+install -D conf/commissaire.conf %{buildroot}%{_sysconfdir}/commissaire/commissaire.conf
 install -D contrib/systemd/commissaire.service %{buildroot}%{_unitdir}/commissaire.service
 
 %check
@@ -98,11 +97,14 @@ install -D contrib/systemd/commissaire.service %{buildroot}%{_unitdir}/commissai
 %doc build/sphinx/text/*.txt
 %{_bindir}/commissaire
 %{python2_sitelib}/*
-%{_sysconfdir}/sysconfig/commissaire
+%{_sysconfdir}/commissaire/commissaire.conf
 %{_unitdir}/commissaire.service
 
 
 %changelog
+* Fri Aug 26 2016 Steve Milner <smilner@redhat.com> - 0.0.1-1
+- Released 0.0.1.
+
 * Fri Jul 29 2016 Steve Milner <smilner@redhat.com> - 0.0.1-0.6.rc3
 - Bumped up ansible version.
 
