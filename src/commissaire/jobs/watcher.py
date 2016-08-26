@@ -24,6 +24,7 @@ from commissaire.handlers.models import Hosts
 from commissaire.handlers import util
 from commissaire.transport import ansibleapi
 from commissaire.util.ssh import TemporarySSHKey
+from commissaire.queues import Empty
 
 
 def watcher(queue, store_manager, run_once=False):
@@ -60,7 +61,12 @@ def watcher(queue, store_manager, run_once=False):
             logger.info('No hosts found in the store.')
 
     while True:
-        host, last_run = queue.get()
+        try:
+            host, last_run = queue.get_nowait()
+        except Empty:
+            time.sleep(throttle)
+            continue
+
         logger.debug('Retrieved {0} from queue. Last check was {1}'.format(
             host.address, last_run))
         now = datetime.datetime.utcnow()

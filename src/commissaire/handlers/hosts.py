@@ -270,8 +270,11 @@ class HostResource(Resource):
         store_manager = cherrypy.engine.publish('get-store-manager')[0]
         try:
             host = Host.new(address=address)
-            store_manager.delete(host)
             WATCHER_QUEUE.dequeue(host)
+            store_manager.delete(host)
+            self.logger.debug(
+                'Deleted host {0} and dequeued it from the watcher.'.format(
+                    host.address))
             resp.status = falcon.HTTP_200
         except:
             resp.status = falcon.HTTP_404
